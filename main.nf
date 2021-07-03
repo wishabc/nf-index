@@ -1,8 +1,12 @@
 #!/usr/bin/env nextflow
 
-params.outdir='output'
+params.samples_file = '/net/seq/data/projects/regulotyping-h.CD3+/metadata.txt'
 params.genome='/net/seq/data/genomes/human/GRCh38/noalts/GRCh38_no_alts'
-params.build_ct_index = 1
+
+//Build cell-type specific indicies as well as a combined index
+params.build_ct_index = 1 
+
+params.outdir='output'
 
 nuclear_chroms="$params.genome" + ".nuclear.txt"
 chrom_sizes="$params.genome"  + ".chrom_sizes.bed"
@@ -11,41 +15,35 @@ centers="$params.genome" + ".K76.center_sites.n100.nuclear.starch"
 
 // Read samples file
 Channel
-	.fromPath("/net/seq/data/projects/regulotyping-h.CD3+/metadata.txt")
+	.fromPath(params.samples_file)
 	.splitCsv(header:true, sep:'\t')
 	.map{ row -> tuple( row.donor_id, row.cell_type, row.ag_number, row.bamfile ) }
-	.into{ SAMPLES_AGGREGATIONS }
-
-SAMPLES_AGGREGATIONS
 	.groupTuple(by: [0, 1])
 	.map{ it -> tuple(it[0], it[1], it[3].join(" ")) }
 	.set{ SAMPLES_AGGREGATIONS_MERGE }
 
 process merge_bamfiles {
-	tag "${donor_id}:${cell_type}"
+	tag "${indiv_id}:${cell_type}"
 
 	publishDir params.outdir + '/merged', mode: 'copy' 
 
 	cpus 2
 
 	input:
-	set val(donor_id), val(cell_type), val(bam_files) from SAMPLES_AGGREGATIONS_MERGE
+	set val(indiv_id), val(cell_type), val(bam_files) from SAMPLES_AGGREGATIONS_MERGE
 
 	output:
-	set val(donor_id), val(cell_type), file('*.bam'), file('*.bam.bai') into BAMS_MERGED 
+	set val(indiv_id), val(cell_type), file('*.bam'), file('*.bam.bai') into BAMS_MERGED_HOTSPOTS, BAMS_MERGED_COUNTS 
 
 	script:
 	"""
-	samtools merge -f -@${task.cpus} ${donor_id}_${cell_type}.bam ${bam_files}
-	samtools index ${donor_id}_${cell_type}.bam
+	samtools merge -f -@${task.cpus} ${indiv_id}_${cell_type}.bam ${bam_files}
+	samtools index ${indiv_id}_${cell_type}.bam
 	"""
 }	
 
-BAMS_MERGED
-	.into{ BAMS_MERGED_HOTSPOTS; BAMS_MERGED_COUNTS }
-
 process call_hotspots {
-	tag "${donor_id}:${cell_type}"
+	tag "${indiv_id}:${cell_type}"
 
 	publishDir params.outdir + '/hotspots', mode: 'copy' 
 
@@ -59,10 +57,10 @@ process call_hotspots {
 	file 'chrom_sizes.bed' from file("${chrom_sizes}")
 	file 'centers.starch' from file("${centers}")
 
-	set val(donor_id), val(cell_type), file(bam_file), file(bam_index_file) from BAMS_MERGED_HOTSPOTS
+	set val(indiv_id), val(cell_type), file(bam_file), file(bam_index_file) from BAMS_MERGED_HOTSPOTS
 
 	output:
-	set val(donor_id), val(cell_type), file("${donor_id}_${cell_type}.varw_peaks.fdr0.001.starch") into PEAKS
+	set val(indiv_id), val(cell_type), file(bam_file), file(bam_index_file), file("${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch") into PEAKS
 
 	script:
 	"""
@@ -102,7 +100,7 @@ process call_hotspots {
 		nuclear.varw_peaks.fdr0.001.starch \
 		\$(cat nuclear.cleavage.total)
 
-	cp nuclear.varw_peaks.fdr0.001.starch ../${donor_id}_${cell_type}.varw_peaks.fdr0.001.starch
+	cp nuclear.varw_peaks.fdr0.001.starch ../${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch
 
 	rm -rf \${TMPDIR}
 	"""
@@ -111,7 +109,7 @@ process call_hotspots {
 PEAKS.into{PEAK_LIST;PEAK_FILES}
 
 PEAK_FILES
-	.map{ it -> tuple(it[1], it[2]) }
+	.map{ it -> tuple(it[1], it[4]) }
 	.groupTuple(by: 0)
 	.tap{PEAK_FILES_BY_CELLTYPE}
 	.map{ it -> tuple("all", it[1].flatten()) }
@@ -132,7 +130,8 @@ process build_index {
 	file chrom_sizes from file("${chrom_sizes}")
 
 	output:
-	set val(cell_type), file ("masterlist*") into INDEX_FILES
+	file "masterlist*"
+	set val(cell_type), file("masterlist_DHSs_*_nonovl_core_chunkIDs.bed") into INDEX_FILES, INDEX_FILES_FOR_ANNOTATION
 
 	script:
 	"""
@@ -147,28 +146,52 @@ process build_index {
 	"""
 }
 
-// process count_tags {
+PEAK_LIST
+	.map{ it -> tuple(it[1], it[0], it[2], it[3], it[4])}
+	.tap{ PEAK_LIST_BY_CELLTYPE }
+	.map{ it -> tuple("all", it[1], it[2], it[3], it[4])}
+	.set{ PEAK_LIST_ALL }
 
-// 	input:
-// 	set val(donor_id), val(cell_type), file(bam_file), file(bam_index_file) BAMS_MERGED_COUNTS
-// 	file 'regions.bed' from INDEX_FILE
+PEAK_LIST_COMBINED = params.build_ct_index ? PEAK_LIST_ALL.concat(PEAK_LIST_BY_CELLTYPE) : PEAK_LIST_ALL
 
-// 	output:
-// 	set val(donor_id), val(cell_type), file('') into COUNTS_FILES
+process count_tags {
+	tag "${indiv}:${cell_type}"
 
-// 	script:
-// 	"""
-// 	python3 /home/jvierstra/proj/t_cell_fxn_genotyping/dnase/count_tags_in_region.py \
-// 		${bam_file} < regions.bed > ${output_dir}/\${columns[1]}.txt
+	module "python/3.6.4"
 
-// 	"""
-// }
+	input:
+	set val(cell_type), val(indiv_id), file(bam_file), file(bam_index_file), file(peaks_file), file(index_file) from PEAK_LIST_COMBINED.combine(INDEX_FILES, by: 0)
 
-// process merge_tags {
+	output:
+	set val(cell_type), val(indiv_id), file("${indiv_id}_${cell_type}.counts.txt"), file("${indiv_id}_${cell_type}.bin.txt") into COUNTS_FILES
 
-// }
+	script:
+	"""
+	count_tags.py ${bam_file} < ${index_file} > ${indiv_id}_${cell_type}.counts.txt
+	
+	bedmap --indicator ${index_file} ${peaks_file} > ${indiv_id}_${cell_type}.bin.txt
 
-// process normalize_matrix {
+	"""
+}
 
+process generate_count_matrix {
+	tag "${cell_type}"
 
-// }
+	publishDir params.outdir + '/index', mode: 'copy' 
+
+	input:
+	set val(cell_type), val(indiv_ids), file(count_files), file(bin_files), file(index_file) from COUNTS_FILES.groupTuple(by: 0).combine(INDEX_FILES_FOR_ANNOTATION, by: 0)
+
+	output:
+	file "matrix_*.txt.gz"
+
+	script:
+	"""
+	echo -n "region_id" > header.txt
+	echo -e "\\t${indiv_ids.join("\t")}" >> header.txt
+
+	cat header.txt <(cut -f4 ${index_file} | paste - ${count_files}) | gzip -c >  matrix_counts.${cell_type}.txt.gz
+	cat header.txt <(cut -f4 ${index_file} | paste - ${bin_files}) | gzip -c >  matrix_bin.${cell_type}.txt.gz
+	"""
+
+}
