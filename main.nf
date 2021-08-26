@@ -45,7 +45,8 @@ process merge_bamfiles {
 process call_hotspots {
 	tag "${indiv_id}:${cell_type}"
 
-	publishDir params.outdir + '/hotspots', mode: 'copy' 
+	// only publish the 0.01% peak files
+	publishDir params.outdir + '/hotspots', mode: 'copy', pattern: "*.varw_peaks.fdr0.001.starch" 
 
 	module "bedops/2.4.35-typical:modwt/1.0"
 
@@ -193,5 +194,4 @@ process generate_count_matrix {
 	cat header.txt <(cut -f4 ${index_file} | paste - ${count_files}) | gzip -c >  matrix_counts.${cell_type}.txt.gz
 	cat header.txt <(cut -f4 ${index_file} | paste - ${bin_files}) | gzip -c >  matrix_bin.${cell_type}.txt.gz
 	"""
-
 }

@@ -1,4 +1,4 @@
-#!/bin/which python3
+#!/usr/bin/env python3
 """
 Counts sequencing reads within a set of regions
 """
