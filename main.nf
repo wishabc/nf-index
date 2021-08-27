@@ -18,8 +18,6 @@ Channel
 	.fromPath(params.samples_file)
 	.splitCsv(header:true, sep:'\t')
 	.map{ row -> tuple( row.indiv_id, row.cell_type, row.bam_file ) }
-	.groupTuple(by: [0, 1])
-	.map{ it -> tuple(it[0], it[1], it[2]) }
 	.set{ BAMS_HOTSPOTS }
 
 
