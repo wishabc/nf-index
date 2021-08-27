@@ -108,7 +108,7 @@ process build_index {
 	
 	module "R/4.0.5"
 
-	publishDir params.outdir + '/index', mode: 'copy' 
+	publishDir params.outdir + '/index', mode: 'symlink' 
 
 	input:
 	set val(cell_type), file('*') from PEAK_INDEX_FILES
@@ -162,7 +162,7 @@ process count_tags {
 process generate_count_matrix {
 	tag "${cell_type}"
 
-	publishDir params.outdir + '/index', mode: 'copy' 
+	publishDir params.outdir + '/index', mode: 'symlink' 
 
 	input:
 	set val(cell_type), val(indiv_ids), file(count_files), file(bin_files), file(index_file) from COUNTS_FILES.groupTuple(by: 0).combine(INDEX_FILES_FOR_ANNOTATION, by: 0)
