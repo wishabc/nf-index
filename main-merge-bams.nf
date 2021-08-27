@@ -19,8 +19,28 @@ Channel
 	.splitCsv(header:true, sep:'\t')
 	.map{ row -> tuple( row.indiv_id, row.cell_type, row.bam_file ) }
 	.groupTuple(by: [0, 1])
-	.map{ it -> tuple(it[0], it[1], it[2]) }
+	.map{ it -> tuple(it[0], it[1], it[2].join(" ")) }
 	.set{ SAMPLES_AGGREGATIONS_MERGE }
+
+process merge_bamfiles {
+	tag "${indiv_id}:${cell_type}"
+
+	publishDir params.outdir + '/merged', mode: 'copy' 
+
+	cpus 2
+
+	input:
+	set val(indiv_id), val(cell_type), val(bam_files) from SAMPLES_AGGREGATIONS_MERGE
+
+	output:
+	set val(indiv_id), val(cell_type), file('*.bam'), file('*.bam.bai') into BAMS_MERGED_HOTSPOTS, BAMS_MERGED_COUNTS 
+
+	script:
+	"""
+	samtools merge -f -@${task.cpus} ${indiv_id}_${cell_type}.bam ${bam_files}
+	samtools index ${indiv_id}_${cell_type}.bam
+	"""
+}	
 
 process call_hotspots {
 	tag "${indiv_id}:${cell_type}"
