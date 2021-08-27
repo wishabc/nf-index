@@ -19,9 +19,8 @@ Channel
 	.splitCsv(header:true, sep:'\t')
 	.map{ row -> tuple( row.indiv_id, row.cell_type, row.bam_file ) }
 	.groupTuple(by: [0, 1])
-	.map{ it -> tuple(it[0], it[1], it[2].join(" ")) }
-	.set{ BAMS_HOTSPOTS }
-
+	.map{ it -> tuple(it[0], it[1], it[2]) }
+	.set{ SAMPLES_AGGREGATIONS_MERGE }
 
 process call_hotspots {
 	tag "${indiv_id}:${cell_type}"
@@ -39,10 +38,10 @@ process call_hotspots {
 	file 'chrom_sizes.bed' from file("${chrom_sizes}")
 	file 'centers.starch' from file("${centers}")
 
-	set val(indiv_id), val(cell_type), val(bam_file) from BAMS_HOTSPOTS
+	set val(indiv_id), val(cell_type), file(bam_file), file(bam_index_file) from BAMS_MERGED_HOTSPOTS
 
 	output:
-	set val(indiv_id), val(cell_type), val(bam_file), file("${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch") into PEAKS
+	set val(indiv_id), val(cell_type), file(bam_file), file(bam_index_file), file("${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch") into PEAKS
 
 	script:
 	"""
@@ -59,7 +58,7 @@ process call_hotspots {
 	PATH=/home/jvierstra/.local/src/hotspot2/bin:\$PATH
 	PATH=/home/jvierstra/.local/src/hotspot2/scripts:\$PATH
 
-	hotspot2.sh -F 0.05 -f 0.05 -p varWidth_20_default \
+	hotspot2.sh -F 0.5 -p varWidth_20_default \
 		-M mappable.bed \
     	-c chrom_sizes.bed \
     	-C centers.starch \
@@ -82,8 +81,6 @@ process call_hotspots {
 		nuclear.varw_peaks.fdr0.001.starch \
 		\$(cat nuclear.cleavage.total)
 
-	cp nuclear.varw_peaks.fdr0.001.starch ../${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch
-    
     cp nuclear.hotspots.fdr0.05.starch ../${indiv_id}_${cell_type}.hotspots.fdr0.05.starch
     cp nuclear.hotspots.fdr0.001.starch ../${indiv_id}_${cell_type}.hotspots.fdr0.001.starch
 
@@ -94,7 +91,7 @@ process call_hotspots {
 PEAKS.into{PEAK_LIST;PEAK_FILES}
 
 PEAK_FILES
-	.map{ it -> tuple(it[1], it[3]) }
+	.map{ it -> tuple(it[1], it[4]) }
 	.groupTuple(by: 0)
 	.tap{PEAK_FILES_BY_CELLTYPE}
 	.map{ it -> tuple("all", it[1].flatten()) }
@@ -132,9 +129,9 @@ process build_index {
 }
 
 PEAK_LIST
-	.map{ it -> tuple(it[1], it[0], it[2], it[3])}
+	.map{ it -> tuple(it[1], it[0], it[2], it[3], it[4])}
 	.tap{ PEAK_LIST_BY_CELLTYPE }
-	.map{ it -> tuple("all", it[1], it[2], it[3])}
+	.map{ it -> tuple("all", it[1], it[2], it[3], it[4])}
 	.set{ PEAK_LIST_ALL }
 
 PEAK_LIST_COMBINED = params.build_ct_index ? PEAK_LIST_ALL.concat(PEAK_LIST_BY_CELLTYPE) : PEAK_LIST_ALL
@@ -145,7 +142,7 @@ process count_tags {
 	module "python/3.6.4"
 
 	input:
-	set val(cell_type), val(indiv_id), val(bam_file), file(peaks_file), file(index_file) from PEAK_LIST_COMBINED.combine(INDEX_FILES, by: 0)
+	set val(cell_type), val(indiv_id), file(bam_file), file(bam_index_file), file(peaks_file), file(index_file) from PEAK_LIST_COMBINED.combine(INDEX_FILES, by: 0)
 
 	output:
 	set val(cell_type), val(indiv_id), file("${indiv_id}_${cell_type}.counts.txt"), file("${indiv_id}_${cell_type}.bin.txt") into COUNTS_FILES
