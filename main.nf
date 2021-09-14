@@ -116,7 +116,7 @@ process build_index {
 
 	output:
 	file "masterlist*"
-	set val(cell_type), file("masterlist_DHSs_*_nonovl_core_chunkIDs.bed") into INDEX_FILES, INDEX_FILES_FOR_ANNOTATION
+	set val(cell_type), file("masterlist_DHSs_*_nonovl_any_chunkIDs.bed") into INDEX_FILES, INDEX_FILES_FOR_ANNOTATION
 
 	script:
 	"""
@@ -142,7 +142,6 @@ PEAK_LIST_COMBINED = params.build_ct_index ? PEAK_LIST_ALL.concat(PEAK_LIST_BY_C
 process count_tags {
 	tag "${indiv}:${cell_type}"
 
-	//module "python/3.6.4"
 	conda '/home/jvierstra/.local/miniconda3/envs/py3.9_default'
 
 	input:
