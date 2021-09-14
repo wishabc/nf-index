@@ -25,7 +25,7 @@ process call_hotspots {
 	tag "${indiv_id}:${cell_type}"
 
 	// only publish varw_peaks and hotspots
-	publishDir params.outdir + '/hotspots', mode: 'symlink', pattern: "*.{varw_peaks,hotspots}.fdr*.starch" 
+	publishDir params.outdir + '/hotspots', mode: 'symlink', pattern: "*.starch" 
 
 	module "bedops/2.4.35-typical:modwt/1.0"
 
@@ -41,6 +41,7 @@ process call_hotspots {
 
 	output:
 	set val(indiv_id), val(cell_type), val(bam_file), file("${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch") into PEAKS
+	file("${indiv_id}_${cell_type}.hotspots.fdr*.starch")
 
 	script:
 	"""
@@ -57,7 +58,7 @@ process call_hotspots {
 	PATH=/home/jvierstra/.local/src/hotspot2/bin:\$PATH
 	PATH=/home/jvierstra/.local/src/hotspot2/scripts:\$PATH
 
-	hotspot2.sh -F 0.05 -f 0.05 -p varWidth_20_default \
+	hotspot2.sh -F 0.05 -f 0.05 -p varWidth_20_${indiv_id}_${cell_type} \
 		-M mappable.bed \
     	-c chrom_sizes.bed \
     	-C centers.starch \
@@ -72,7 +73,7 @@ process call_hotspots {
 
 	density-peaks.bash \
 		\${TMPDIR}\
-		varWidth_20_default \
+		varWidth_20_${indiv_id}_${cell_type} \
 		nuclear.cutcounts.starch \
 		nuclear.hotspots.fdr0.001.starch \
 		../chrom_sizes.bed \
@@ -80,10 +81,10 @@ process call_hotspots {
 		nuclear.varw_peaks.fdr0.001.starch \
 		\$(cat nuclear.cleavage.total)
 
-	cp nuclear.varw_peaks.fdr0.001.starch ../${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch
+		cp nuclear.varw_peaks.fdr0.001.starch ../${indiv_id}_${cell_type}.varw_peaks.fdr0.001.starch
     
-    cp nuclear.hotspots.fdr0.05.starch ../${indiv_id}_${cell_type}.hotspots.fdr0.05.starch
-    cp nuclear.hotspots.fdr0.001.starch ../${indiv_id}_${cell_type}.hotspots.fdr0.001.starch
+    	cp nuclear.hotspots.fdr0.05.starch ../${indiv_id}_${cell_type}.hotspots.fdr0.05.starch
+    	cp nuclear.hotspots.fdr0.001.starch ../${indiv_id}_${cell_type}.hotspots.fdr0.001.starch
 
 	rm -rf \${TMPDIR}
 	"""
@@ -105,6 +106,7 @@ process build_index {
 	tag "${cell_type}"
 	
 	module "R/4.0.5"
+	module "bedops/2.4.35-typical"
 
 	publishDir params.outdir + '/index', mode: 'symlink' 
 
@@ -140,7 +142,8 @@ PEAK_LIST_COMBINED = params.build_ct_index ? PEAK_LIST_ALL.concat(PEAK_LIST_BY_C
 process count_tags {
 	tag "${indiv}:${cell_type}"
 
-	module "python/3.6.4"
+	//module "python/3.6.4"
+	conda '/home/jvierstra/.local/miniconda3/envs/py3.9_default'
 
 	input:
 	set val(cell_type), val(indiv_id), val(bam_file), file(peaks_file), file(index_file) from PEAK_LIST_COMBINED.combine(INDEX_FILES, by: 0)
