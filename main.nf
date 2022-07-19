@@ -8,7 +8,7 @@ process count_tags {
 	tag "${indiv_id}"
 
 	input:
-	tuple val(index_file), val(indiv_id), val(bam_file), val(peaks_file)
+	tuple val(index_file), val(indiv_id), val(bam_file), val(bam_index_file), val(peaks_file)
 
 	output:
 	tuple val(index_file), val(indiv_id), file("${prefix}.counts.txt"), file("${prefix}.bin.txt")
@@ -45,7 +45,7 @@ workflow {
 	BAMS_HOTSPOTS = Channel
 		.fromPath(params.samples_file)
 		.splitCsv(header:true, sep:'\t')
-		.map{ row -> tuple(row.index_file, row.ag_id, row.bam_file, row.hotspots_file) }
+		.map{ row -> tuple(row.index_file, row.ag_id, row.bam_file, "${row.bam_file}.bai", row.hotspots_file) }
 
 	COUNT_FILES = count_tags(BAMS_HOTSPOTS)
 	generate_count_matrix(COUNT_FILES.groupTuple(by: 0))
