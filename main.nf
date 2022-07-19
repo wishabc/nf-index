@@ -48,6 +48,6 @@ workflow {
 		.map{ row -> tuple(row.index_file, row.ag_id, row.bam_file, row.hotspots_file) }
 
 	COUNT_FILES = count_tags(BAMS_HOTSPOTS)
-	generate_count_matrix(COUNTS_FILES.groupTuple(by: 0))
+	generate_count_matrix(COUNT_FILES.groupTuple(by: 0))
 
 }
