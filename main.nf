@@ -27,7 +27,7 @@ process generate_count_matrix {
 	publishDir params.outdir + '/index'
 
 	input:
-	set val(index_file), val(indiv_ids), file(count_files), file(bin_files)
+	tuple val(index_file), val(indiv_ids), file(count_files), file(bin_files)
 
 	output:
 	file "${prefix}.*.txt.gz"
