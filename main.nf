@@ -16,7 +16,7 @@ process count_tags {
 	script:
 	prefix = "${indiv_id}"
 	"""
-	$baseDir/bin/count_tags.py ${bam_file} ${bam_index_file} < ${index_file} > ${prefix}.counts.txt
+	$baseDir/bin/count_tags.py ${bam_file} < ${index_file} > ${prefix}.counts.txt
 	
 	bedmap --indicator ${index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
