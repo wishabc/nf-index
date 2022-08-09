@@ -14,23 +14,20 @@ def bed3_iterator(filehandle):
 	Returns:
 		genomic_interval
 	"""
-	for line in filehandle:
-		
-		fields = line.strip().split()
-		
+	for fields in filehandle:
 		chrom = fields[0]
 		start = int(fields[1])
 		end = int(fields[2])
 
 		yield (chrom, start, end)
 
-with pysam.AlignmentFile(sys.argv[1], 'rc') as bam:
-	for index, (chrom, start, end) in enumerate(bed3_iterator(sys.stdin)):
+
+with pysam.AlignmentFile(sys.argv[1], 'rc') as bam,\
+ pysam.TabixFile(sys.argv[2]) as bed:
+	for index, (chrom, start, end) in enumerate(bed3_iterator(bed)):
 		try:
 			print(bam.count(chrom, start, end, read_callback='all'))
-		except ValueError:
-			if index == 0:
-				pysam.index(sys.argv[1])
-				print(bam.count(chrom, start, end, read_callback='all'))
-			else:
-				raise
+		except Exception as e:
+			print(f'Problems with {chrom}:{start}-{end}')
+			raise e
+
