@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-params.samples_file = '/home/sabramov/projects/SuperIndex/matrix_master_list.txt'
+params.samples_file = '/home/sabramov/projects/SuperIndex/edc-reprocessing/EDC_matrix_master_list.txt'
 params.outdir='output'
 
 
@@ -40,14 +40,19 @@ process generate_count_matrix {
 }
 
 
-
+workflow generateMatrix {
+	take:
+		BAMS_HOTSPOTS
+	main:
+		COUNT_FILES = count_tags(BAMS_HOTSPOTS)
+		generate_count_matrix(COUNT_FILES.groupTuple(by: 0))
+	emit:
+		generate_count_matrix.out
+}
 workflow {
 	BAMS_HOTSPOTS = Channel
 		.fromPath(params.samples_file)
 		.splitCsv(header:true, sep:'\t')
 		.map{ row -> tuple(row.index_file, row.ag_id, row.bam_file, row.hotspots_file) }
-
-	COUNT_FILES = count_tags(BAMS_HOTSPOTS)
-	generate_count_matrix(COUNT_FILES.groupTuple(by: 0))
-
+	generateMatrix(BAMS_HOTSPOTS)
 }
