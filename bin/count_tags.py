@@ -6,7 +6,7 @@ Counts sequencing reads within a set of regions
 import sys
 import pysam
 
-bam = pysam.AlignmentFile(sys.argv[1], 'r')
+
 def bed3_iterator(filehandle):
 	"""
 	Generator that parses BED3 format from a string iterator
@@ -24,13 +24,13 @@ def bed3_iterator(filehandle):
 
 		yield (chrom, start, end)
 
-
-for index, (chrom, start, end) in enumerate(bed3_iterator(sys.stdin)):
-	try:
-		print(bam.count(chrom, start, end, read_callback='all'))
-	except ValueError:
-		if index == 0:
-			pysam.index(sys.argv[1])
+with pysam.AlignmentFile(sys.argv[1], 'rc') as bam:
+	for index, (chrom, start, end) in enumerate(bed3_iterator(sys.stdin)):
+		try:
 			print(bam.count(chrom, start, end, read_callback='all'))
-		else:
-			raise
+		except ValueError:
+			if index == 0:
+				pysam.index(sys.argv[1])
+				print(bam.count(chrom, start, end, read_callback='all'))
+			else:
+				raise
