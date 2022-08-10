@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-params.samples_file = '/home/sabramov/projects/SuperIndex/edc-reprocessing/EDC_matrix_master_list.txt'
+params.samples_file = '/home/sabramov/projects/SuperIndex/matrix_master_list.txt'
 params.outdir='output'
 
 
@@ -8,15 +8,15 @@ process count_tags {
 	tag "${indiv_id}"
 
 	input:
-	tuple val(index_file), val(indiv_id), val(bam_file), val(peaks_file)
+		tuple val(index_file), val(indiv_id), val(bam_file), val(peaks_file)
 
 	output:
-	tuple val(index_file), val(indiv_id), file("${prefix}.counts.txt"), file("${prefix}.bin.txt")
+		tuple val(index_file), val(indiv_id), file("${prefix}.counts.txt"), file("${prefix}.bin.txt")
 
 	script:
 	prefix = "${indiv_id}"
 	"""
-	$baseDir/bin/count_tags.py ${bam_file} ${index_file} > ${prefix}.counts.txt
+	$moduleDir/bin/count_tags.py ${bam_file} < ${index_file} > ${prefix}.counts.txt
 	
 	bedmap --indicator ${index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
@@ -27,10 +27,10 @@ process generate_count_matrix {
 	publishDir params.outdir + '/index'
 
 	input:
-	tuple val(index_file), val(indiv_ids), file(count_files), file(bin_files)
+		tuple val(index_file), val(indiv_ids), file(count_files), file(bin_files)
 
 	output:
-	file "${prefix}.*.txt.gz"
+		file "${prefix}.*.txt.gz"
 
 	script:
 	"""
