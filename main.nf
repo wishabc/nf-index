@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-params.samples_file = '/home/sabramov/projects/SuperIndex/matrix_master_list.txt'
+params.samples_file = '/home/sabramov/projects/SuperIndex/edc-reprocessing/EDC_matrix_master_list.txt'
 params.outdir='output'
 
 
