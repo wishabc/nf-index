@@ -30,11 +30,13 @@ process generate_count_matrix {
 		tuple val(index_file), val(indiv_ids), file(count_files), file(bin_files)
 
 	output:
-		file "${prefix}.*.txt.gz"
+		tuple file("matrix.all.signal.txt.gz"), file("matrix.all.peaks.txt.gz"), file("indivs_order.txt")
 
 	script:
+	indiv_ids_join = indiv_ids.join("\t")
 	"""
-	paste  ${count_files} | gzip -c >  matrix.all.signal.txt.gz
+	echo -e "\\t${indiv_ids_join}" > indivs_order.txt
+	paste - ${count_files} | gzip -c >  matrix.all.signal.txt.gz
 	paste - ${bin_files} | gzip -c >  matrix.all.peaks.txt.gz
 	"""
 }
