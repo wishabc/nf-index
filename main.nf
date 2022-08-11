@@ -6,7 +6,7 @@ params.outdir='output'
 
 process count_tags {
 	tag "${indiv_id}"
-	
+
 	publishDir params.outdir + '/count_files'
 
 	input:
@@ -37,7 +37,7 @@ process generate_count_matrix {
 	script:
 	indiv_ids_join = indiv_ids.join("\t")
 	"""
-	echo -e "\\t${indiv_ids_join}" > indivs_order.txt
+	echo "${indiv_ids_join}" > indivs_order.txt
 	paste - ${count_files} | gzip -c >  matrix.all.signal.txt.gz
 	paste - ${bin_files} | gzip -c >  matrix.all.peaks.txt.gz
 	"""
