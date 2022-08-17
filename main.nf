@@ -6,6 +6,7 @@ conda_env = "$moduleDir/environment.yml"
 
 process count_tags {
 	tag "${indiv_id}"
+	conda conda_env
 
 	input:
 		tuple val(index_file), val(indiv_id), val(bam_file), val(peaks_file)
@@ -25,6 +26,7 @@ process count_tags {
 process generate_count_matrix {
 
 	publishDir params.outdir + '/index'
+	conda conda_env
 
 	input:
 		tuple val(index_file), val(indiv_ids), file(count_files), file(bin_files)
