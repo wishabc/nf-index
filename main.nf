@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
+nextflow.enable.dsl = 2
 
-params.samples_file = '/home/sabramov/projects/SuperIndex/edc-reprocessing/EDC_matrix_master_list.txt'
-params.outdir='output'
+conda_env = "$moduleDir/environment.yml"
 
 
 process count_tags {
@@ -38,8 +38,8 @@ process generate_count_matrix {
 	indiv_ids_join = indiv_ids.join("\t")
 	"""
 	echo "${indiv_ids_join}" > indivs_order.txt
-	paste - ${count_files} | gzip -c >  matrix.all.signal.txt.gz
-	paste - ${bin_files} | gzip -c >  matrix.all.peaks.txt.gz
+	paste - ${count_files} | cut -c2- | gzip -c > matrix.all.signal.txt.gz
+	paste - ${bin_files} | cut -c2- | gzip -c > matrix.all.peaks.txt.gz
 	"""
 }
 
