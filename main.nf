@@ -17,8 +17,12 @@ process count_tags {
 	script:
 	prefix = "${indiv_id}"
 	"""
-	bedtools intersect -sorted -g ${params.chrom_sizes} -c -a ${params.index_file} -b ${bam_file} | awk '{print \$(NF)}' > ${prefix}.counts.txt
-	
+	while read chr; do
+		chr_index=\$(cat ${params.index_file} | grep \$chr)
+		if [ -s "\$chr_index" ]; then
+			bedtools intersect -sorted -c -a \$chr_index -b ${bam_file} | awk '{print \$(NF)}' >> ${prefix}.counts.txt
+		fi
+	done < awk '{print \$1}' ${params.chrom_sizes}
 	bedmap --indicator ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
