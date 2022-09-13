@@ -17,14 +17,7 @@ process count_tags {
 	script:
 	prefix = "${indiv_id}"
 	"""
-	awk '{print \$1}' ${params.chrom_sizes} > chroms.txt
-	while read chrom; do
-		echo \$chrom
-		cat ${params.index_file} | { grep "\$chrom\t" || true; } > chrom_index.txt
-		if [ -s chrom_index.txt ]; then
-			bedtools intersect -sorted -g ${params.chrom_sizes} -c -a chrom_index.txt -b ${bam_file} | awk '{print \$(NF)}' >> ${prefix}.counts.txt
-		fi
-	done < chroms.txt
+	bedtools multicov -bams ${bam_file} -bed ${params.index_file} | awk '{print \$(NF)}' > ${prefix}.counts.txt
 	bedmap --indicator ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
