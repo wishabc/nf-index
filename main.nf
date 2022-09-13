@@ -9,17 +9,17 @@ process count_tags {
 	conda params.conda
 
 	input:
-		tuple val(index_file), val(indiv_id), val(bam_file), val(peaks_file)
+		tuple val(indiv_id), val(bam_file), val(peaks_file)
 
 	output:
-		tuple val(index_file), val(indiv_id), file("${prefix}.counts.txt"), file("${prefix}.bin.txt")
+		tuple val(indiv_id), file("${prefix}.counts.txt"), file("${prefix}.bin.txt")
 
 	script:
 	prefix = "${indiv_id}"
 	"""
-	bedtools intersect -sorted -g ${params.chrom_sizes} -c -a ${index_file} -b ${bam_file} | awk '{print \$(NF)}' > ${prefix}.counts.txt
+	bedtools intersect -sorted -g ${params.chrom_sizes} -c -a ${params.index_file} -b ${bam_file} | awk '{print \$(NF)}' > ${prefix}.counts.txt
 	
-	bedmap --indicator ${index_file} ${peaks_file} > ${prefix}.bin.txt
+	bedmap --indicator ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
 
@@ -29,7 +29,7 @@ process generate_count_matrix {
 	conda params.conda
 
 	input:
-		tuple val(index_file), val(indiv_ids), file(count_files), file(bin_files)
+		tuple val(indiv_ids), file(count_files), file(bin_files)
 
 	output:
 		tuple file("matrix.all.signal.txt.gz"), file("matrix.all.peaks.txt.gz"), file("indivs_order.txt")
@@ -57,6 +57,6 @@ workflow {
 	BAMS_HOTSPOTS = Channel
 		.fromPath(params.samples_file)
 		.splitCsv(header:true, sep:'\t')
-		.map{ row -> tuple(row.index_file, row.ag_id, row.bam_file, row.hotspots_file) }
+		.map{ row -> tuple(row.ag_id, row.bam_file, row.hotspots_file) }
 	generateMatrix(BAMS_HOTSPOTS)
 }
