@@ -57,7 +57,7 @@ process split_file {
 	"""
 	mkdir out
 	cd out
-	split -l ${params.chunksize} ${prefix} ${input_file}
+	split -l ${params.chunksize} ${input_file} ${prefix} 
 	"""
 }
 
