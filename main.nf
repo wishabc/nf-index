@@ -6,7 +6,6 @@ params.conda = "$moduleDir/environment.yml"
 
 process count_tags {
 	tag "${indiv_id}"
-	scratch true
 	conda params.conda
 
 	input:
