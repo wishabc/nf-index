@@ -6,6 +6,7 @@ params.conda = "$moduleDir/environment.yml"
 
 process count_tags {
 	tag "${indiv_id}"
+	scratch true
 	conda params.conda
 
 	input:
@@ -17,12 +18,13 @@ process count_tags {
 	script:
 	prefix = "${indiv_id}"
 	"""
+	awk '{print \$1}' ${params.chrom_sizes} > chroms.txt
 	while read chr; do
 		chr_index=\$(cat ${params.index_file} | grep \$chr)
 		if [ -s "\$chr_index" ]; then
 			bedtools intersect -sorted -c -a \$chr_index -b ${bam_file} | awk '{print \$(NF)}' >> ${prefix}.counts.txt
 		fi
-	done < awk '{print \$1}' ${params.chrom_sizes}
+	done < chroms.txt
 	bedmap --indicator ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
