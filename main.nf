@@ -17,8 +17,7 @@ process count_tags {
 	script:
 	prefix = "${indiv_id}"
 	"""
-	$moduleDir/bin/count_tags.py ${bam_file} < ${index_chunk} > ${prefix}.counts.txt
-	
+	bedtools intersect -sorted -g ${params.chrom_sizes}  -c -a ${index_chunk} -b ${bam_file} > ${prefix}.counts.txt
 	bedmap --indicator ${index_chunk} ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
