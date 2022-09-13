@@ -83,5 +83,5 @@ workflow {
 		.fromPath(params.samples_file)
 		.splitCsv(header:true, sep:'\t')
 		.map(row -> tuple(row.ag_id, row.bam_file, row.hotspots_file))
-	generateMatrix(bams_hotspots, split_file(params.index_file))
+	generateMatrix(bams_hotspots, split_file(params.index_file).flatten())
 }
