@@ -48,7 +48,7 @@ workflow generateMatrix {
 		bams_hotspots
 		index_chunks
 	main:
-		count_files = count_tags(bams_hotspots, index_chunks)
+		count_files = count_tags(bams_hotspots.combine(index_chunks)
 		count_indivs = count_files.collectFile(sort: true) {
 				item -> ["${item[0]}.count.txt", item[2] + '\n']
 		}
