@@ -43,11 +43,14 @@ process generate_count_matrix {
 }
 
 process split_file {
-	scratch: true
+	scratch true
+
 	input:
 		path(input_file)
+
 	output:
 		path("out/${prefix}*")
+
 	script:
 	prefix = "index_chunk."
 	"""
