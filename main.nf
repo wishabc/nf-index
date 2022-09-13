@@ -19,9 +19,10 @@ process count_tags {
 	prefix = "${indiv_id}"
 	"""
 	awk '{print \$1}' ${params.chrom_sizes} > chroms.txt
-	while read chr; do
-		cat ${params.index_file} | grep -q \$chr > chrom_index.txt
-		if [ -s "chrom_index.txt" ]; then
+	while read chrom; do
+		echo \$chrom
+		cat ${params.index_file} | grep \$chrom > chrom_index.txt
+		if [ -s chrom_index.txt ]; then
 			bedtools intersect -sorted -g ${params.chrom_sizes} -c -a chrom_index.txt -b ${bam_file} | awk '{print \$(NF)}' >> ${prefix}.counts.txt
 		fi
 	done < chroms.txt
