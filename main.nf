@@ -22,7 +22,7 @@ process count_tags {
 	while read chr; do
 		cat ${params.index_file} | grep -q \$chr > chrom_index.txt
 		if [ -s "chrom_index.txt" ]; then
-			bedtools intersect -sorted -c -a chrom_index.txt -b ${bam_file} | awk '{print \$(NF)}' >> ${prefix}.counts.txt
+			bedtools intersect -sorted -g ${params.chrom_sizes} -c -a chrom_index.txt -b ${bam_file} | awk '{print \$(NF)}' >> ${prefix}.counts.txt
 		fi
 	done < chroms.txt
 	bedmap --indicator ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
