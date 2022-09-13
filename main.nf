@@ -42,17 +42,32 @@ process generate_count_matrix {
 	"""
 }
 
+process split_file {
+	scratch: true
+	input:
+		path(input_file)
+	output:
+		path("out/${prefix}*")
+	script:
+	prefix = "index_chunk."
+	"""
+	mkdir out
+	cd out
+	split -l ${params.chunksize} ${prefix} ${input_file}
+	"""
+}
+
 
 workflow generateMatrix {
 	take:
 		bams_hotspots
 		index_chunks
 	main:
-		count_files = count_tags(bams_hotspots.combine(index_chunks)
-		count_indivs = count_files.collectFile(sort: true) {
+		count_files = count_tags(bams_hotspots.combine(index_chunks))
+		count_indivs = count_files.collectFile(sort: { it[1] }) {
 				item -> ["${item[0]}.count.txt", item[2] + '\n']
 		}
-		binary_indivs = count_files.collectFile(sort: true) {
+		binary_indivs = count_files.collectFile() {
 				item -> ["${item[0]}.binary.txt", item[3] + '\n']
 		}
 		generate_count_matrix(count_indivs, binary_indivs)
@@ -64,7 +79,6 @@ workflow {
 		.fromPath(params.samples_file)
 		.splitCsv(header:true, sep:'\t')
 		.map(row -> tuple(row.ag_id, row.bam_file, row.hotspots_file))
-	index_chunks = Channel.fromPath(params.index_file)
-		.splitText( by: params.chunksize, file: true )
-	generateMatrix(bams_hotspots, index_chunks)
+	index_file = Channel.fromPath(params.index_file)
+	generateMatrix(bams_hotspots, split_file(index_file))
 }
