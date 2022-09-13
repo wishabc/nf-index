@@ -29,7 +29,8 @@ process generate_count_matrix {
 	conda params.conda
 
 	input:
-		tuple path(count_files), path(bin_files)
+		path(count_files)
+		path(bin_files)
 
 	output:
 		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz"), path("indivs_order.txt")
@@ -67,10 +68,10 @@ workflow generateMatrix {
 		index_chunks
 	main:
 		count_files = count_tags(bams_hotspots.combine(index_chunks))
-		count_indivs = count_files.collectFile(sort: { it[1] }) {
+		count_indivs = count_files.collectFile(sort: { a,b -> a[1].name <=> b[1].name ?: a[0] <=> b[0] }) {
 				item -> ["${item[0]}.count.txt", item[2] + '\n']
 		}
-		binary_indivs = count_files.collectFile() {
+		binary_indivs = count_files.collectFile(sort: { a,b -> a[1].name <=> b[1].name ?: a[0] <=> b[0] }) {
 				item -> ["${item[0]}.binary.txt", item[3] + '\n']
 		}
 		generate_count_matrix(count_indivs, binary_indivs)
