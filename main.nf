@@ -47,7 +47,7 @@ process split_file {
 	scratch true
 
 	input:
-		path(input_file)
+		val(input_file)
 
 	output:
 		path("out/${prefix}*")
@@ -83,6 +83,5 @@ workflow {
 		.fromPath(params.samples_file)
 		.splitCsv(header:true, sep:'\t')
 		.map(row -> tuple(row.ag_id, row.bam_file, row.hotspots_file))
-	index_file = Channel.fromPath(params.index_file)
-	generateMatrix(bams_hotspots, split_file(index_file))
+	generateMatrix(bams_hotspots, split_file(params.index_file))
 }
