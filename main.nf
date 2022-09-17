@@ -48,7 +48,10 @@ workflow generateMatrix {
 		BAMS_HOTSPOTS
 	main:
 		COUNT_FILES = count_tags(BAMS_HOTSPOTS)
-		generate_count_matrix(COUNT_FILES.toList().transpose())
+
+		collected_files = COUNT_FILES.toList()
+		collected_files.view()
+		generate_count_matrix(collected_files)
 	emit:
 		generate_count_matrix.out
 }
