@@ -28,10 +28,10 @@ process generate_count_matrix {
 	conda params.conda
 
 	input:
-		tuple val(indiv_ids), file(count_files), file(bin_files)
+		tuple val(indiv_ids), path(count_files), path(bin_files)
 
 	output:
-		tuple file("matrix.all.signal.txt.gz"), file("matrix.all.peaks.txt.gz"), file("indivs_order.txt")
+		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz"), path("indivs_order.txt")
 
 	script:
 	indiv_ids_join = indiv_ids.join("\t")
@@ -48,7 +48,7 @@ workflow generateMatrix {
 		BAMS_HOTSPOTS
 	main:
 		COUNT_FILES = count_tags(BAMS_HOTSPOTS)
-		generate_count_matrix(COUNT_FILES.groupTuple(by: 0))
+		generate_count_matrix(COUNT_FILES.toSortedList())
 	emit:
 		generate_count_matrix.out
 }
