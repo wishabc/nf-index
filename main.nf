@@ -95,7 +95,8 @@ process get_scale_factors {
 	memory params.memory
 
 	input:
-		tuple path(signal_matrix), path(normed_matrix)
+		path(signal_matrix)
+		path(normed_matrix)
 
 	output:
 		path name
