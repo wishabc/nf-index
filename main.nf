@@ -44,6 +44,26 @@ process generate_count_matrix {
 	"""
 }
 
+process filter_autosomes {
+	input:
+		path signal_matrix
+		path peaks_matrix
+
+	output:
+		path sigmat, emit: signal
+		path peakmat, emit: peaks
+	
+	script:
+	sigmat = "matrix.all.autosomes.signal.txt.gz"
+	peakmat = "matrix.all.autosomes.peaks.txt.gz"
+	"""
+	len="\$((\$(cat ${params.index_file} | grep -n -m 1 chrX | cut -f1 -d:) - 1))"
+	head -n \$len ${signal_matrix} > ${sigmat}
+	head -n \$len ${peaks_matrix} > ${peakmat}
+	"""
+
+}
+
 process normalize_matrix {
 	conda params.conda
 
@@ -155,11 +175,9 @@ workflow generateMatrix {
 
 		collected_files = count_files.toList().transpose().toList()
 		count_matrices = generate_count_matrix(collected_files)
-		
 		signal_matrix = count_matrices.signal
 		peaks_matrix = count_matrices.peaks
 		indivs_order = count_matrices.indivs
-
 	emit:
 		signal_matrix
 		peaks_matrix
@@ -172,11 +190,11 @@ workflow normalizeMatrix {
 		peaks_matrix
 		indivs_order
 	main:
-		norm_matrix = normalize_matrix(signal_matrix, peaks_matrix).matrix
+		matrices = filter_autosomes(signal_matrix, peaks_matrix)
+		norm_matrix = normalize_matrix(matrices.signal, matrices.peaks).matrix
 		new_meta = reorder_meta(params.metadata, indivs_order)
-
-		sf = get_scale_factors(signal_matrix, norm_matrix)
-		deseq2(signal_matrix, sf, indivs_order, new_meta)
+		sf = get_scale_factors(matrices.signal, norm_matrix)
+		deseq2(matrices.signal, sf, indivs_order, new_meta)
 	emit:
 		deseq2.out
 }
