@@ -139,6 +139,14 @@ process deseq2 {
 
 }
 
+workflow generateAndNormalize {
+	take:
+		bams_hotspots
+	main:
+		generateMatrix(bams_hotspots)
+		normalizeMatrix(signal_matrix, peaks_matrix, indivs_order)
+}
+
 workflow generateMatrix {
 	take:
 		bams_hotspots
@@ -152,20 +160,34 @@ workflow generateMatrix {
 		// peaks_matrix = count_matrices.peaks
 		// indivs_order = count_matrices.indivs
 
-		signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.signal.txt.gz')
-		peaks_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.peaks.txt.gz')
-		indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
+	emit:
+		signal_matrix
+		peaks_matrix
+		indivs_order
+}
 
+workflow normalizeMatrix {
+	take:
+		signal_matrix
+		peaks_matrix
+		indivs_order
+	main:
 		norm_matrix = normalize_matrix(signal_matrix, peaks_matrix).matrix
 		new_meta = reorder_meta(params.metadata, indivs_order)
 
 		sf = get_scale_factors(signal_matrix, norm_matrix)
-
 		deseq2(signal_matrix, sf, indivs_order, new_meta)
 	emit:
 		deseq2.out
 }
 
+workflow test {
+	signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.signal.txt.gz')
+	peaks_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.peaks.txt.gz')
+	indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
+
+	normalize_matrix(signal_matrix, peaks_matrix, indivs_order)
+}
 
 workflow {
 	BAMS_HOTSPOTS = Channel
