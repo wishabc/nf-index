@@ -256,12 +256,13 @@ class DataNormalize:
 
         logger.info('Computing mean and pseudocounts for each peak')
         pseudocounts = self.get_pseudocounts(density_mat)
-
+        print(density_mat.dtype)
         mean_density = density_mat.mean(axis=1)
         mean_pseudocount = pseudocounts.mean()
         xvalues = np.log(mean_density + mean_pseudocount)
         mat_and_pseudo = np.log(density_mat + pseudocounts)
         diffs = (mat_and_pseudo.T - xvalues).T
+        print(diffs.dtype)
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
         decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat,
                                                  correlation_limit=self.correlation_limit)
@@ -273,6 +274,7 @@ class DataNormalize:
 
         logger.info('Computing LOWESS smoothing parameter via cross-validation')
         delta = np.percentile(mean_density, 99) * self.delta_fraction
+        print(delta.dtype)
         cv_set = self.seed.choice(S, size=min(cv_number, S), replace=False)
         cv_fraction = np.mean(self.parallel_apply_2D(self.choose_fraction_cv, axis=0,
                                                      arr=diffs[:, cv_set], x=xvalues,
