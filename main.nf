@@ -151,14 +151,14 @@ workflow generateMatrix {
 	take:
 		bams_hotspots
 	main:
-		// count_files = count_tags(bams_hotspots)
+		count_files = count_tags(bams_hotspots)
 
-		// collected_files = count_files.toList().transpose().toList()
-		// count_matrices = generate_count_matrix(collected_files)
+		collected_files = count_files.toList().transpose().toList()
+		count_matrices = generate_count_matrix(collected_files)
 		
-		// signal_matrix = count_matrices.signal
-		// peaks_matrix = count_matrices.peaks
-		// indivs_order = count_matrices.indivs
+		signal_matrix = count_matrices.signal
+		peaks_matrix = count_matrices.peaks
+		indivs_order = count_matrices.indivs
 
 	emit:
 		signal_matrix
