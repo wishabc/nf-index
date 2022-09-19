@@ -42,6 +42,99 @@ process generate_count_matrix {
 	"""
 }
 
+process normalize_matrix {
+	conda params.conda
+
+	cpus params.cpus
+	memory params.memory
+	publishDir "${params.outdir}/norm"
+
+	input:
+		tuple path(signal_matrix), path(peaks_matrix), path(indivs_order)
+
+	output:
+		path("${prefix}.normed.npy"), emit: matrix
+		path("${prefix}*"), emit: norm_matrices
+
+	script:
+	prefix = 'normalized'
+	"""
+	python3 $moduleDir/bin/lowess.py \
+	  ${peaks_matrix} \
+	  ${signal_matrix} \
+	  ./ \
+	  --jobs ${task.cpus} \
+	  --prefix ${prefix}
+	"""
+}
+
+process reorder_meta {
+	conda params.conda
+	publishDir "${params.outdir}"
+
+	input:
+		tuple val(metadata_path), path(indivs_order)
+
+	output:
+		path name
+	
+	script:
+	name = "reordered_meta.txt"
+	"""
+	while IFS="\t" read LINE
+	do
+    	grep "\$LINE" "${metadata_path}" >> "${name}"
+	done < ${indivs_order} 
+	"""
+}
+
+process get_scale_factors {
+	conda params.conda
+	publishDir "${params.outdir}"
+	memory params.memory
+
+	input:
+		tuple path(signal_matrix), path(normed_matrix)
+
+	output:
+		path name
+
+	script:
+	name = "scale_factors.npy"
+	"""
+	python3 $moduleDir/bin/get_scale_factors.py \
+	  ${signal_matrix} \
+	  ${normed_matrix} \
+	  ${name}
+	"""
+}
+
+process deseq2 {
+	conda params.conda
+	publishDir "${params.outdir}"
+	memory params.memory
+
+	input:
+		path signal_matrix
+		path scale_factors
+		path indivs_order
+		path meta_path
+
+	output:
+		path "${prefix}*"
+
+	script:
+	prefix = "deseq.normalized"
+	"""
+	Rscript $moduleDir/bin/deseq2.R \
+	  ${signal_matrix} \
+	  ${scale_factors} \
+	  ${indivs_order} \
+	  ${meta_path} \
+	  ${prefix}
+	"""
+
+}
 
 workflow generateMatrix {
 	take:
@@ -50,10 +143,22 @@ workflow generateMatrix {
 		COUNT_FILES = count_tags(BAMS_HOTSPOTS)
 
 		collected_files = COUNT_FILES.toList().transpose().toList()
-		generate_count_matrix(collected_files)
+		count_matrices = generate_count_matrix(collected_files)
+		
+		norm_matrix = normalize_matrix(count_matrices).matrix
+
+		signal_matrix = count_matrices.map(it -> it[0])
+		indivs_order = count_matrices.map(it -> it[2])
+		new_meta = reorder_meta(params.metadata, indivs_order)
+
+		sf = get_scale_factors(signal_matrix, norm_matrix)
+
+		deseq2(signal_matrix, sf, indivs_order, new_meta)
 	emit:
-		generate_count_matrix.out
+		deseq2.out
 }
+
+
 workflow {
 	BAMS_HOTSPOTS = Channel
 		.fromPath(params.samples_file)
