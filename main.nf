@@ -186,7 +186,7 @@ workflow test {
 	peaks_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.peaks.txt.gz')
 	indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
 
-	normalize_matrix(signal_matrix, peaks_matrix, indivs_order)
+	normalizeMatrix(signal_matrix, peaks_matrix, indivs_order)
 }
 
 workflow {
