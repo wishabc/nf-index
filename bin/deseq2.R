@@ -19,13 +19,13 @@ if (length(args)<4) {
 counts <- np$load(args[1])
 norm_factors <- np$load(args[2])
 sample_names <- fread(args[3], header=FALSE)
-sample_names <- data.table(t(sapply(sample_names, FUN=function(x) { sprintf('AG_%s', x)})))
+sample_names <- data.table(t(sample_names))
 
 counts <- as.data.frame(counts, stringsAsFactors = F)
 colnames(counts) <- sample_names
 
-metadata <- read_delim(metadata, delim = '\t', col_names=T)
-rownames(metadata) <- metadata$indiv_id
+metadata <- read_delim(args[4], delim = '\t', col_names=T)
+rownames(metadata) <- metadata$uniq_id
 
 # Applying DESEQ with norm_factors
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
