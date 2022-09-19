@@ -48,21 +48,17 @@ process filter_autosomes {
 	publishDir params.outdir
 
 	input:
-		path signal_matrix
-		path peaks_matrix
+		path matrix
 
 	output:
-		path sigmat, emit: signal
-		path peakmat, emit: peaks
+		path name
 	
 	script:
-	sigmat = "matrix.all.autosomes.signal.txt.gz"
-	peakmat = "matrix.all.autosomes.peaks.txt.gz"
+	name = "${signal_matrix.baseName.baseName}.autosomes.txt.gz"
 	"""
 	len=\$({ cat ${params.index_file} | sed -n '/^chrX/{=;q;}' || true; })
 	len=\$((\$len - 1))
-	zcat ${signal_matrix} | head -n \$len | gzip -c > ${sigmat}
-	zcat ${peaks_matrix} | head -n \$len | gzip -c > ${peakmat}
+	{ zcat ${matrix} | head -n \$len || true; } | gzip -c > ${name}
 	"""
 
 }
@@ -193,11 +189,13 @@ workflow normalizeMatrix {
 		peaks_matrix
 		indivs_order
 	main:
-		matrices = filter_autosomes(signal_matrix, peaks_matrix)
-		norm_matrix = normalize_matrix(matrices.signal, matrices.peaks).matrix
+		matrices = filter_autosomes(signal_matrix.concat(peaks_matrix))
+		signal = matrices.first()
+		peaks = matrices.last()
+		norm_matrix = normalize_matrix(signal, peaks).matrix
 		new_meta = reorder_meta(params.metadata, indivs_order)
-		sf = get_scale_factors(matrices.signal, norm_matrix)
-		deseq2(matrices.signal, sf, indivs_order, new_meta)
+		sf = get_scale_factors(signal, norm_matrix)
+		deseq2(signal, sf, indivs_order, new_meta)
 	emit:
 		deseq2.out
 }
