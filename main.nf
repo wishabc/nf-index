@@ -85,10 +85,8 @@ process reorder_meta {
 	script:
 	name = "reordered_meta.txt"
 	"""
-	while IFS="\t" read LINE
-	do
-    	grep "\$LINE" "${metadata_path}" >> "${name}"
-	done < ${indivs_order} 
+	tr '\t' '\n' < ${indivs_order} > indivs_order_col.txt
+	awk 'FNR == NR { lineno[\$1] = NR; next} {print lineno[\$1], \$0;}' indivs_order_col.txt ${metadata_path} | sort -k 1,1n | cut -d' ' -f2- > ${name}
 	"""
 }
 
