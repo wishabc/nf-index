@@ -73,7 +73,8 @@ process reorder_meta {
 	publishDir "${params.outdir}"
 
 	input:
-		tuple val(metadata_path), path(indivs_order)
+		val metadata_path
+		path indivs_order
 
 	output:
 		path name
