@@ -48,7 +48,7 @@ process normalize_matrix {
 	conda params.conda
 
 	cpus params.cpus
-	memory params.memory
+	memory params.memory * task.attempt
 	publishDir "${params.outdir}/norm"
 
 	input:
@@ -93,7 +93,7 @@ process reorder_meta {
 process get_scale_factors {
 	conda params.conda
 	publishDir "${params.outdir}"
-	memory params.memory
+	memory params.memory * task.attempt
 
 	input:
 		path(signal_matrix)
@@ -115,7 +115,7 @@ process get_scale_factors {
 process deseq2 {
 	conda params.conda
 	publishDir "${params.outdir}"
-	memory params.memory
+	memory params.memory * task.attempt
 
 	input:
 		path signal_matrix
