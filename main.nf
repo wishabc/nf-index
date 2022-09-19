@@ -58,8 +58,8 @@ process filter_autosomes {
 	peakmat = "matrix.all.autosomes.peaks.txt.gz"
 	"""
 	len="\$((\$(cat ${params.index_file} | grep -n -m 1 chrX | cut -f1 -d:) - 1))"
-	head -n \$len ${signal_matrix} > ${sigmat}
-	head -n \$len ${peaks_matrix} > ${peakmat}
+	zcat ${signal_matrix} | head -n \$len | gzip -c > ${sigmat}
+	zcat ${peaks_matrix} | head -n \$len | gzip -c > ${peakmat}
 	"""
 
 }
