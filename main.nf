@@ -58,7 +58,7 @@ process filter_autosomes {
 	"""
 	len=\$({ cat ${params.index_file} | sed -n '/^chrX/{=;q;}' || true; })
 	len=\$((\$len - 1))
-	{ zcat ${matrix} | head -n \$len || true; } | gzip -c > ${name}
+	{ zcat ${matrix} | head -n \$len | gzip -c || true; } > ${name}
 	"""
 
 }
