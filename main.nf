@@ -189,7 +189,7 @@ workflow normalizeMatrix {
 		peaks_matrix
 		indivs_order
 	main:
-		matrices = filter_autosomes(signal_matrix.concat(peaks_matrix))
+		matrices = filter_autosomes(Channel.from(signal_matrix, peaks_matrix))
 		signal = matrices.first()
 		peaks = matrices.last()
 		norm_matrix = normalize_matrix(signal, peaks).matrix
