@@ -54,7 +54,7 @@ process filter_autosomes {
 		path name
 	
 	script:
-	name = "${matrix.baseName.baseName}.autosomes.txt.gz"
+	name = "${matrix.baseName}.autosomes.txt.gz"
 	"""
 	len=\$({ cat ${params.index_file} | sed -n '/^chrX/{=;q;}' || true; })
 	len=\$((\$len - 1))
