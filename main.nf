@@ -31,7 +31,9 @@ process generate_count_matrix {
 		tuple val(indiv_ids), path(count_files), path(bin_files)
 
 	output:
-		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz"), path("indivs_order.txt")
+		path "matrix.all.signal.txt.gz", emit: signal
+		path "matrix.all.peaks.txt.gz", emit: peaks
+		path "indivs_order.txt", emit: indivs
 
 	script:
 	indiv_ids_join = indiv_ids.join("\t")
@@ -50,7 +52,8 @@ process normalize_matrix {
 	publishDir "${params.outdir}/norm"
 
 	input:
-		tuple path(signal_matrix), path(peaks_matrix), path(indivs_order)
+		path signal_matrix
+		path peaks_matrix
 
 	output:
 		path("${prefix}.normed.npy"), emit: matrix
@@ -140,17 +143,22 @@ process deseq2 {
 
 workflow generateMatrix {
 	take:
-		BAMS_HOTSPOTS
+		bams_hotspots
 	main:
-		COUNT_FILES = count_tags(BAMS_HOTSPOTS)
+		// count_files = count_tags(bams_hotspots)
 
-		collected_files = COUNT_FILES.toList().transpose().toList()
-		count_matrices = generate_count_matrix(collected_files)
+		// collected_files = count_files.toList().transpose().toList()
+		// count_matrices = generate_count_matrix(collected_files)
 		
-		norm_matrix = normalize_matrix(count_matrices).matrix
+		// signal_matrix = count_matrices.signal
+		// peaks_matrix = count_matrices.peaks
+		// indivs_order = count_matrices.indivs
 
-		signal_matrix = count_matrices.map(it -> it[0])
-		indivs_order = count_matrices.map(it -> it[2])
+		signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.signal.txt.gz')
+		peaks_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.peaks.txt.gz')
+		indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
+
+		norm_matrix = normalize_matrix(signal_matrix, peaks_matrix).matrix
 		new_meta = reorder_meta(params.metadata, indivs_order)
 
 		sf = get_scale_factors(signal_matrix, norm_matrix)
