@@ -57,7 +57,7 @@ process filter_autosomes {
 	sigmat = "matrix.all.autosomes.signal.txt.gz"
 	peakmat = "matrix.all.autosomes.peaks.txt.gz"
 	"""
-	len="\$((\$(cat ${params.index_file} | grep -n -m 1 chrX | cut -f1 -d:) - 1))"
+	len="\$((\$(cat ${params.index_file} | { grep -n -m 1 chrX || true; } | cut -f1 -d:) - 1))"
 	zcat ${signal_matrix} | head -n \$len | gzip -c > ${sigmat}
 	zcat ${peaks_matrix} | head -n \$len | gzip -c > ${peakmat}
 	"""
