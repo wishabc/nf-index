@@ -18,6 +18,8 @@ formatter = logging.Formatter('%(asctime)s  %(levelname)s  %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+dtype = np.float32
+
 
 class DataNormalize:
     def __init__(self,
@@ -286,7 +288,7 @@ class DataNormalize:
 
     @staticmethod
     def get_scale_factor(matrix):
-        return 1. / (matrix.sum(axis=0) * 2 / 1.e5)
+        return np.divide(1., (matrix.sum(axis=0) * 2 / 1.e5), dtype=dtype)
 
 
 def check_and_open_matrix_file(path, outpath):
