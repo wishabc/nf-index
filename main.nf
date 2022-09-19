@@ -25,7 +25,6 @@ process count_tags {
 process generate_count_matrix {
 
 	publishDir params.outdir + '/index'
-	conda params.conda
 
 	input:
 		tuple val(indiv_ids), path(count_files), path(bin_files)
@@ -45,6 +44,9 @@ process generate_count_matrix {
 }
 
 process filter_autosomes {
+
+	publishDir params.outdir
+
 	input:
 		path signal_matrix
 		path peaks_matrix
@@ -57,7 +59,9 @@ process filter_autosomes {
 	sigmat = "matrix.all.autosomes.signal.txt.gz"
 	peakmat = "matrix.all.autosomes.peaks.txt.gz"
 	"""
+	echo Start
 	len=\$(cat ${params.index_file} | { grep -n -m 1 chrX || true; } | cut -f1 -d:)
+	echo 2
 	len=\$((\$len - 1))
 	echo \$len
 	zcat ${signal_matrix} | head -n \$len | gzip -c > ${sigmat}
