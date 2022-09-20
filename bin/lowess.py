@@ -11,6 +11,8 @@ import logging
 import sys
 import argparse
 
+import gc
+
 handler = logging.StreamHandler(sys.stdout)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -18,7 +20,7 @@ formatter = logging.Formatter('%(asctime)s  %(levelname)s  %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-dtype = np.float32
+dtype = np.float64
 
 
 class DataNormalize:
@@ -41,6 +43,7 @@ class DataNormalize:
         self.correlation_limit = correlation_limit
         self.cv_fraction = cv_fraction
         self.scale_factor = None
+        self.delta = None
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
 
     def outlier_limit(self, x):
@@ -245,10 +248,9 @@ class DataNormalize:
         else:
             return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
 
-    def lowess_normalize(self, density_mat: np.ndarray, peaks_mat: np.ndarray, cv_number: int = 5, sample_method='raw'):
+    def sample_peaks(self, density_mat: np.ndarray, peaks_mat: np.ndarray, sample_method='raw'):
         """
-        Normalizes to the mean of of the dataset
-        Uses only well-correlated peaks to perform normalization
+        Select well-correlated peaks and sample a subset
         """
         N, S = density_mat.shape
         assert density_mat.shape == peaks_mat.shape
@@ -257,13 +259,12 @@ class DataNormalize:
 
         logger.info('Computing mean and pseudocounts for each peak')
         pseudocounts = self.get_pseudocounts(density_mat)
-        print(density_mat.dtype)
         mean_density = density_mat.mean(axis=1)
         mean_pseudocount = pseudocounts.mean()
         xvalues = np.log(mean_density + mean_pseudocount)
         mat_and_pseudo = np.log(density_mat + pseudocounts)
         diffs = (mat_and_pseudo.T - xvalues).T
-        print(diffs.dtype)
+
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
         decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat,
                                                  correlation_limit=self.correlation_limit)
@@ -273,21 +274,31 @@ class DataNormalize:
             f'Found {decent_peaks_mask.sum():,} well-correlated peaks, using method "{sample_method}"'
             f' and sampled {sampled_peaks_mask.sum():,} peaks')
 
+        self.delta = np.percentile(mean_density, 99) * self.delta_fraction
+
+        return xvalues, sampled_peaks_mask, diffs
+
+    def lowess_normalize(self, diffs: np.ndarray, xvalues: np.ndarray, sampled_peaks_mask: np.ndarray,
+                         cv_number: int = 5):
+        """
+        Normalizes to the mean of of the dataset
+        Uses only well-correlated peaks to perform normalization
+        """
+        N, S = diffs.shape
         logger.info('Computing LOWESS smoothing parameter via cross-validation')
-        delta = np.percentile(mean_density, 99) * self.delta_fraction
-        print(delta.dtype)
+
         cv_set = self.seed.choice(S, size=min(cv_number, S), replace=False)
         cv_fraction = np.mean(self.parallel_apply_2D(self.choose_fraction_cv, axis=0,
                                                      arr=diffs[:, cv_set], x=xvalues,
-                                                     sampled=sampled_peaks_mask, delta=delta))
-        logger.info(f'Computing LOWESS on all the data with params - delta = {delta}, frac = {cv_fraction}')
+                                                     sampled=sampled_peaks_mask, delta=self.delta))
+        logger.info(f'Computing LOWESS on all the data with params - delta = {self.delta}, frac = {cv_fraction}')
 
         norm = self.parallel_apply_2D(self.fit_and_extrapolate, axis=0,
                                       arr=diffs, x=xvalues, sampled=sampled_peaks_mask,
-                                      delta=delta, frac=cv_fraction)
+                                      delta=self.delta, frac=cv_fraction)
 
         logger.info('Normalizing finished')
-        return density_mat / np.exp(norm)
+        return np.exp(norm)
 
     @staticmethod
     def get_scale_factor(matrix):
@@ -332,17 +343,47 @@ if __name__ == '__main__':
     p_args = parser.parse_args()
     if not os.path.exists(p_args.output):
         os.mkdir(p_args.output)
-    dens_outpath = make_out_path(p_args.output, p_args.prefix, 'signal', 'numpy')
+    sign_outpath = make_out_path(p_args.output, p_args.prefix, 'signal', 'numpy')
     peaks_outpath = make_out_path(p_args.output, p_args.prefix, 'bin', 'numpy')
+    dens_outpath = make_out_path(p_args.output, p_args.prefix, 'density', 'numpy')
+    lowess_outpath = make_out_path(p_args.output, p_args.prefix, 'lowess', 'numpy')
 
     logger.info('Reading matrices')
-    counts_matrix = check_and_open_matrix_file(p_args.signal_matrix, dens_outpath)
+    counts_matrix = check_and_open_matrix_file(p_args.signal_matrix, sign_outpath)
     peaks_matrix = check_and_open_matrix_file(p_args.peak_matrix, peaks_outpath)
     data_norm = DataNormalize(jobs=p_args.jobs)
     scale_factors = data_norm.get_scale_factor(counts_matrix)
     density_matrix = counts_matrix * scale_factors
-    normed = data_norm.lowess_normalize(density_mat=density_matrix, peaks_mat=peaks_matrix)
+
+    np.save(dens_outpath, density_matrix)
+
+    del counts_matrix
+    gc.collect()
+
+    xvals, sampled_mask, differences = data_norm.sample_peaks(density_mat=density_matrix,
+                                                              peaks_mat=peaks_matrix)
+
+    del density_matrix
+    del peaks_matrix
+    gc.collect()
+
+    lowess_norm = data_norm.lowess_normalize(diffs=differences, xvalues=xvals, sampled_peaks_mask=sampled_mask)
+    np.save(lowess_outpath, lowess_norm)
+
+    del xvals
+    del sampled_mask
+    del differences
+    gc.collect()
+
+    logger.info('Reconstructing normed matrix')
+    density_matrix = np.load(dens_outpath)
+    normed = density_matrix / lowess_norm
     normed = normed / scale_factors.mean()
+
+    del density_matrix
+    del lowess_norm
+    gc.collect()
+
     logger.info('Saving results')
     np.save(make_out_path(p_args.output, p_args.prefix, 'normed', 'numpy'), normed)
     np.savetxt(make_out_path(p_args.output, p_args.prefix, 'normed', 'txt'), normed, delimiter='\t', fmt="%0.4f")
