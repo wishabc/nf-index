@@ -205,6 +205,7 @@ class DataNormalize:
         thresholds = np.floor(perc[i] * density_mat.shape[1])
 
         for i in thresholds:
+            logger.info(f'Selecting threshold, iteration #{i}')
             over = num_samples_per_peak >= i
             correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
                                                arr=density_mat[over, :])
