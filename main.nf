@@ -106,7 +106,7 @@ process reorder_meta {
 	name = "reordered_meta.txt"
 	"""
 	tr '\t' '\n' < ${indivs_order} > indivs_order_col.txt
-	awk 'FNR == NR { lineno[\$1] = NR; next} {print lineno[\$1], \$0;}' indivs_order_col.txt ${metadata_path} | sort -k 1,1n | cut -d' ' -f2- > ${name}
+	awk -F'\t' 'FNR == NR { lineno[$1] = NR; next} {print lineno[$1], $0;}' indivs_order_col.txt ${metadata_path} | sort -k 1,1n | cut -d' ' -f2- > ${name}
 	"""
 }
 
@@ -206,11 +206,9 @@ workflow test {
 	signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/output/matrix_sorted.signal.npy')
 
 	indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
-	norm_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/output/matrix_sorted.normed.npy')
-
 	new_meta = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/reordered_meta.txt')
 
-	sf = get_scale_factors(signal_matrix, norm_matrix)
+	sf = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/output/output/scale_factors.npy')
 	deseq2(signal_matrix, sf, indivs_order, new_meta)
 }
 
