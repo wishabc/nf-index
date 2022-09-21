@@ -201,11 +201,15 @@ workflow normalizeMatrix {
 }
 
 workflow test {
-	signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.signal.txt.gz')
-	peaks_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.peaks.txt.gz')
-	indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
+	signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.signal.txt.autosomes.txt.gz')
 
-	normalizeMatrix(signal_matrix, peaks_matrix, indivs_order)
+	indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
+	norm_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/output/matrix_sorted.normed.npy')
+
+	new_meta = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/reordered_meta.txt')
+
+	sf = get_scale_factors(signal_matrix, norm_matrix)
+	deseq2(signal_matrix, sf, indivs_order, new_meta)
 }
 
 workflow {
