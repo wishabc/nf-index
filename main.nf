@@ -75,8 +75,9 @@ process normalize_matrix {
 		path peaks_matrix
 
 	output:
-		path("${prefix}.normed.npy"), emit: matrix
-		path("${prefix}*"), emit: norm_matrices
+		path("${prefix}.normed.npy"), emit: normed_matrix
+		path("${prefix}.signal.npy"), emit: signal_numpy
+		path("${prefix}*"), emit: all_matrices
 
 	script:
 	prefix = 'normalized'
@@ -189,19 +190,20 @@ workflow normalizeMatrix {
 		peaks_matrix
 		indivs_order
 	main:
-		matrices = filter_autosomes(Channel.from(signal_matrix, peaks_matrix))
-		signal = matrices.first()
-		peaks = matrices.last()
-		norm_matrix = normalize_matrix(signal, peaks).matrix
+		inp_matrices = filter_autosomes(Channel.from(signal_matrix, peaks_matrix))
+		signal = inp_matrices.first()
+		peaks = inp_matrices.last()
+		matrices = normalize_matrix(signal, peaks)
 		new_meta = reorder_meta(params.metadata, indivs_order)
-		sf = get_scale_factors(signal, norm_matrix)
+		signal = matrices.signal_numpy
+		sf = get_scale_factors(signal, matrices.normed_matrix)
 		deseq2(signal, sf, indivs_order, new_meta)
 	emit:
 		deseq2.out
 }
 
 workflow test {
-	signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix.all.signal.txt.autosomes.txt.gz')
+	signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/matrix_sorted.signal.npy')
 
 	indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
 	norm_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/output/matrix_sorted.normed.npy')
