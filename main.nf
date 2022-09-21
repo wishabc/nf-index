@@ -106,7 +106,7 @@ process reorder_meta {
 	name = "reordered_meta.txt"
 	"""
 	tr '\t' '\n' < ${indivs_order} > indivs_order_col.txt
-	awk -F'\t' 'FNR == NR { lineno[$1] = NR; next} {print lineno[$1], $0;}' indivs_order_col.txt ${metadata_path} | sort -k 1,1n | cut -d' ' -f2- > ${name}
+	awk -F'\t' 'FNR == NR { lineno[\$1] = NR; next} {print lineno[\$1], \$0;}' indivs_order_col.txt ${metadata_path} | sort -k 1,1n | cut -d' ' -f2- > ${name}
 	"""
 }
 
