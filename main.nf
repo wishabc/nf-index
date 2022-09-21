@@ -135,6 +135,7 @@ process get_scale_factors {
 process deseq2 {
 	conda params.conda
 	publishDir "${params.outdir}"
+	cpus 10
 	memory { params.memory * task.attempt }
 
 	input:
