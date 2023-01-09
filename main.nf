@@ -159,16 +159,6 @@ process deseq2 {
 
 }
 
-workflow generateAndNormalize {
-	take:
-		bams_hotspots
-	main:
-		out = generateMatrix(bams_hotspots)
-		| normalizeMatrix(signal_matrix, peaks_matrix, indivs_order)
-	emit:
-		out
-}
-
 workflow generateMatrix {
 	take:
 		bams_hotspots
@@ -177,13 +167,10 @@ workflow generateMatrix {
 
 		collected_files = count_files.toList().transpose().toList()
 		count_matrices = generate_count_matrix(collected_files)
-		signal_matrix = count_matrices.signal
-		peaks_matrix = count_matrices.peaks
-		indivs_order = count_matrices.indivs
 	emit:
-		signal_matrix
-		peaks_matrix
-		indivs_order
+		count_matrices.signal
+		count_matrices.peaks
+		count_matrices.indivs
 }
 
 workflow normalizeMatrix {
@@ -202,6 +189,15 @@ workflow normalizeMatrix {
 		deseq2(signal_np, sf, indivs_order, new_meta)
 	emit:
 		deseq2.out
+}
+
+workflow generateAndNormalize {
+	take:
+		bams_hotspots
+	main:
+		out = generateMatrix(bams_hotspots) | normalizeMatrix
+	emit:
+		out
 }
 
 workflow {
