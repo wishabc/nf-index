@@ -6,7 +6,7 @@ params.conda = "$moduleDir/environment.yml"
 
 process count_tags {
 	tag "${indiv_id}"
-	conda params.conda
+	conda "/home/sabramov/miniconda3/envs/babachi"
 
 	input:
 		tuple val(indiv_id), val(bam_file), val(peaks_file)
