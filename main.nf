@@ -186,16 +186,17 @@ workflow normalizeMatrix {
 		new_meta = reorder_meta(indivs_order)
 		signal_np = matrices.signal_numpy
 		sf = get_scale_factors(signal_np, matrices.normed_matrix)
-		deseq2(signal_np, sf, indivs_order, new_meta)
+		out = deseq2(signal_np, sf, indivs_order, new_meta)
 	emit:
-		deseq2.out
+		out
 }
 
 workflow generateAndNormalize {
 	take:
 		bams_hotspots
 	main:
-		out = generateMatrix(bams_hotspots) | normalizeMatrix
+		matrices = generateMatrix(bams_hotspots)
+		out = normalizeMatrix(matrices[0], matrices[1], matrices[2])
 	emit:
 		out
 }
