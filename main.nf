@@ -48,10 +48,10 @@ process filter_autosomes {
 	publishDir params.outdir
 
 	input:
-		path matrix
+		tuple val(prefix), path(matrix)
 
 	output:
-		path name
+		tuple val(prefix), path(name)
 	
 	script:
 	name = "${matrix.baseName}.autosomes.txt.gz"
@@ -77,7 +77,6 @@ process normalize_matrix {
 	output:
 		path("${prefix}.normed.npy"), emit: normed_matrix
 		path("${prefix}.signal.npy"), emit: signal_numpy
-		path("${prefix}*"), emit: all_matrices
 
 	script:
 	prefix = 'normalized'
@@ -179,9 +178,16 @@ workflow normalizeMatrix {
 		peaks_matrix
 		indivs_order
 	main:
-		inp_matrices = signal_matrix | concat(peaks_matrix) | filter_autosomes
-		signal = inp_matrices.first()
-		peaks = inp_matrices.last()
+		inp_matrices = signal_matrix
+			| map(it -> tuple('signal', it))
+			| concat(peaks_matrix.map(it -> tuple('peaks', it)))
+			| filter_autosomes
+		signal = inp_matrices
+			| filter { it[0] == 'signal'}
+			| first()
+		peaks = inp_matrices
+			| filter { it[0] == 'peaks'}
+			| first()
 		matrices = normalize_matrix(signal, peaks)
 		new_meta = reorder_meta(indivs_order)
 		signal_np = matrices.signal_numpy
