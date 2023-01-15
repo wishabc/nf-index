@@ -185,9 +185,11 @@ workflow normalizeMatrix {
 		signal = inp_matrices
 			| filter { it[0] == 'signal'}
 			| first()
+			| map(it -> it[1])
 		peaks = inp_matrices
 			| filter { it[0] == 'peaks'}
 			| first()
+			| map(it -> it[1])
 		matrices = normalize_matrix(signal, peaks)
 		new_meta = reorder_meta(indivs_order)
 		signal_np = matrices.signal_numpy
@@ -215,12 +217,14 @@ workflow {
 }
 
 
-// workflow test {
-// 	signal_matrix = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/output/matrix_sorted.signal.npy')
-
-// 	indivs_order = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/indivs_order.txt')
-// 	new_meta = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/reordered_meta.txt')
-
-// 	sf = file('/net/seq/data/projects/sabramov/SuperIndex/raj+atac_2022-09-10/output/output/output/scale_factors.npy')
-// 	deseq2(signal_matrix, sf, indivs_order, new_meta)
-// }
+workflow test {
+	signal = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.signal.txt.autosomes.txt.gz'))
+	peaks = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.peaks.txt.autosomes.txt.gz'))
+	indivs_order = file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/indivs_order.txt')
+	new_meta = file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/reordered_meta.txt')
+	
+	matrices = normalize_matrix(signal, peaks)
+	signal_np = matrices.signal_numpy
+	sf = get_scale_factors(signal_np, matrices.normed_matrix)
+	out = deseq2(signal_np, sf, indivs_order, new_meta)
+}
