@@ -220,7 +220,7 @@ workflow {
 workflow test {
 	signal = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.signal.txt.autosomes.txt.gz'))
 	peaks = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.peaks.txt.autosomes.txt.gz'))
-	indivs_order = file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/indivs_order.txt')
+	indivs_order = file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt')
 	new_meta = file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/reordered_meta.txt')
 	
 	matrices = normalize_matrix(signal, peaks)
