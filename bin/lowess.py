@@ -229,22 +229,22 @@ class DataNormalize:
         """
         Parallel version of apply_along_axis() for 2D matrices
         """
-        other_axis = 1 if axis == 0 else 0
-        jobs = min(self.jobs, arr.shape[other_axis])
+        if axis == 1:
+            arr = arr.T
+        n_samples = arr.shape[1]
+        jobs = min(self.jobs, n_samples)
         if jobs > 1:
             ctx = mp.get_context("forkserver")
             with ctx.Pool(jobs) as p:
                 individual_results = p.starmap(self.unpack_and_apply,
                                                [(arr[:, index], func1d, kwargs, *args) for
-                                                index in range(arr.shape[other_axis])])
+                                                index in range(n_samples)])
 
             if np.ndim(individual_results) > 1:
-                result = np.vstack(individual_results)
-                if other_axis == 1:
-                    result = result.T
+                result = np.vstack(individual_results).T
             else:
                 result = np.array(individual_results)
-            return result
+            return result if axis == 0 else result.T
         else:
             return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
 
