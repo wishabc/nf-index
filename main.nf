@@ -3,10 +3,9 @@ nextflow.enable.dsl = 2
 
 params.conda = "$moduleDir/environment.yml"
 
-
 process count_tags {
 	tag "${indiv_id}"
-	conda "/home/sabramov/miniconda3/envs/babachi"
+	conda params.conda
 
 	input:
 		tuple val(indiv_id), val(bam_file), val(peaks_file)
@@ -46,6 +45,7 @@ process generate_count_matrix {
 process filter_autosomes {
 	
 	publishDir params.outdir
+	tag "${prefix}"
 
 	input:
 		tuple val(prefix), path(matrix)
