@@ -52,8 +52,8 @@ process clustering {
             """
             break;
         default: 
-			error "Clustering with ${clust_alg} is not implemented."
-			break;
+            error "Clustering with ${clust_alg} is not implemented."
+            break;
     }
 
 }
