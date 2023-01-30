@@ -41,7 +41,7 @@ process clustering {
 
             """
             break;
-        case "hierarhical":
+        case "hierarchical":
             """
             
             """
