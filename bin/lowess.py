@@ -138,10 +138,13 @@ class DataNormalize:
         extrapolated = self.extrapolate(interpolated, x, x[sampled], lowess_est)
         return extrapolated
 
+    def run_lowess(self, y, x, sampled, frac, delta):
+        return smoothers_lowess.lowess(y[sampled], x[sampled],
+                                                return_sorted=False, it=4,
+                                                frac=frac, delta=delta)
+
     def fit_and_extrapolate(self, y, x, sampled, frac, delta):
-        smoothed_values = smoothers_lowess.lowess(y[sampled], x[sampled],
-                                                  return_sorted=False, it=4,
-                                                  frac=frac, delta=delta)
+        smoothed_values = self.run_lowess(y, x, sampled, frac, delta)
         return self.get_extrapolation(x, smoothed_values, sampled)
 
     def choose_fraction_cv(self, y, x, sampled, start=0.1, end=0.8, step=0.1, delta=None):

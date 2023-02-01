@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 // TODO: move to main.nf
 process filter_singletons {
     conda params.conda
-    publishDir "${params.outdir}/index"
+    publishDir "${params.outdir}/index", pattern: name
     scratch true
 
     output:
@@ -22,7 +22,7 @@ process filter_singletons {
 process subset_peaks {
     conda params.conda
     tag "${id}"
-    publishDir "${params.outdir}/matrix"
+    publishDir "${params.outdir}/matrix", pattern: name
     
     input:
 		tuple val(id), val(peaks_params)
