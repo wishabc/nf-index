@@ -13,12 +13,12 @@ if __name__ == '__main__':
     work_matrix = np.load(sys.argv[2])
     with open(sys.argv[1]) as js:
         config = json.load(js)
+    prefix = sys.argv[3]
 
     vae = main(work_matrix, config)
     
-    # TODO save vae
-    with open(sys.argv[3] + '.model.txt') as out:
-        out.write('FIXME')
+    vae.save(weight_file_path=f'{prefix}_weights.h5', optimizer_file_path=f'{prefix}_optimiser.json',
+             config_json=f'{prefix}_config.json')
 
     encoding = vae.get_encoded_data()
-    np.save(sys.argv[3] + '.npy', encoding)
+    np.save(f'{prefix}.embedding.npy', encoding)

@@ -43,19 +43,20 @@ process fit_vae {
 	tag "${id}"
 	conda params.conda
     label "gpu"
-    publishDir "${params.outdir}/vae", pattern: "${id}.npy"
-    publishDir "${params.outdir}/vae_models", pattern: "${id}.model.*"
+    publishDir "${params.outdir}/vae", pattern: name
+    publishDir "${params.outdir}/vae_models", pattern: "${id}_*"
+    scratch true
 
 	input:
 		tuple val(id), val(vae_params), path(peaks_matrix)
 
 	output:
-        tuple val(vae_params), path("${id}.model.npy"), emit: emb
-		path "${prefix}*", emit: all_data
+        tuple val(vae_params), path(name), emit: emb
+		path "${id}*", emit: all_data
 
 	script:
+    name = "${id}.embedding.npy"
 	"""
-    # TODO save model
     echo "${vae_params}" > params.json
     python3 $moduleDir/bin/fit_auto_encoder.py \
         params.json \
