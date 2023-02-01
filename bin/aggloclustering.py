@@ -1,6 +1,3 @@
-#!/bin/usr/python
-
-#Import Libraries
 import sys
 import numpy as np
 import pandas as pd
