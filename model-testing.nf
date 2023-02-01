@@ -13,8 +13,13 @@ process filter_singletons {
     script:
     name = "singletons_mask.txt"
     """
-    bedmap --indicator ${params.index_file} ${params.encode_blacklist_regions} > blacklisted_mask.txt
-    python3 $moduleDir/bin/filter_index.py ${params.index_file} blacklisted_mask.txt ${name}
+    bedmap --indicator ${params.index_file} \
+        ${params.encode_blacklist_regions} > blacklisted_mask.txt
+    
+    python3 $moduleDir/bin/filter_index.py \
+        ${params.index_file} \
+        blacklisted_mask.txt \
+        ${name}
     """
 }
 
@@ -35,7 +40,11 @@ process subset_peaks {
     name = "${id}.peaks.npy"
     """
     echo "${peaks_params}" > params.json
-    python3 $moduleDir/bin/subset_peaks.py params.json ${params.normalized_matrix} ${singletons_mask} ${name}
+    python3 $moduleDir/bin/subset_peaks.py \
+        params.json \
+        ${params.normalized_matrix} \
+        ${singletons_mask} \
+        ${name}
     """
 }
 
