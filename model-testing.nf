@@ -41,7 +41,7 @@ process subset_peaks {
 
 process fit_vae {
 	tag "${id}"
-	conda params.conda
+	conda params.gpu_conda
     label "gpu"
     publishDir "${params.outdir}/vae", pattern: name
     publishDir "${params.outdir}/vae_models", pattern: "${id}_*"
