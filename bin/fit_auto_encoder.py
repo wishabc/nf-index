@@ -5,8 +5,10 @@ from scivae import VAE
 
 
 def main(work_matrix, config):
-    vae = VAE(work_matrix, work_matrix, ["None"] * len(work_matrix), config, f'vae_rcm')
-    vae.encode('default', epochs=20, batch_size=50, train_percent=75.0)
+    vae_config = config['vae_config']
+    encoding_params = config['encoding_params'] # e.g. epochs=20, batch_size=50, train_percent=75.0
+    vae = VAE(work_matrix, work_matrix, ["None"] * len(work_matrix), vae_config, f'vae_rcm')
+    vae.encode('default', *encoding_params)
     return vae
 
 if __name__ == '__main__':
