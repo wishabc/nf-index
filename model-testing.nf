@@ -2,24 +2,46 @@
 nextflow.enable.dsl = 2
 
 process subset_peaks {
+    conda params.conda
+    tag "${id}"
+    publishDir "${params.outdir}/matrix"
     
+    input:
+		tuple val(id), val(peaks_params)
+
+	output:
+		tuple val(peaks_params), path(name)
+    
+    script:
+    name = "${id}.peaks.npy"
+    """
+    echo "${peaks_params}" > params.json
+    python3 $moduleDir/bin/subset_peaks.py params.json ${params.normalized_matrix} ${name}
+    """
 }
 
 process fit_vae {
-	tag "${indiv_id}"
+	tag "${id}"
 	conda params.conda
     label "gpu"
+    publishDir "${params.outdir}/vae", pattern: "${id}.npy"
+    publishDir "${params.outdir}/vae_models", pattern: "${id}.model.*"
 
 	input:
-		tuple val(vae_params), path(peaks_matrix)
+		tuple val(id), val(vae_params), path(peaks_matrix)
 
 	output:
-		tuple val(vae_params), file("${prefix}*")
+        tuple val(vae_params), path("${id}.model.npy"), emit: emb
+		path "${prefix}*", emit: all_data
 
 	script:
-    prefix = "vae."
 	"""
-    #FIXME
+    # TODO save model
+    echo "${vae_params}" > params.json
+    python3 $moduleDir/bin/fit_auto_encoder.py \
+        params.json \
+        ${peaks_matrix} \
+        ${id}
 	"""
 }
 
@@ -28,7 +50,7 @@ process clustering {
     tag "${id}"
 
     input:
-        tuple val(clust_alg), val(clust_params), val(id), path(embedding)
+        tuple val(id), val(clust_alg), val(clust_params), path(embedding)
 
     output:
         tuple val(id), path("${prefix}*")
@@ -38,12 +60,14 @@ process clustering {
     switch (clust_alg) {
         case "k-means": 
             """
-
+            echo "${clust_params}" > params.json
+            python3 $moduleDir/bin/k-means.py params.json ${embedding} ${prefix}
             """
             break;
         case "hierarchical":
             """
-            
+            echo "${clust_params}" > params.json
+            python3 $moduleDir/bin/hierarchical.py params.json ${embedding} ${prefix}
             """
             break;
         case "community":
@@ -58,43 +82,28 @@ process clustering {
 
 }
 
-process calc_metrics {
-    tag "${id}"
-    conda params.conda
-
-    input:
-        tuple val(id), path(clustering)
-    
-    output:
-        tuple val(id), path(name)
-    script:
-    name = "metrics.tsv"
-    """
-    
-    """
-}
-
 workflow fitModels {
     take:
-        hyperparams
+        hyperparams // ID, peaks_params, encoder_params, encoder_params, clustering_alg, clustering_params
     main:
+        params.normalized_matrix = ""
         peaks = hyperparams 
-            | map(it -> it[0])
-            | unique
-            | subset_peaks
+            | map(it -> tuple(it[0], it[1]))
+            | unique { it[1] }
+            | subset_peaks // peaks_params, peaks_subset
         
-        embedding = peaks
-            | join(hyperparams)
-            | map(it -> tuple(it[1], it[2]))
-            | unique
-            | fit_vae
-        
+        embedding = hyperparams
+            | map(it -> tuple(it[1], it[0], it[2]))
+            | join(peaks) // peaks_params, ID, encoder_params, peaks_subset
+            | map(it -> tuple(*it[1..(it.size()-1)])) // ID, encoder_params, peaks_subset
+            | unique { it[1] }
+            | fit_vae // encoder_params, embedding
+
         out = hyperparams 
-            | map(it -> tuple(*it[1..(it.size()-1)]))
-            | join(embedding)
-            | map(iter -> tuple(*iter[1..(iter.size()-1)]))
+            | map(it -> tuple(it[3], it[0], it[4], it[5])) //  encoder_params, ID,  clustering_alg, clustering_params
+            | join(embedding.emb) //  encoder_params, ID,  clustering_alg, clustering_params, embedding
+            | map(it -> tuple(*it[1..(it.size()-1)])) // ID,  clustering_alg, clustering_params, embedding
             | clustering
-            | calc_metrics
     emit:
         out
 }
@@ -103,7 +112,8 @@ workflow fitModels {
 workflow {
     Channel.fromPath("${params.meta_params}")
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.peaks_params, row.encoder_params, row.clust_alg, row.clust_params, row.id))
+		| map(row -> tuple(row.id, row.peaks_params,
+            row.encoder_params, row.clust_alg, row.clust_params))
         | fitModels
 }
 
