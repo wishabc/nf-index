@@ -23,7 +23,8 @@ process count_tags {
 
 process generate_count_matrix {
 
-	publishDir params.outdir + '/index'
+	publishDir "${params.outdir}/index", pattern: "matrix.all*"
+	publishDir params.outdir, pattern: "indivs_order.txt"
 
 	input:
 		tuple val(indiv_ids), path(count_files), path(bin_files)
@@ -217,6 +218,8 @@ workflow {
 }
 
 
+
+// Debug code, defunc
 workflow test {
 	signal = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.signal.txt.autosomes.txt.gz'))
 	peaks = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.peaks.txt.autosomes.txt.gz'))

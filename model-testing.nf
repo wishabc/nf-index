@@ -1,6 +1,24 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
+// TODO: move to main.nf
+process filter_singletons {
+    conda params.conda
+    publishDir "${params.outdir}/index"
+    scratch true
+
+    output:
+        path name
+
+    script:
+    name = "singletons_mask.txt"
+    """
+    bedmap --indicator ${params.index_file} ${params.encode_blacklist_regions} > blacklisted_mask.txt
+    python3 $moduleDir/bin/filter_index.py ${params.index_file} blacklisted_mask.txt ${name}
+    """
+}
+
+
 process subset_peaks {
     conda params.conda
     tag "${id}"
@@ -8,6 +26,7 @@ process subset_peaks {
     
     input:
 		tuple val(id), val(peaks_params)
+        path singletons_mask
 
 	output:
 		tuple val(peaks_params), path(name)
@@ -16,7 +35,7 @@ process subset_peaks {
     name = "${id}.peaks.npy"
     """
     echo "${peaks_params}" > params.json
-    python3 $moduleDir/bin/subset_peaks.py params.json ${params.normalized_matrix} ${name}
+    python3 $moduleDir/bin/subset_peaks.py params.json ${params.normalized_matrix} ${singletons_mask} ${name}
     """
 }
 
@@ -86,11 +105,12 @@ workflow fitModels {
     take:
         hyperparams // ID, peaks_params, encoder_params, encoder_params, clustering_alg, clustering_params
     main:
+        out_mask = filter_singletons()
         params.normalized_matrix = ""
-        peaks = hyperparams 
+        subset_peaks_params = hyperparams 
             | map(it -> tuple(it[0], it[1]))
             | unique { it[1] }
-            | subset_peaks // peaks_params, peaks_subset
+        peaks = subset_peaks(subset_peaks_params, out_mask) // peaks_params, peaks_subset
         
         embedding = hyperparams
             | map(it -> tuple(it[1], it[0], it[2]))
