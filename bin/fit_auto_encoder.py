@@ -19,8 +19,9 @@ if __name__ == '__main__':
 
     vae = main(work_matrix, config)
     
-    vae.save(weight_file_path=f'{prefix}_weights.h5', optimizer_file_path=f'{prefix}_optimiser.json',
-             config_json=f'{prefix}_config.json')
+    vae.save(weight_file_path=f'{prefix}_weights.h5', 
+            optimizer_file_path=f'{prefix}_optimiser.json',
+            config_json=f'{prefix}_config.json')
 
     encoding = vae.get_encoded_data()
     np.save(f'{prefix}.embedding.npy', encoding)
