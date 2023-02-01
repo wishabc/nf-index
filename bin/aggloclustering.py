@@ -41,21 +41,27 @@ def get_clustering_metrics(labels_pred, labels_true):
 def main(json_object, meta, embedding):
     #Run Clustering Algorithm
     #Methods = single, average, weighted, centroid, median, and ward
-    #Metrics = euclidian, manhattan, hamming, minkowski
-    clustering_model = AgglomerativeClustering(*json_object)
-    clustering_model.fit(embedding)
-    clustered_labels =  clustering_model.labels_
-
-
-    #Encode Ontology_Term
+    #Metrics = euclidian, manhattan
+    metrics_rows = []
     label_encoder = LabelEncoder()
+    
     true_labels = label_encoder.fit_transform(meta['ontology_term'])
+    for method in methods:
+        params = {**json_object, 'method': method}
+        clustering_model = AgglomerativeClustering(**json_object, method=method)
+        clustering_model.fit(embedding)
+        clustered_labels =  clustering_model.labels_
+        params_str = json.dumps(params)
+        metrics = get_clustering_metrics(clustered_labels, true_labels)
+        metrics_rows.append([params_str, metrics[0], metrics[1], metrics[2], metrics[5]])
+    
+
+
 
     #Get Clustering Metrics
-    metrics = get_clustering_metrics(clustered_labels, true_labels)
+
 
     #Save Metrics
-    metrics_df = pd.DataFrame([metrics[0], metrics[1], metrics[2], metrics[5]]).T
     
     #Save Cluster Annotations
     annotations = pd.DataFrame(clustered_labels)
