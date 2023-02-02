@@ -6,6 +6,10 @@ from sklearn.cluster import AgglomerativeClustering
 import json
 from sklearn.preprocessing import LabelEncoder
 import pickle
+from itertools import product
+
+methods = ["single", "average", "weighted", "centroid", "median", "ward"]
+metrics = ["euclidian", "manhattan"]
 
 
 def get_clustering_metrics(labels_pred, labels_true):
@@ -44,28 +48,22 @@ def main(json_object, meta, embedding):
     #Metrics = euclidian, manhattan
     metrics_rows = []
     label_encoder = LabelEncoder()
-    
+    models = []
     true_labels = label_encoder.fit_transform(meta['ontology_term'])
-    for method in methods:
-        params = {**json_object, 'method': method}
-        clustering_model = AgglomerativeClustering(**json_object, method=method)
+    for index, (method, metric) in enumerate(product(methods, metrics)):
+        params = {**json_object, 'method': method, 'metric': metric}
+        clustering_model = AgglomerativeClustering(**params)
         clustering_model.fit(embedding)
         clustered_labels =  clustering_model.labels_
         params_str = json.dumps(params)
-        metrics = get_clustering_metrics(clustered_labels, true_labels)
-        metrics_rows.append([params_str, metrics[0], metrics[1], metrics[2], metrics[5]])
-    
-
-
-
-    #Get Clustering Metrics
-
-
-    #Save Metrics
-    
-    #Save Cluster Annotations
-    annotations = pd.DataFrame(clustered_labels)
-    return metrics_df, annotations, clustering_model
+        ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(clustered_labels, true_labels)
+        metrics_rows.append([index, params_str, ami, ari, fm, jaccard])
+        models.append(
+            (index, pd.DataFrame(clustered_labels), clustering_model)
+        )
+    metrics_df = pd.DataFrame.from_records(metrics_rows,
+        columns=['id', 'params', 'ami', 'ari', 'fm', 'jaccard'])
+    return metrics_df, models
 
 
 if __name__ == '__main__':
@@ -89,12 +87,11 @@ if __name__ == '__main__':
     meta = pd.read_table(sys.argv[3], header=None, names=meta_columns)
     prefix=sys.argv[4]
 
-    metrics_df, annotations, clustering_model = main(params, meta, embedding)
-
-    annotations.to_csv(f"{prefix}.annotations.txt", header=None, index=False)
-
-    #Save Model
-    with open(f"{prefix}.model.pkl") as out:
-        pickle.dump(clustering_model, out)
+    metrics_df, models = main(params, meta, embedding)
+    for index, labels, clustering in models:
+        labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
+        labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
+        with open(f"{prefix}.{index}.model.pkl") as out:
+            pickle.dump(clustering, out)
 
     metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", header=None, index=False)

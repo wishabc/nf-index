@@ -61,7 +61,7 @@ process fit_vae {
 
 	output:
         tuple val(vae_params), path(name), emit: emb
-		path "${id}*", emit: all_data
+		path "${id}_*", emit: all_data
 
 	script:
     name = "${id}.embedding.npy"
@@ -77,6 +77,8 @@ process fit_vae {
 process clustering {
     conda params.conda
     tag "${id}"
+    publishDir "${params.outdir}/clustering", pattern: "${prefix}.metrics.tsv"
+    publishDir "${params.outdir}/clustering_data", pattern: "${prefix}.[0-9]*"
 
     input:
         tuple val(id), val(clust_alg), val(clust_params), path(embedding)
@@ -101,7 +103,7 @@ process clustering {
             break;
         case "community":
             """
-            
+            exit 1
             """
             break;
         default: 
