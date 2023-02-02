@@ -15,8 +15,9 @@ def main(index, mask):
     return (index['avg_score'] >= cutoff) * mask
 
 if __name__ == '__main__':
-    index = pd.read_table(sys.argv[1], header=None, names=index_cols)
+    index_df = pd.read_table(sys.argv[1], header=None, names=index_cols)
     # mask - numpy array with zeros for peaks in ENCODE blacklisted regions
     mask = np.invert(np.loadtxt(sys.argv[2], dtype=bool))
-    out_mask = main(index, mask)
+    out_mask = main(index_df, mask)
+    assert len(index_df.index) == len(out_mask)
     np.savetxt(sys.argv[3], out_mask)
