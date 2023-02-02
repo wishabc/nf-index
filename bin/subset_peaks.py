@@ -19,7 +19,7 @@ def main(params, normalized_matrix):
     means = np.mean(normalized_matrix, axis=1)
 
     data_norm = DataNormalize(jobs=1)
-    sampled_peaks_mask = data_norm.select_peaks_uniform(means, singletons_mask,
+    sampled_peaks_mask = data_norm.select_peaks_uniform(means, np.ones(means.shape[0], dtype=bool),
                                                        sample_method='raw')
     smoothed_gini_samp = data_norm.run_lowess(gini, means, sampled_peaks_mask,
                                                 frac=0.2, delta=0.001)
