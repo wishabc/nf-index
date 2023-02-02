@@ -128,7 +128,7 @@ workflow fitModels {
         hyperparams.map(it -> it[0]).collect().view()
         encoder_params = hyperparams
             | map(it -> tuple(it[1], it[0], it[2]))
-            | join(peaks) // peaks_params, ID, encoder_params, peaks_subset
+            | combine(peaks, by: 0) // peaks_params, ID, encoder_params, peaks_subset
             | map(it -> tuple(*it[1..(it.size()-1)])) // ID, encoder_params, peaks_subset
         
         encoder_params.map(it -> it[0]).collect().view()
@@ -139,7 +139,7 @@ workflow fitModels {
 
         out = hyperparams 
             | map(it -> tuple(it[3], it[0], it[4], it[5])) //  encoder_params, ID,  clustering_alg, clustering_params
-            | join(embedding.emb) //  encoder_params, ID,  clustering_alg, clustering_params, embedding
+            | combine(embedding.emb, by: 0) //  encoder_params, ID,  clustering_alg, clustering_params, embedding
             | map(it -> tuple(*it[1..(it.size()-1)])) // ID,  clustering_alg, clustering_params, embedding
             | clustering
     emit:
