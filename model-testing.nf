@@ -142,7 +142,8 @@ workflow fitModels {
 
 
 workflow {
-    Channel.fromPath("${params.meta_params}")
+    params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering.tsv"
+    Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.id, row.peaks_params,
             row.encoder_params, row.clust_alg, row.clust_params))
