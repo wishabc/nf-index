@@ -67,6 +67,7 @@ process fit_vae {
 	script:
     name = "${id}.embedding.npy"
 	"""
+    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:\$CONDA_PREFIX/lib/python3.10/site-packages/tensorrt/
     echo '${vae_params}' > params.json
     python3 $moduleDir/bin/fit_auto_encoder.py \
         params.json \
