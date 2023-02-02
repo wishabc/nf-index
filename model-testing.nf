@@ -29,7 +29,7 @@ process subset_peaks {
     conda params.conda
     tag "${id}"
     publishDir "${params.outdir}/matrix", pattern: "${name}"
-    memory 250.GB
+    memory 350.GB
     input:
 		tuple val(id), val(peaks_params)
         path singletons_mask
