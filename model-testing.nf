@@ -119,13 +119,13 @@ workflow fitModels {
     take:
         hyperparams // ID, peaks_params, encoder_params, encoder_params, clustering_alg, clustering_params
     main:
-        hyperparams.map(it -> it[0]).collect().view()
         out_mask = filter_singletons()
         subset_peaks_params = hyperparams 
             | map(it -> tuple(it[0], it[1]))
             | unique { it[1] }
         peaks = subset_peaks(subset_peaks_params, out_mask) // peaks_params, peaks_subset
         
+        hyperparams.map(it -> it[0]).collect().view()
         encoder_params = hyperparams
             | map(it -> tuple(it[1], it[0], it[2]))
             | join(peaks) // peaks_params, ID, encoder_params, peaks_subset
