@@ -125,10 +125,14 @@ workflow fitModels {
             | unique { it[1] }
         peaks = subset_peaks(subset_peaks_params, out_mask) // peaks_params, peaks_subset
         
-        embedding = hyperparams
+        encoder_params = hyperparams
             | map(it -> tuple(it[1], it[0], it[2]))
             | join(peaks) // peaks_params, ID, encoder_params, peaks_subset
             | map(it -> tuple(*it[1..(it.size()-1)])) // ID, encoder_params, peaks_subset
+        
+        encoder_params | size() | view()
+
+        embedding  = encoder_params
             | unique { tuple(it[1], it[2]) }
             | fit_vae // encoder_params, embedding
 
