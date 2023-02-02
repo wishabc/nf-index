@@ -39,7 +39,7 @@ process subset_peaks {
     script:
     name = "${id}.peaks.npy"
     """
-    echo "${peaks_params}" > params.json
+    echo -e "${peaks_params}" > params.json
     python3 $moduleDir/bin/subset_peaks.py \
         params.json \
         ${params.normalized_matrix} \
