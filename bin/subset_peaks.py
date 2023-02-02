@@ -39,7 +39,7 @@ if __name__ == '__main__':
         params = json.load(json_file)
     
     normalized_matrix = np.load(sys.argv[2])
-    singletons_mask = np.loadtxt(sys.argv[3], dtype=bool)
+    singletons_mask = np.loadtxt(sys.argv[3]).astype(bool)
 
     out_path = sys.argv[4]
 
