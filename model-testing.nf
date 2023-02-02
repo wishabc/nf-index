@@ -27,7 +27,7 @@ process filter_singletons {
 process subset_peaks {
     conda params.conda
     tag "${id}"
-    publishDir "${params.outdir}/matrix", pattern: name
+    publishDir "${params.outdir}/matrix", pattern: "${name}"
     
     input:
 		tuple val(id), val(peaks_params)
@@ -52,7 +52,7 @@ process fit_vae {
 	tag "${id}"
 	conda params.gpu_conda
     label "gpu"
-    publishDir "${params.outdir}/vae", pattern: name
+    publishDir "${params.outdir}/vae", pattern: "${name}"
     publishDir "${params.outdir}/vae_models", pattern: "${id}_*"
     scratch true
 
