@@ -42,6 +42,7 @@ if __name__ == '__main__':
     normalized_matrix = np.load(sys.argv[2])
     singletons_mask = np.loadtxt(sys.argv[3]).astype(bool)
     out_path = sys.argv[4]
+    assert normalized_matrix.shape[0] == singletons_mask.shape[0]
     normalized_matrix = normalized_matrix[singletons_mask, :]
     main(params, normalized_matrix)
     
