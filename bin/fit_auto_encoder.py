@@ -2,11 +2,6 @@ import numpy as np
 import sys
 import json
 
-try:
-    import tensorflow
-except:
-    raise
-
 from scivae import VAE
 
 
