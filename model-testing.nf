@@ -39,7 +39,7 @@ process subset_peaks {
     script:
     name = "${id}.peaks.npy"
     """
-    echo -e "${peaks_params}" > params.json
+    echo -e '${peaks_params}' > params.json
     python3 $moduleDir/bin/subset_peaks.py \
         params.json \
         ${params.normalized_matrix} \
@@ -66,7 +66,7 @@ process fit_vae {
 	script:
     name = "${id}.embedding.npy"
 	"""
-    echo "${vae_params}" > params.json
+    echo '${vae_params}' > params.json
     python3 $moduleDir/bin/fit_auto_encoder.py \
         params.json \
         ${peaks_matrix} \
@@ -97,7 +97,7 @@ process clustering {
             break;
         case "hierarchical":
             """
-            echo "${clust_params}" > params.json
+            echo '${clust_params}' > params.json
             python3 $moduleDir/bin/hierarchical.py params.json ${embedding} ${prefix}
             """
             break;
