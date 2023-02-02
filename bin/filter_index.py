@@ -9,7 +9,7 @@ index_cols = ["chr", "start", "end", "chunk_id", "score", "n_samples",
 
 
 def main(index, mask):
-    index['avg_score'] = index.eval('score/num_samples')
+    index['avg_score'] = index.eval('score / n_samples')
     cutoff = index[mask]['avg_score'].quantile(0.05)
     print(f'Cutoff = {cutoff}')
     return (index['avg_score'] >= cutoff) * mask
