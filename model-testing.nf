@@ -142,6 +142,7 @@ workflow fitModels {
 
 
 workflow {
+    params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
     params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering.tsv"
     Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
