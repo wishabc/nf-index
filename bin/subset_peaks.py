@@ -12,7 +12,7 @@ def get_interpolation_for_gini(x, lowess_est, sampled):
     return interpolated
 
 
-def main(params, normalized_matrix, singletons_mask):
+def main(params, normalized_matrix):
     gini = np.cumsum(np.sort(normalized_matrix, axis=1) - normalized_matrix.min(axis=1)[:, None], axis=1)
     q = np.linspace(0, 1, normalized_matrix.shape[1])
     gini = 2 * (q[None, :] - gini / gini[:, -1:]).mean(axis=1)
@@ -29,7 +29,6 @@ def main(params, normalized_matrix, singletons_mask):
 
     num_peaks = params['num_peaks']
     return normalized_matrix[
-        singletons_mask &
         (gini_index > gini_index[np.argsort(gini_index)[::-1][num_peaks]]), :
     ]
 
@@ -42,6 +41,6 @@ if __name__ == '__main__':
     singletons_mask = np.loadtxt(sys.argv[3]).astype(bool)
 
     out_path = sys.argv[4]
-
-    result = main(params, normalized_matrix, singletons_mask)
+    
+    result = main(params, normalized_matrix[singletons_mask, :])
     np.save(out_path, result)
