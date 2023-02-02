@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 // TODO: move to main.nf
 process filter_singletons {
     conda params.conda
-    publishDir "${params.outdir}/index", pattern: name
+    publishDir "${params.outdir}/index", pattern: "${name}"
     scratch true
 
     output:
