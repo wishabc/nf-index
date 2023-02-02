@@ -13,7 +13,7 @@ process filter_singletons {
     script:
     name = "singletons_mask.txt"
     """
-    bedmap --indicator --sweep-all --bp-ovr 1 ${params.index_file} \
+    cat ${params.index_file} | grep -v X | grep -v Y | bedmap --indicator --sweep-all --bp-ovr 1  \
         ${params.encode_blacklist_regions} > blacklisted_mask.txt
     
     python3 $moduleDir/bin/filter_index.py \
