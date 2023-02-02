@@ -17,6 +17,6 @@ def main(index, mask):
 if __name__ == '__main__':
     index = pd.read_table(sys.argv[1], header=None, names=index_cols)
     # mask - numpy array with zeros for peaks in ENCODE blacklisted regions
-    mask = np.invert(np.loadtxt(sys.argv[2]), dtype=bool)
+    mask = np.invert(np.loadtxt(sys.argv[2], dtype=bool))
     out_mask = main(index, mask)
     np.savetxt(sys.argv[3], out_mask, dtype=bool)
