@@ -157,9 +157,9 @@ workflow {
             row.encoder_params, row.clust_alg, row.clust_params))
         | fitModels
         | collectFile(name: "all.metrics.tsv", 
-        storeDir: "${params.outdir}",
-        skip: 1,
-        sort: true,
-        keepHeader: true)
+            storeDir: "${params.outdir}/all_data",
+            skip: 1,
+            sort: true,
+            keepHeader: true)
 }
 
