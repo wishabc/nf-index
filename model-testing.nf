@@ -158,7 +158,7 @@ workflow {
     out.metrics | collectFile(name: "all.metrics.tsv", 
         storeDir: "${params.outdir}",
         skip: 1,
-        sort: true
+        sort: true,
         keepHeader: true)
 }
 
