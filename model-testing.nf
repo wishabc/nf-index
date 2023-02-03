@@ -117,7 +117,7 @@ process clustering {
 
 workflow fitModels {
     take:
-        hyperparams // ID, peaks_params, encoder_params, encoder_params, clustering_alg, clustering_params
+        hyperparams // ID, peaks_params, encoder_params, clustering_alg, clustering_params
     main:
         out_mask = filter_singletons()
         subset_peaks_params = hyperparams 
@@ -135,7 +135,7 @@ workflow fitModels {
             | fit_vae // encoder_params, embedding
 
         out = hyperparams 
-            | map(it -> tuple(it[3], it[0], it[4], it[5])) //  encoder_params, ID,  clustering_alg, clustering_params
+            | map(it -> tuple(it[2], it[0], it[3], it[4])) //  encoder_params, ID,  clustering_alg, clustering_params
             | combine(embedding.emb, by: 0) //  encoder_params, ID,  clustering_alg, clustering_params, embedding
             | map(it -> tuple(*it[1..(it.size()-1)])) // ID,  clustering_alg, clustering_params, embedding
             | clustering
