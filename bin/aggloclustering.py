@@ -41,8 +41,8 @@ def get_clustering_metrics(labels_pred, labels_true):
     #Homogeniety and Completeness (not adjusted to by-chance values)
     hom = homogeneity_score(labels2, labels1)
     comp = completeness_score(labels2, labels1)
-    
     return ami, ari, fm, hom, comp, jaccard, N
+
 
 def main(json_object, meta, embedding):
     #Run Clustering Algorithm
@@ -97,4 +97,4 @@ if __name__ == '__main__':
         with open(f"{prefix}.{index}.model.pkl", 'wb') as out:
             pickle.dump(clustering, out)
 
-    metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", index=False)
+    metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", index=False, quoting=csv.QUOTE_NONE)
