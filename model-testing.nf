@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
 params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
-params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering.tsv"
+params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering+ids.tsv"
 
 params.indivs_order = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt"
 
@@ -43,7 +43,7 @@ process subset_peaks {
         path singletons_mask
 
 	output:
-		tuple val(peaks_params), path(name)
+		tuple val(id), path(name)
     
     script:
     name = "${id}.peaks.npy"
@@ -66,10 +66,10 @@ process fit_vae {
     scratch true
 
 	input:
-		tuple val(id), val(vae_params), path(peaks_matrix)
+		tuple val(peaks_id), val(id), val(vae_params), path(peaks_matrix)
 
 	output:
-        tuple val(vae_params), path(name), emit: emb
+        tuple val(peaks_id), val(id), path(name), emit: emb
 		path "${id}_*", emit: all_data
 
 	script:
@@ -91,7 +91,7 @@ process clustering {
     publishDir "${params.outdir}/clustering_data", pattern: "${prefix}.[0-9]*"
 
     input:
-        tuple val(id), val(clust_alg), val(clust_params), path(embedding)
+        tuple val(peaks_id), val(encoder_id), val(clust_alg), val(id), val(clust_params), path(embedding)
 
     output:
         tuple val(id), path("${prefix}.metrics.tsv"), emit: metrics
@@ -131,27 +131,29 @@ process clustering {
 
 workflow fitModels {
     take:
-        hyperparams // ID, peaks_params, encoder_params, clustering_alg, clustering_params
+        // ID,
+        // peaks_id, peaks_params,
+        // encoder_id, encoder_params,
+        // clustering_alg,
+        // cluster_id, clustering_params
+        hyperparams 
     main:
         out_mask = filter_singletons()
-        subset_peaks_params = hyperparams 
-            | map(it -> tuple(it[0], it[1]))
-            | unique { it[1] }
-        peaks = subset_peaks(subset_peaks_params, out_mask) // peaks_params, peaks_subset
-        
-        encoder_params = hyperparams
-            | map(it -> tuple(it[1], it[0], it[2]))
-            | combine(peaks, by: 0) // peaks_params, ID, encoder_params, peaks_subset
-            | map(it -> tuple(*it[1..(it.size()-1)])) // ID, encoder_params, peaks_subset
 
-        embedding  = encoder_params
-            | unique { tuple(it[1], it[2]) }
-            | fit_vae // encoder_params, embedding
+        subset_peaks_params = hyperparams
+            | map(it -> tuple(it[1], it[2]))
+            | unique()
+        peaks = subset_peaks(subset_peaks_params, out_mask) // peaks_id, peaks_subset
+        
+        embedding = hyperparams
+            | map(it -> tuple(it[1], it[3], it[4])) // peaks_id, encoder_id, encoder_params
+            | unique()
+            | combine(peaks, by: 0) // peaks_id, encoder_id, encoder_params, peaks_subset
+            | fit_vae // peaks_id, encoder_id, embedding
 
         out = hyperparams 
-            | map(it -> tuple(it[2], it[0], it[3], it[4])) //  encoder_params, ID,  clustering_alg, clustering_params
-            | combine(embedding.emb, by: 0) //  encoder_params, ID,  clustering_alg, clustering_params, embedding
-            | map(it -> tuple(*it[1..(it.size()-1)])) // ID,  clustering_alg, clustering_params, embedding
+            | map(it -> tuple(it[1], it[3], it[5], it[6], it[7])) //  peaks_id, encoder_id, clustering_alg, clust_id, clustering_params
+            | combine(embedding.emb, by: [0, 1]) //  peaks_id, encoder_id, clustering_alg, clust_id, clustering_params, embedding
             | clustering
     emit:
         out.metrics
@@ -161,8 +163,14 @@ workflow fitModels {
 workflow {
     Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.id, row.peaks_params,
-            row.encoder_params, row.clust_alg, row.clust_params))
+		| map(row -> tuple(row.id,
+            row.peak_id,
+            row.peaks_params,
+            row.encoder_id,
+            row.encoder_params,
+            row.clust_alg,
+            row.clust_id,
+            row.clust_params))
         | fitModels
         | collectFile(name: "all.metrics.tsv", 
             storeDir: "${params.outdir}/all_data",

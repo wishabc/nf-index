@@ -13,7 +13,7 @@ def main(work_matrix, config):
     return vae
 
 if __name__ == '__main__':
-    work_matrix = np.load(sys.argv[2])
+    work_matrix = np.load(sys.argv[2]).T
     with open(sys.argv[1]) as js:
         config = json.load(js)
     prefix = sys.argv[3]
