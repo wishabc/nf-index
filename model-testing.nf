@@ -89,7 +89,7 @@ process clustering {
         tuple val(id), path("${prefix}*")
     
     script:
-    prefix = "${id}.clustering."
+    prefix = "${id}.clustering"
     switch (clust_alg) {
         case "k-means": 
             """

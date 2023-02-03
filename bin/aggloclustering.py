@@ -93,7 +93,7 @@ if __name__ == '__main__':
     for index, labels, clustering in models:
         labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
         labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
-        with open(f"{prefix}.{index}.model.pkl") as out:
+        with open(f"{prefix}.{index}.model.pkl", 'w') as out:
             pickle.dump(clustering, out)
 
     metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", header=None, index=False)
