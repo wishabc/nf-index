@@ -86,7 +86,8 @@ process clustering {
         tuple val(id), val(clust_alg), val(clust_params), path(embedding)
 
     output:
-        tuple val(id), path("${prefix}*")
+        tuple val(id), path("${prefix}.metrics.tsv"), emit: metrics
+        tuple val(id), path("${prefix}*"), emit: all_data
     
     script:
     prefix = "${id}.clustering"
@@ -148,10 +149,15 @@ workflow {
     params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
     params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
     params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering.tsv"
-    Channel.fromPath(params.meta_params)
+    out = Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.id, row.peaks_params,
             row.encoder_params, row.clust_alg, row.clust_params))
         | fitModels
+    out.metrics.collectFile(name: "all.metrics.tsv", 
+        storeDir: "${params.outdir}",
+        skip: 1,
+        sort: true
+        keepHeader: true)
 }
 
