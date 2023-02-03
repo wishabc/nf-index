@@ -9,7 +9,7 @@ import pickle
 from itertools import product
 
 linkages = ["ward", "complete", "average", "single"]
-metrics = ["euclidean", "manhattan"]
+metrics = ["euclidean"]
 
 
 def get_clustering_metrics(labels_pred, labels_true):
