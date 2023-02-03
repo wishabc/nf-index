@@ -7,6 +7,8 @@ import json
 from sklearn.preprocessing import LabelEncoder
 import pickle
 from itertools import product
+import csv
+
 
 linkages = ["ward", "complete", "average", "single"]
 metrics = ["euclidean", "manhattan"]
@@ -91,9 +93,8 @@ if __name__ == '__main__':
 
     metrics_df, models = main(params, meta, embedding)
     for index, labels, clustering in models:
-        labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
-        labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
+        labels.to_csv(f"{prefix}.{index}.annotations.txt", index=False)
         with open(f"{prefix}.{index}.model.pkl", 'wb') as out:
             pickle.dump(clustering, out)
 
-    metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", header=None, index=False)
+    metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", index=False)
