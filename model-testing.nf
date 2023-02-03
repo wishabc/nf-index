@@ -142,7 +142,7 @@ workflow fitModels {
             | map(it -> tuple(*it[1..(it.size()-1)])) // ID,  clustering_alg, clustering_params, embedding
             | clustering
     emit:
-        out
+        out.metrics
 }
 
 
@@ -155,7 +155,7 @@ workflow {
 		| map(row -> tuple(row.id, row.peaks_params,
             row.encoder_params, row.clust_alg, row.clust_params))
         | fitModels
-    out.metrics | collectFile(name: "all.metrics.tsv", 
+        | collectFile(name: "all.metrics.tsv", 
         storeDir: "${params.outdir}",
         skip: 1,
         sort: true,
