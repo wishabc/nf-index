@@ -95,7 +95,7 @@ process clustering {
         case "k_means": 
             """
             echo "${clust_params}" > params.json
-            python3 $moduleDir/bin/k_means.py params.json ${embedding} ${prefix}
+            python3 $moduleDir/bin/k-means.py params.json ${embedding} ${prefix}
             """
             break;
         case "hierarchical":
