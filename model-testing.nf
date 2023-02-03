@@ -100,7 +100,7 @@ process clustering {
         case "hierarchical":
             """
             echo '${clust_params}' > params.json
-            python3 $moduleDir/bin/hierarchical.py params.json ${embedding} ${prefix}
+            python3 $moduleDir/bin/aggloclustering.py params.json ${embedding} ${prefix}
             """
             break;
         case "community":
