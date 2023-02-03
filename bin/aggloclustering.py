@@ -55,9 +55,9 @@ def main(json_object, meta, embedding):
         params = {**json_object, 'linkage': linkage, 'metric': metric}
         try:
             clustering_model = AgglomerativeClustering(**params)
+            clustering_model.fit(embedding)
         except:
             continue
-        clustering_model.fit(embedding)
         clustered_labels =  clustering_model.labels_
         params_str = json.dumps(params)
         ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(clustered_labels, true_labels)
