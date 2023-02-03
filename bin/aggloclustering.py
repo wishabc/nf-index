@@ -9,7 +9,7 @@ import pickle
 from itertools import product
 
 linkages = ["ward", "complete", "average", "single"]
-metrics = ["euclidean"]
+metrics = ["euclidean", "manhattan"]
 
 
 def get_clustering_metrics(labels_pred, labels_true):
@@ -51,8 +51,11 @@ def main(json_object, meta, embedding):
     true_labels = label_encoder.fit_transform(meta['ontology_term'])
     for index, (linkage, metric) in enumerate(product(linkages, metrics)):
         params = {**json_object, 'linkage': linkage, 'metric': metric}
-        clustering_model = AgglomerativeClustering(**params)
-        clustering_model.fit(embedding)
+        try:
+            clustering_model = AgglomerativeClustering(**params)
+            clustering_model.fit(embedding)
+        except:
+            continue
         clustered_labels =  clustering_model.labels_
         params_str = json.dumps(params)
         ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(clustered_labels, true_labels)
