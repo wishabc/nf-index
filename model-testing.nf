@@ -81,7 +81,6 @@ process clustering {
     tag "${id}"
     publishDir "${params.outdir}/clustering", pattern: "${prefix}.metrics.tsv"
     publishDir "${params.outdir}/clustering_data", pattern: "${prefix}.[0-9]*"
-    errorStrategy 'terminate'
 
     input:
         tuple val(id), val(clust_alg), val(clust_params), path(embedding)
@@ -93,10 +92,10 @@ process clustering {
     script:
     prefix = "${id}.clustering"
     switch (clust_alg) {
-        case "k-means": 
+        case "k_means": 
             """
             echo "${clust_params}" > params.json
-            python3 $moduleDir/bin/k-means.py params.json ${embedding} ${prefix}
+            python3 $moduleDir/bin/k_means.py params.json ${embedding} ${prefix}
             """
             break;
         case "hierarchical":
