@@ -81,6 +81,7 @@ process clustering {
     tag "${id}"
     publishDir "${params.outdir}/clustering", pattern: "${prefix}.metrics.tsv"
     publishDir "${params.outdir}/clustering_data", pattern: "${prefix}.[0-9]*"
+    errorStrategy 'terminate'
 
     input:
         tuple val(id), val(clust_alg), val(clust_params), path(embedding)
