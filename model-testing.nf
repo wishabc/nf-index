@@ -150,7 +150,7 @@ workflow {
     params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
     params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
     params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering.tsv"
-    out = Channel.fromPath(params.meta_params)
+    Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.id, row.peaks_params,
             row.encoder_params, row.clust_alg, row.clust_params))
