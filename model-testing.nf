@@ -1,6 +1,14 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
+
+params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
+params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
+params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering.tsv"
+
+params.indivs_order = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt"
+
+
 // TODO: move to main.nf
 process filter_singletons {
     conda params.conda
@@ -100,9 +108,13 @@ process clustering {
             break;
         case "hierarchical":
             """
-            echo 'start'
             echo '${clust_params}' > params.json
-            python3 $moduleDir/bin/aggloclustering.py params.json ${embedding} ${params.meta} ${prefix}
+            python3 $moduleDir/bin/aggloclustering.py \
+                params.json \
+                ${embedding} \
+                ${params.meta} \
+                ${params.indivs_order} \
+                ${prefix}
             """
             break;
         case "community":
@@ -147,9 +159,6 @@ workflow fitModels {
 
 
 workflow {
-    params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
-    params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
-    params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering.tsv"
     Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.id, row.peaks_params,

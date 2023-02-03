@@ -1,70 +1,79 @@
 import sys
 import numpy as np
 import pandas as pd
-from sklearn.metrics import adjusted_mutual_info_score, pair_confusion_matrix, homogeneity_score, completeness_score
-from sklearn.cluster import AgglomerativeClustering
 import json
 from sklearn.preprocessing import LabelEncoder
 import pickle
-from itertools import product
-import csv
+from sklearn.cluster import KMeans
+from aggloclustering import get_clustering_metrics
 
 
-linkages = ["ward", "complete", "average", "single"]
-metrics = ["euclidean", "manhattan"]
+algoirithm = ["lloyd", "elkan"]
 
 
-def get_clustering_metrics(labels_pred, labels_true):
-    labels_pred, labels_true = zip(*[(x, y) for x, y in zip(labels_pred, labels_true) if not pd.isna(y)])
-    labels1 = np.array(labels_pred)
-    labels2 = np.array(labels_true)
-    
-    assert len(labels1) == len(labels2)
+def main(json_object, meta, embedding, training_set, validation_set):
+   
+    #Subset embedding and metadata by training and validation_set
+    #Remember emdbedding currenlty has ['ID'] as the last column
+    train = embedding[embedding['ID'].isin(training_set['ID'])]
+    valid = embedding[embedding['ID'].isin(validation_set['ID'])]
+    del train[train.columns[-1]]
+    del valid[valid.columns[-1]]
+    del embedding[embedding.columns[-1]]
 
-    #Pair confusion  matrix
-    N = pair_confusion_matrix(labels2, labels1) // 2
-    
-    #Adjusted Rand Index
-    ari = 2 * (N[0, 0]*N[1, 1] - N[0, 1]*N[1, 0]) / ((N[0, 0] + N[0, 1])*(N[0, 1] + N[1, 1]) + (N[0, 0] + N[1, 0])*(N[1, 0] + N[1, 1]))
-    #assert ari == adjusted_rand_score(labels2, labels1)
-    
-    #Fowlkes-Mallows score
-    fm = np.sqrt((N[1, 1] / (N[1, 1] + N[0, 1]))*(N[1, 1] / (N[1, 1] + N[1, 0])))
-    #assert fm == fowlkes_mallows_score(labels2, labels1)
-    
-    #Jaccard simmilarity
-    jaccard = N[1, 1] / (N[1, 0] + N[0, 1] + N[1, 1])
-    
-    #Adjusted Mutual Information
-    ami = adjusted_mutual_info_score(labels2, labels1)
-    
-    #Homogeniety and Completeness (not adjusted to by-chance values)
-    hom = homogeneity_score(labels2, labels1)
-    comp = completeness_score(labels2, labels1)
-    return ami, ari, fm, hom, comp, jaccard, N
+    #Subset MetaData
+    train_meta = meta[meta['ID'].isin(training_set['ID'])]
+    valid_meta = meta[meta['ID'].isin(validation_set['ID'])]
 
-
-def main(json_object, meta, embedding):
     #Run Clustering Algorithm
-    #Metrics = euclidian, manhattan
     metrics_rows = []
     label_encoder = LabelEncoder()
     models = []
-    true_labels = label_encoder.fit_transform(meta['ontology_term'])
-    for index, (linkage, metric) in enumerate(product(linkages, metrics)):
-        params = {**json_object, 'linkage': linkage, 'metric': metric}
+
+    true_col = 'ontology_term'
+    true_labels = label_encoder.fit_transform(meta[true_col])
+    true_train_labels = label_encoder.fit_transform(train_meta[true_col])
+    #Do I just use the true_label encodings or the encodings from validation set separately?? Same for training
+    true_valid_labels = label_encoder.fit_transform(valid_meta[true_col]) 
+
+    for index, algorithm in enumerate(algorithm):
+        params = {**json_object, 'algorithm': algorithm}
         try:
-            clustering_model = AgglomerativeClustering(**params)
+	        #Full Embedding
+            clustering_model = KMeans(**params)
             clustering_model.fit(embedding)
+
+	        #Train and Validation
+            test_model = KMeans(**params) 
+            valid_labels = test_model.predict(valid)
         except:
             continue
         clustered_labels =  clustering_model.labels_
+        training_labels = test_model.labels_
+       
         params_str = json.dumps(params)
-        ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(clustered_labels, true_labels)
-        metrics_rows.append([index, params_str, ami, ari, fm, jaccard])
-        models.append(
-            (index, pd.DataFrame(clustered_labels), clustering_model)
+        
+	#Full Set
+    ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(clustered_labels, true_labels)
+    metrics_rows.append([index, params_str, ami, ari, fm, jaccard])
+    models.append(
+        (index, pd.DataFrame(clustered_labels), clustering_model)
+    )
+
+    # Training Set
+    ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(training_labels, true_train_labels) 
+    metrics_rows.append([index, params_str, ami, ari, fm, jaccard])
+    models.append(
+            (index, pd.DataFrame(training_labels), test_model)
         )
+
+    # Validation Set
+    ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(valid_labels, true_valid_labels)
+    metrics_rows.append([index, params_str, ami, ari, fm, jaccard]) 
+    models.append(
+	    (index, pd.DataFrame(valid_labels), test_model)  # Will be the same model as training
+	)
+
     metrics_df = pd.DataFrame.from_records(metrics_rows,
         columns=['id', 'params', 'ami', 'ari', 'fm', 'jaccard'])
     return metrics_df, models
@@ -74,6 +83,11 @@ if __name__ == '__main__':
     with open(sys.argv[1], 'r') as openfile:
         params = json.load(openfile)
     embedding = np.load(sys.argv[2])
+    samples = pd.read_table("/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt", header=None)
+    samples = samples.T
+    samples.columns = ['ID']
+    embedding['ID'] = samples['ID']
+    
     #Load Metadata
     meta_columns = ['tc_number', 'ds_number', 'ln_number', 'id', 
                 'passed_agg_qc', 'hotspot1_spot', 'hotspot2_spot', 'nuclear_percent_duplication', 'taxonomy_name', 
@@ -90,11 +104,14 @@ if __name__ == '__main__':
     
     meta = pd.read_table(sys.argv[3], header=None, names=meta_columns)
     prefix=sys.argv[4]
+    training_set = pd.read_table(sys.argv[5], header=None, names=['ID'])
+    validation_set = pd.read_table(sys.argv[6], header=None, names=['ID'])
 
-    metrics_df, models = main(params, meta, embedding)
+    metrics_df, models = main(params, meta, embedding, training_set, validation_set)
     for index, labels, clustering in models:
-        labels.to_csv(f"{prefix}.{index}.annotations.txt", index=False)
+        labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
+        labels.to_csv(f"{prefix}.{index}.annotations.txt", header=None, index=False)
         with open(f"{prefix}.{index}.model.pkl", 'wb') as out:
             pickle.dump(clustering, out)
 
-    metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", index=False, quoting=csv.QUOTE_NONE)
+    metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", header=None, index=False)

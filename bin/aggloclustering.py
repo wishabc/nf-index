@@ -88,8 +88,13 @@ if __name__ == '__main__':
                 'paired_autosomal_align', 'paired_nuclear_align', 'picard_median_insert_size', 'picard_percent_duplication',
                 'raj_dataset', 'tag', 'footprintdir', 'num_footprints']
     
-    meta = pd.read_table(sys.argv[3], header=None, names=meta_columns)
-    prefix=sys.argv[4]
+    meta = pd.read_table(sys.argv[3], header=None, names=meta_columns).set_index('id')
+    with open(sys.argv[4]) as f:
+        indivs_order = f.readline().strip().split()
+    prefix=sys.argv[5]
+
+    # Double check if meta is sorted correctly
+    meta = meta.loc[indivs_order]
 
     metrics_df, models = main(params, meta, embedding)
     for index, labels, clustering in models:
