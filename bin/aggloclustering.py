@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelEncoder
 import pickle
 from itertools import product
 
-methods = ["single", "average", "weighted", "centroid", "median", "ward"]
+linkages = ["ward", "complete", "average", "single"]
 metrics = ["euclidian", "manhattan"]
 
 
@@ -44,14 +44,13 @@ def get_clustering_metrics(labels_pred, labels_true):
 
 def main(json_object, meta, embedding):
     #Run Clustering Algorithm
-    #Methods = single, average, weighted, centroid, median, and ward
     #Metrics = euclidian, manhattan
     metrics_rows = []
     label_encoder = LabelEncoder()
     models = []
     true_labels = label_encoder.fit_transform(meta['ontology_term'])
-    for index, (method, metric) in enumerate(product(methods, metrics)):
-        params = {**json_object, 'method': method, 'metric': metric}
+    for index, (linkage, metric) in enumerate(product(linkages, metrics)):
+        params = {**json_object, 'linkage': linkage, 'metric': metric}
         clustering_model = AgglomerativeClustering(**params)
         clustering_model.fit(embedding)
         clustered_labels =  clustering_model.labels_
