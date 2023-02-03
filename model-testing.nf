@@ -155,7 +155,7 @@ workflow {
 		| map(row -> tuple(row.id, row.peaks_params,
             row.encoder_params, row.clust_alg, row.clust_params))
         | fitModels
-    out.metrics.collectFile(name: "all.metrics.tsv", 
+    out.metrics | collectFile(name: "all.metrics.tsv", 
         storeDir: "${params.outdir}",
         skip: 1,
         sort: true
