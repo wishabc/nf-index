@@ -101,6 +101,7 @@ process clustering {
             break;
         case "hierarchical":
             """
+            echo 'start'
             echo '${clust_params}' > params.json
             python3 $moduleDir/bin/aggloclustering.py params.json ${embedding} ${params.meta} ${prefix}
             """
