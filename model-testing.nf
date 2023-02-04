@@ -151,7 +151,7 @@ workflow fitModels {
             | fit_vae // peaks_id, encoder_id, embedding
 
         out = hyperparams 
-            | map(it -> tuple(it[1], it[3], it[0], it[5], it[6], it[7])) //  peaks_id, encoder_id, clustering_alg, clust_id, clustering_params
+            | map(it -> tuple(it[1], it[3], it[0], it[5], it[6])) //  peaks_id, encoder_id, clustering_alg, clustering_params
             | combine(embedding.emb, by: [0, 1]) //  peaks_id, encoder_id, ID, clustering_alg, clustering_params, embedding
             | clustering
     emit:
