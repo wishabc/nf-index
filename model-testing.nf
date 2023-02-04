@@ -161,7 +161,7 @@ workflow fitModels {
 
 
 workflow {
-    out = Channel.fromPath(params.meta_params)
+    Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.id,
             row.peak_id,
@@ -171,8 +171,8 @@ workflow {
             row.clust_alg,
             row.clust_params))
         | fitModels
-    
-    out.collectFile(name: 'all.metrics.tsv', 
+        | map(it -> it[1])
+        | collectFile(name: 'all.metrics.tsv', 
             storeDir: "${params.outdir}",
             skip: 1,
             sort: true,
