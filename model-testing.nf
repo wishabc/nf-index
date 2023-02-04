@@ -87,23 +87,23 @@ process fit_vae {
 process clustering {
     conda params.conda
     tag "${id}"
-    publishDir "${params.outdir}/clustering", pattern: "${prefix}.metrics.tsv"
-    publishDir "${params.outdir}/clustering_data", pattern: "${prefix}.[0-9]*"
+    publishDir "${params.outdir}/clustering", pattern: "${name}"
+    publishDir "${params.outdir}/clustering_data", pattern: "${id}.[0-9]*"
 
     input:
         tuple val(peaks_id), val(encoder_id), val(id), val(clust_alg), val(clust_params), path(embedding)
 
     output:
-        tuple val(id), path("${prefix}.metrics.tsv"), emit: metrics
-        tuple val(id), path("${prefix}*"), emit: all_data
+        tuple val(id), path("${name}"), emit: metrics
+        tuple val(id), path("${id}*"), emit: all_data
     
     script:
-    prefix = "${id}.clustering"
+    name = "${id}.clustering.metrics.tsv"
     switch (clust_alg) {
         case "k_means": 
             """
             echo "${clust_params}" > params.json
-            python3 $moduleDir/bin/k-means.py params.json ${embedding} ${prefix}
+            python3 $moduleDir/bin/k-means.py params.json ${embedding} ${id}
             """
             break;
         case "hierarchical":
@@ -114,7 +114,7 @@ process clustering {
                 ${embedding} \
                 ${params.meta} \
                 ${params.indivs_order} \
-                ${prefix}
+                ${id}
             """
             break;
         case "community":

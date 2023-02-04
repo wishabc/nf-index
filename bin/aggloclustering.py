@@ -25,11 +25,11 @@ def get_clustering_metrics(labels_pred, labels_true):
     N = pair_confusion_matrix(labels2, labels1) // 2
     
     #Adjusted Rand Index
-    ari = 2 * (N[0, 0]*N[1, 1] - N[0, 1]*N[1, 0]) / ((N[0, 0] + N[0, 1])*(N[0, 1] + N[1, 1]) + (N[0, 0] + N[1, 0])*(N[1, 0] + N[1, 1]))
+    ari = 2 * (N[0, 0] * N[1, 1] - N[0, 1] * N[1, 0]) / ((N[0, 0] + N[0, 1]) * (N[0, 1] + N[1, 1]) + (N[0, 0] + N[1, 0]) * (N[1, 0] + N[1, 1]))
     #assert ari == adjusted_rand_score(labels2, labels1)
     
     #Fowlkes-Mallows score
-    fm = np.sqrt((N[1, 1] / (N[1, 1] + N[0, 1]))*(N[1, 1] / (N[1, 1] + N[1, 0])))
+    fm = np.sqrt((N[1, 1] / (N[1, 1] + N[0, 1])) * (N[1, 1] / (N[1, 1] + N[1, 0])))
     #assert fm == fowlkes_mallows_score(labels2, labels1)
     
     #Jaccard simmilarity
@@ -91,15 +91,20 @@ if __name__ == '__main__':
     meta = pd.read_table(sys.argv[3], header=None, names=meta_columns).set_index('id')
     with open(sys.argv[4]) as f:
         indivs_order = f.readline().strip().split()
-    prefix=sys.argv[5]
+    run_id = sys.argv[5]
 
     # Double check if meta is sorted correctly
     meta = meta.loc[indivs_order]
 
     metrics_df, models = main(params, meta, embedding)
+    
+    metrics_df['run_id'] = run_id
+    
     for index, labels, clustering in models:
-        labels.to_csv(f"{prefix}.{index}.annotations.txt", index=False)
-        with open(f"{prefix}.{index}.model.pkl", 'wb') as out:
+        labels.to_csv(f"{run_id}.{index}.annotations.txt", index=False)
+        with open(f"{run_id}.{index}.model.pkl", 'wb') as out:
             pickle.dump(clustering, out)
 
-    metrics_df.to_csv(f'{prefix}.metrics.tsv', sep="\t", index=False, quoting=csv.QUOTE_NONE)
+    metrics_df.to_csv(f'{run_id}.clustering.metrics.tsv',
+        sep="\t", index=False,
+        quoting=csv.QUOTE_NONE)
