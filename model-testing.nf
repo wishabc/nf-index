@@ -90,6 +90,7 @@ process clustering {
     publishDir "${params.outdir}/clustering", pattern: "${name}"
     publishDir "${params.outdir}/clustering_data", pattern: "${id}.[0-9]*"
 
+
     input:
         tuple val(peaks_id), val(encoder_id), val(id), val(clust_alg), val(clust_params), path(embedding)
 
@@ -160,7 +161,7 @@ workflow fitModels {
 
 
 workflow {
-    Channel.fromPath(params.meta_params)
+    out = Channel.fromPath(params.meta_params)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.id,
             row.peak_id,
@@ -170,7 +171,8 @@ workflow {
             row.clust_alg,
             row.clust_params))
         | fitModels
-        | collectFile(name: "all.metrics.tsv", 
+    
+    out.collectFile(name: "all.metrics.tsv", 
             storeDir: "${params.outdir}/all_data",
             skip: 1,
             sort: true,
