@@ -63,7 +63,7 @@ def main(json_object, meta, embedding):
         ami, ari, fm, _, _, jaccard, _ = get_clustering_metrics(clustered_labels, true_labels)
         metrics_rows.append([index, params_str, ami, ari, fm, jaccard])
         models.append(
-            (index, pd.DataFrame(clustered_labels), clustering_model)
+            (index, pd.DataFrame(clustered_labels, columns=['labels']), clustering_model)
         )
     metrics_df = pd.DataFrame.from_records(metrics_rows,
         columns=['id', 'params', 'ami', 'ari', 'fm', 'jaccard'])
