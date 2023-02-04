@@ -172,8 +172,8 @@ workflow {
             row.clust_params))
         | fitModels
     
-    out.collectFile(name: "all.metrics.tsv", 
-            storeDir: "${params.outdir}/all_data",
+    out.collectFile(name: 'all.metrics.tsv', 
+            storeDir: "${params.outdir}",
             skip: 1,
             sort: true,
             keepHeader: true)
