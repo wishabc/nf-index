@@ -91,7 +91,7 @@ process clustering {
     publishDir "${params.outdir}/clustering_data", pattern: "${prefix}.[0-9]*"
 
     input:
-        tuple val(peaks_id), val(encoder_id), val(clust_alg), val(id), val(clust_params), path(embedding)
+        tuple val(peaks_id), val(encoder_id), val(id), val(clust_alg), val(clust_params), path(embedding)
 
     output:
         tuple val(id), path("${prefix}.metrics.tsv"), emit: metrics
@@ -134,8 +134,7 @@ workflow fitModels {
         // ID,
         // peaks_id, peaks_params,
         // encoder_id, encoder_params,
-        // clustering_alg,
-        // cluster_id, clustering_params
+        // clustering_alg, clustering_params
         hyperparams 
     main:
         out_mask = filter_singletons()
@@ -152,8 +151,8 @@ workflow fitModels {
             | fit_vae // peaks_id, encoder_id, embedding
 
         out = hyperparams 
-            | map(it -> tuple(it[1], it[3], it[5], it[6], it[7])) //  peaks_id, encoder_id, clustering_alg, clust_id, clustering_params
-            | combine(embedding.emb, by: [0, 1]) //  peaks_id, encoder_id, clustering_alg, clust_id, clustering_params, embedding
+            | map(it -> tuple(it[1], it[3], it[0], it[5], it[6], it[7])) //  peaks_id, encoder_id, clustering_alg, clust_id, clustering_params
+            | combine(embedding.emb, by: [0, 1]) //  peaks_id, encoder_id, ID, clustering_alg, clustering_params, embedding
             | clustering
     emit:
         out.metrics
@@ -169,7 +168,6 @@ workflow {
             row.encoder_id,
             row.encoder_params,
             row.clust_alg,
-            row.clust_id,
             row.clust_params))
         | fitModels
         | collectFile(name: "all.metrics.tsv", 
