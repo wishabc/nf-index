@@ -58,29 +58,29 @@ process subset_peaks {
 }
 
 process fit_vae {
-	tag "${id}"
+	tag "${preifx}"
 	conda params.gpu_conda
     label "gpu"
     publishDir "${params.outdir}/vae", pattern: "${name}"
-    publishDir "${params.outdir}/vae_models", pattern: "${id}_*"
+    publishDir "${params.outdir}/vae_models", pattern: "${prefix}_*"
     scratch true
 
 	input:
-		tuple val(peaks_id), val(id), val(vae_params), path(peaks_matrix)
+		tuple val(peaks_id), val(vae_id), val(vae_params), path(peaks_matrix)
 
 	output:
-        tuple val(peaks_id), val(id), path(name), emit: emb
-		path "${id}_*", emit: all_data
+        tuple val(peaks_id), val(vae_id), path(name), emit: emb
+		path "${prefix}_*", emit: all_data
 
 	script:
-    name = "${id}.embedding.npy"
+    prefix = "${vae_id}.${peaks_id}"
+    name = "${prefix}.embedding.npy"
 	"""
-    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:\$CONDA_PREFIX/lib/python3.10/site-packages/tensorrt/
     echo '${vae_params}' > params.json
     python3 $moduleDir/bin/fit_auto_encoder.py \
         params.json \
         ${peaks_matrix} \
-        ${id}
+        ${prefix}
 	"""
 }
 
