@@ -58,7 +58,7 @@ process subset_peaks {
 }
 
 process fit_vae {
-	tag "${preifx}"
+	tag "${vae_id}:${peaks_id}"
 	conda params.gpu_conda
     label "gpu"
     publishDir "${params.outdir}/vae", pattern: "${name}"
