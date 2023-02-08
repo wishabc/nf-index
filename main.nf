@@ -235,7 +235,7 @@ workflow generateAndNormalize {
 workflow {
 	bams_hotspots = Channel.fromPath(params.samples_file)
 		| splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.uniq_id, file(row.bam_file),, file("${row.bam_file}.crai"), file(row.hotspots_file)))
+		| map(row -> tuple(row.uniq_id, file(row.bam_file), file("${row.bam_file}.crai"), file(row.hotspots_file)))
 	generateAndNormalize(bams_hotspots)
 }
 
