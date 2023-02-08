@@ -8,7 +8,7 @@ process count_tags {
 	conda params.conda
 
 	input:
-		tuple val(indiv_id), path(bam_file), path(peaks_file)
+		tuple val(indiv_id), path(bam_file), path(bam_file_index), path(peaks_file)
 
 	output:
 		tuple val(indiv_id), path("${prefix}.counts.txt"), path("${prefix}.bin.txt")
@@ -19,7 +19,7 @@ process count_tags {
 	bedtools multicov -bams ${bam_file} \
 		-bed ${params.index_file} \
 		| awk '{print \$(NF)}' > ${prefix}.counts.txt
-	bedmap --indicator --sweep-all ${params.index_file}  ${peaks_file} > ${prefix}.bin.txt
+	bedmap --indicator --sweep-all ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
 
@@ -235,7 +235,7 @@ workflow generateAndNormalize {
 workflow {
 	bams_hotspots = Channel.fromPath(params.samples_file)
 		| splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.uniq_id, file(row.bam_file), file(row.hotspots_file)))
+		| map(row -> tuple(row.uniq_id, file(row.bam_file),, file("${row.bam_file}.crai"), file(row.hotspots_file)))
 	generateAndNormalize(bams_hotspots)
 }
 
@@ -245,7 +245,7 @@ workflow {
 workflow test {
 	bams_hotspots = Channel.fromPath(params.samples_file)
 		| splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.uniq_id, file(row.bam_file), file(row.hotspots_file)))
+		| map(row -> tuple(row.uniq_id, file(row.bam_file), file("${row.bam_file}.crai"), file(row.hotspots_file)))
 
 	count_matrices = bams_hotspots
 		| count_tags
