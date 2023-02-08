@@ -9,7 +9,7 @@ params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering+
 params.indivs_order = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt"
 
 
-// TODO: move to main.nf
+// TODO: remove after redoing normalization
 process filter_singletons {
     conda params.conda
     publishDir "${params.outdir}/index", pattern: "${name}"
@@ -103,7 +103,7 @@ process clustering {
     switch (clust_alg) {
         case "k_means": 
             """
-            echo "${clust_params}" > params.json
+            echo '${clust_params}' > params.json
             python3 $moduleDir/bin/k-means.py params.json ${embedding} ${id}
             """
             break;

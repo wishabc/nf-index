@@ -5,6 +5,7 @@ from scipy.sparse import coo_matrix, csr_matrix, save_npz
 import logging
 import datatable as dt
 import argparse
+import numpy as np
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Converts matrix in txt format to csr')
     parser.add_argument('matrix', help='Path to matrix file')
     parser.add_argument('outpath', help='Path to output binary matrix file with .npz extension')
+    parser.add_argument('--mask', help='Mask file to filter the matrix by columns', default=None)
     args = parser.parse_args()
     input_path = args.matrix
     out_path = args.outpath
@@ -42,4 +44,9 @@ if __name__ == '__main__':
     logger.info(f'Matrix size: {matrix_dense.shape}. '
                 f'Density: {matrix_dense.sum() / matrix_dense.size}'
                 )
-    convert_to_sparse(matrix_dense, out_path)
+    if args.mask is not None:
+        mask = np.loadtxt(args.mask)
+        assert mask.shape[0] == matrix_dense.shape[1]
+        matrix_dense = matrix_dense[:, mask]
+    np.save(args.outpath, matrix_dense)
+    #convert_to_sparse(matrix_dense, out_path)

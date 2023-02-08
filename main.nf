@@ -8,30 +8,30 @@ process count_tags {
 	conda params.conda
 
 	input:
-		tuple val(indiv_id), val(bam_file), val(peaks_file)
+		tuple val(indiv_id), path(bam_file), path(peaks_file)
 
 	output:
-		tuple val(indiv_id), file("${prefix}.counts.txt"), file("${prefix}.bin.txt")
+		tuple val(indiv_id), path("${prefix}.counts.txt"), path("${prefix}.bin.txt")
 
 	script:
 	prefix = "${indiv_id}"
 	"""
-	bedtools multicov -bams ${bam_file} -bed ${params.index_file} | awk '{print \$(NF)}' > ${prefix}.counts.txt
-	bedmap --indicator ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
+	bedtools multicov -bams ${bam_file} \
+		-bed ${params.index_file} \
+		| awk '{print \$(NF)}' > ${prefix}.counts.txt
+	bedmap --indicator --sweep-all ${params.index_file}  ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
 
 process generate_count_matrix {
-
-	publishDir "${params.outdir}/index", pattern: "matrix.all*"
+	publishDir "${params.outdir}/raw_matrices", pattern: "matrix.all*"
 	publishDir params.outdir, pattern: "indivs_order.txt"
 
 	input:
 		tuple val(indiv_ids), path(count_files), path(bin_files)
 
 	output:
-		path "matrix.all.signal.txt.gz", emit: signal
-		path "matrix.all.peaks.txt.gz", emit: peaks
+		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz"), emit: matrices
 		path "indivs_order.txt", emit: indivs
 
 	script:
@@ -43,51 +43,84 @@ process generate_count_matrix {
 	"""
 }
 
-process filter_autosomes {
-	
-	publishDir params.outdir
-	tag "${prefix}"
-
-	input:
-		tuple val(prefix), path(matrix)
+process filter_index {
+	publishDir "${params.outdir}"
+	scratch true
 
 	output:
-		tuple val(prefix), path(name)
+		path filtered_mask, emit: mask
+		path filtered_index, emit: filtered_index
+		
+
+	script:
+	filtered_index = "masterlist.filtered.bed"
+	filtered_mask = 'filtered_peaks_mask.txt'
+	"""
+	bedmap --indicator --sweep-all --bp-ovr 1 ${params.index_file} \
+        ${params.encode_blacklist_regions} > blacklisted_mask.txt
+	
+	python3 $moduleDir/bin/filter_index.py \
+        ${params.index_file} \
+        blacklisted_mask.txt \
+        ${filtered_mask}
+		${filtered_index}
+	"""
+}
+
+process apply_filter_to_matrix {
+	publishDir "${params.outdir}"
+	label "bigmem"
+
+	input:
+		tuple path(signal_matrix), path(peaks_matrix)
+		path filtered_mask
+	
+	output:
+		tuple path(signal_filt_matrix), path(peaks_filt_matrix)
 	
 	script:
-	name = "${matrix.baseName}.autosomes.txt.gz"
+	signal_filt_matrix = "signal.filtered.matrix.npy"
+	peaks_filt_matrix = "binary.filtered.matrix.npy"
 	"""
-	len=\$({ cat ${params.index_file} | sed -n '/^chrX/{=;q;}' || true; })
-	len=\$((\$len - 1))
-	{ zcat ${matrix} | head -n \$len | gzip -c || true; } > ${name}
+	(
+		trap 'kill 0' SIGINT; \
+		
+		python3 $moduleDir/bin/convert_to_numpy.py \
+			${signal_matrix} \
+			${signal_filt_matrix} \
+			--mask ${filtered_mask} & \
+		
+		python3 $moduleDir/bin/convert_to_numpy.py \
+			${peaks_matrix} \
+			${peaks_filt_matrix} \
+			--mask ${filtered_mask} & \
+		
+		wait \
+	)
 	"""
-
 }
+
 
 process normalize_matrix {
 	conda params.conda
-
-	cpus params.cpus
 	label "bigmem"
-	publishDir "${params.outdir}/norm"
+	publishDir "${params.outdir}/norm", pattern: "${prefix}.normed.npy"
 
 	input:
-		path signal_matrix
-		path peaks_matrix
+		tuple path(signal_matrix), path(peaks_matrix)
 
 	output:
-		path("${prefix}.normed.npy"), emit: normed_matrix
-		path("${prefix}.signal.npy"), emit: signal_numpy
+		tuple path(signal_matrix), path("${prefix}.normed.npy")
 
 	script:
 	prefix = 'normalized'
 	"""
 	python3 $moduleDir/bin/lowess.py \
-	  ${peaks_matrix} \
-	  ${signal_matrix} \
-	  ./ \
-	  --jobs ${task.cpus} \
-	  --prefix ${prefix}
+		${peaks_matrix} \
+		${signal_matrix} \
+		./ \
+		--jobs ${task.cpus} \
+		--prefix ${prefix}
 	"""
 }
 
@@ -109,17 +142,17 @@ process reorder_meta {
 	"""
 }
 
+
 process get_scale_factors {
 	conda params.conda
-	publishDir "${params.outdir}"
+	publishDir "${params.outdir}/norm", pattern: "${name}"
 	label "bigmem"
 
 	input:
-		path(signal_matrix)
-		path(normed_matrix)
+		tuple path(signal_matrix), path(normed_matrix)
 
 	output:
-		path name
+		tuple path(signal_matrix), path(name)
 
 	script:
 	name = "scale_factors.npy"
@@ -134,12 +167,10 @@ process get_scale_factors {
 process deseq2 {
 	conda params.conda
 	publishDir "${params.outdir}"
-	cpus 10
 	label "bigmem"
 
 	input:
-		path signal_matrix
-		path scale_factors
+		tuple path(signal_matrix), path(scale_factors)
 		path indivs_order
 		path meta_path
 
@@ -163,39 +194,29 @@ workflow generateMatrix {
 	take:
 		bams_hotspots
 	main:
-		count_files = count_tags(bams_hotspots)
+		count_matrices = bams_hotspots
+			| count_tags
+			| toList()
+			| transpose()
+			| toList()
+			| generate_count_matrix
 
-		collected_files = count_files.toList().transpose().toList()
-		count_matrices = generate_count_matrix(collected_files)
+		mask = filter_index().mask
+		out = apply_filter_to_matrix(count_matrices, mask)
 	emit:
-		count_matrices.signal
-		count_matrices.peaks
+		out
 		count_matrices.indivs
 }
 
 workflow normalizeMatrix {
 	take:
-		signal_matrix
-		peaks_matrix
+		matrices
 		indivs_order
 	main:
-		inp_matrices = signal_matrix
-			| map(it -> tuple('signal', it))
-			| concat(peaks_matrix.map(it -> tuple('peaks', it)))
-			| filter_autosomes
-		signal = inp_matrices
-			| filter { it[0] == 'signal'}
-			| first()
-			| map(it -> it[1])
-		peaks = inp_matrices
-			| filter { it[0] == 'peaks'}
-			| first()
-			| map(it -> it[1])
-		matrices = normalize_matrix(signal, peaks)
+		norm_mat = normalize_matrix(matrices)
 		new_meta = reorder_meta(indivs_order)
-		signal_np = matrices.signal_numpy
-		sf = get_scale_factors(signal_np, matrices.normed_matrix)
-		out = deseq2(signal_np, sf, indivs_order, new_meta)
+		sf = get_scale_factors(norm_mat)
+		out = deseq2(sf, indivs_order, new_meta)
 	emit:
 		out
 }
@@ -205,7 +226,7 @@ workflow generateAndNormalize {
 		bams_hotspots
 	main:
 		matrices = generateMatrix(bams_hotspots)
-		out = normalizeMatrix(matrices[0], matrices[1], matrices[2])
+		out = normalizeMatrix(matrices[0], matrices[1])
 	emit:
 		out
 }
@@ -213,7 +234,7 @@ workflow generateAndNormalize {
 workflow {
 	bams_hotspots = Channel.fromPath(params.samples_file)
 		| splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.uniq_id, row.bam_file, row.hotspots_file))
+		| map(row -> tuple(row.uniq_id, file(row.bam_file), file(row.hotspots_file)))
 	generateAndNormalize(bams_hotspots)
 }
 
@@ -221,13 +242,14 @@ workflow {
 
 // Debug code, defunc
 workflow test {
-	signal = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.signal.txt.autosomes.txt.gz'))
-	peaks = Channel.of(file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.peaks.txt.autosomes.txt.gz'))
-	indivs_order = file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt')
-	new_meta = file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/reordered_meta.txt')
-	
-	matrices = normalize_matrix(signal, peaks)
-	signal_np = matrices.signal_numpy
-	sf = get_scale_factors(signal_np, matrices.normed_matrix)
-	out = deseq2(signal_np, sf, indivs_order, new_meta)
+	bams_hotspots = Channel.fromPath(params.samples_file)
+		| splitCsv(header:true, sep:'\t')
+		| map(row -> tuple(row.uniq_id, file(row.bam_file), file(row.hotspots_file)))
+
+	count_matrices = bams_hotspots
+		| count_tags
+		| toList()
+		| transpose()
+		| toList()
+		| generate_count_matrix
 }

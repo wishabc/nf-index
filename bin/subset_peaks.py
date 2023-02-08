@@ -28,11 +28,13 @@ def main(params, normalized_matrix):
     gini_index = gini - smoothed_gini_final
 
     num_peaks = params['num_peaks']
+    new_mask = gini_index > gini_index[np.argsort(gini_index)[::-1][num_peaks]]
     np.save(out_path,
         normalized_matrix[
-            (gini_index > gini_index[np.argsort(gini_index)[::-1][num_peaks]]), :
+            (new_mask), :
         ]
     )
+    return new_mask
 
 
 if __name__ == '__main__':
@@ -44,5 +46,8 @@ if __name__ == '__main__':
     out_path = sys.argv[4]
     assert normalized_matrix.shape[0] == singletons_mask.shape[0]
     normalized_matrix = normalized_matrix[singletons_mask, :]
-    main(params, normalized_matrix)
+    new_mask = main(params, normalized_matrix)
+
+    singletons_mask[singletons_mask][~new_mask] = False
+    np.savetxt(singletons_mask, fmt="%5i")
     
