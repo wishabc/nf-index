@@ -6,12 +6,10 @@ channels:
 dependencies:
   - matplotlib
   - pandas
-  - dask
   - scikit-learn
   - umap-learn
   - seaborn
   - tmux
-  - dask-ml
   - datatables
   - python=3.9
   - datatable
