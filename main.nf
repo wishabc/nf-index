@@ -106,12 +106,17 @@ process normalize_matrix {
 	conda params.conda
 	label "bigmem"
 	publishDir "${params.outdir}/norm", pattern: "${prefix}.normed.npy"
+	publishDir "${params.outdir}/norm", pattern: "${prefix}.params.npz"
+	publishDir "${params.outdir}/norm", pattern: "${prefix}.scale_factors.npy"
 
 	input:
 		tuple path(signal_matrix), path(peaks_matrix)
 
 	output:
-		tuple path(signal_matrix), path("${prefix}.normed.npy")
+		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
+		path "${prefix}.normed.npy", emit: normed_matrix
+		path "${prefix}.params.npz", emit: model_params
+		
 
 	script:
 	prefix = 'normalized'
@@ -140,28 +145,6 @@ process reorder_meta {
 	"""
 	tr '\t' '\n' < ${indivs_order} > indivs_order_col.txt
 	awk -F'\t' 'FNR == NR { lineno[\$1] = NR; next} {print lineno[\$1], \$0;}' indivs_order_col.txt ${params.samples_file} | sort -k 1,1n | cut -d' ' -f2- > ${name}
-	"""
-}
-
-
-process get_scale_factors {
-	conda params.conda
-	publishDir "${params.outdir}/norm", pattern: "${name}"
-	label "bigmem"
-
-	input:
-		tuple path(signal_matrix), path(normed_matrix)
-
-	output:
-		tuple path(signal_matrix), path(name)
-
-	script:
-	name = "scale_factors.npy"
-	"""
-	python3 $moduleDir/bin/get_scale_factors.py \
-	  ${signal_matrix} \
-	  ${normed_matrix} \
-	  ${name}
 	"""
 }
 
@@ -214,9 +197,8 @@ workflow normalizeMatrix {
 		matrices
 		indivs_order
 	main:
-		norm_mat = normalize_matrix(matrices)
+		sf = normalize_matrix(matrices).scale_factors
 		new_meta = reorder_meta(indivs_order)
-		sf = get_scale_factors(norm_mat)
 		out = deseq2(sf, indivs_order, new_meta)
 	emit:
 		out

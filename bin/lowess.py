@@ -311,10 +311,10 @@ class DataNormalize:
         arrays = np.load(model_params)
         for key, value in zip(arrays['param_keys'], arrays['param_values']):
             setattr(self, key, value)
-        return arrays['xvalues'], arrays['sampled_mask']
+        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf']
         
     
-    def save_params(self, save_path, xvals, sampled_mask):
+    def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf):
         if os.path.exists(save_path):
             logger.warning(f'File {save_path} exists, model params were not saved')
             return
@@ -325,6 +325,7 @@ class DataNormalize:
             sampled_mask=sampled_mask,
             param_keys=np.array(param_keys),
             param_values=np.array(param_values),
+            deseq2_mean_sf=deseq2_mean_sf
         )
         
 
@@ -357,6 +358,23 @@ def make_out_path(outdir, prefix, matrix_type='signal', mode='npz'):
         return basename + '.txt'
     else:
         raise ValueError(f'Mode {mode} not in (npz, numpy, txt)')
+
+
+def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calculated_mean):
+    logger.info('Calculating scale factors...')
+    sf = raw_tags / as_normed_matrix
+    i = (raw_tags == 0) | (as_normed_matrix == 0)
+    sf[i] = 1
+
+    sf[np.isnan(sf)] = 1
+    sf[~np.isfinite(sf)] = 1
+    if calculated_mean != None:
+        sf_geomean = calculated_mean
+    else:
+        sf_geomean = np.exp(np.mean(np.log(sf), axis=1))
+    as_scale_factors = (sf.T / sf_geomean).T
+    np.save(scale_factor_path, as_scale_factors)
+    return sf_geomean
 
 
 if __name__ == '__main__':
@@ -417,20 +435,18 @@ if __name__ == '__main__':
             xvalues=xvals,
             sampled_peaks_mask=sampled_mask,
             cv_number=5)
+        deseq2_mean_sf = None
     else:
         del density_matrix
         del peaks_matrix
         gc.collect()
 
-        xvals, sampled_mask = data_norm.load_params(model_params)
+        xvals, sampled_mask, deseq2_mean_sf = data_norm.load_params(model_params)
         differences = (mat_and_pseudo.T - xvals).T
 
     lowess_norm = data_norm.lowess_normalize(diffs=differences,
         xvalues=xvals, sampled_peaks_mask=sampled_mask)
-    
-    data_norm.save_params(model_save_params_path, xvals, sampled_mask)
-    del xvals
-    del sampled_mask
+
     del differences
     gc.collect()
     np.save(lowess_outpath, lowess_norm)
@@ -444,6 +460,15 @@ if __name__ == '__main__':
     del lowess_norm
     gc.collect()
     
-    logger.info('Saving results')
+    logger.info('Saving normed matrix')
     np.save(make_out_path(p_args.output, p_args.prefix, 'normed', 'numpy'), normed)
     np.savetxt(make_out_path(p_args.output, p_args.prefix, 'normed', 'txt'), normed, delimiter='\t', fmt="%0.4f")
+    logger.info('Reading raw tags...')
+    counts_matrix = check_and_open_matrix_file(p_args.signal_matrix, sign_outpath)
+
+    deseq2_mean_sf = get_deseq2_scale_factors(counts_matrix,
+        normed,
+        make_out_path(p_args.output, p_args.prefix, 'scale_factors', 'numpy'),
+        deseq2_mean_sf
+    )
+    data_norm.save_params(model_save_params_path, xvals, sampled_mask, deseq2_mean_sf)
