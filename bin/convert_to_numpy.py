@@ -3,10 +3,10 @@
 import sys
 from scipy.sparse import coo_matrix, csr_matrix, save_npz
 import logging
-import datatable as dt
+#import datatable as dt
 import argparse
 import numpy as np
-
+datatable = {}
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
 logger.setLevel('INFO')
@@ -15,7 +15,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-def read_matrix(input_file, dtype):
+def read_matrix(input_file, dtype=int):
     # Make sure to say there is NO header in this file. Otherwise will be off by 1
     df = dt.fread(input_file, header=False)
     logger.info('Converting to numpy array')

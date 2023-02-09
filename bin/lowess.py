@@ -1,17 +1,15 @@
 import os
-
 import numpy as np
 from numpy import ma
 from scipy.stats import expon, spearmanr
 from statsmodels.nonparametric import smoothers_lowess
-from convert_sparse import convert_to_sparse
-import datatable as dt
+from convert_to_numpy import read_matrix
 import multiprocessing as mp
 import logging
 import sys
 import argparse
-
 import gc
+
 
 handler = logging.StreamHandler(sys.stdout)
 logger = logging.getLogger(__name__)
@@ -32,10 +30,11 @@ class DataNormalize:
                  seed_number=1832245,
                  sample_number=75_000,
                  bin_number=100,
+                 sample_method='raw',
                  jobs=1,
                  ):
-        self.seed = np.random.RandomState(seed_number)
-
+        self.seed_number = seed_number
+        self.seed = np.random.RandomState(self.seed_number)
         self.sample_number = sample_number
         self.bin_number = bin_number
         self.peak_outlier_threshold = peak_outlier_threshold
@@ -44,8 +43,10 @@ class DataNormalize:
         self.cv_fraction = cv_fraction
         self.scale_factor = None
         self.delta = None
+        self.sample_method = sample_method
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
-
+        
+    
     def outlier_limit(self, x):
         """
         """
@@ -250,88 +251,112 @@ class DataNormalize:
             return result if axis == 0 else result.T
         else:
             return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
-
-    def sample_peaks(self, density_mat: np.ndarray, peaks_mat: np.ndarray, sample_method='raw'):
-        """
-        Select well-correlated peaks and sample a subset
-        """
-        N, S = density_mat.shape
-        assert density_mat.shape == peaks_mat.shape
-        logger.info(f'Normalizing matrix with shape: {N:,};{S}')
-        num_samples_per_peak = self.get_num_samples_per_peak(peaks_mat)
-
+    
+    def preprocess_peaks(self, density_mat, pseudocounts):
         logger.info('Computing mean and pseudocounts for each peak')
-        pseudocounts = self.get_pseudocounts(density_mat)
+        
         mean_density = density_mat.mean(axis=1)
         mean_pseudocount = pseudocounts.mean()
         xvalues = np.log(mean_density + mean_pseudocount)
-        mat_and_pseudo = np.log(density_mat + pseudocounts)
-        diffs = (mat_and_pseudo.T - xvalues).T
+        return xvalues
 
+    def sample_peaks(self, density_mat: np.ndarray, mean_density: np.ndarray, peaks_mat: np.ndarray):
+        """
+        Select well-correlated peaks and sample a subset
+        """
+        num_samples_per_peak = self.get_num_samples_per_peak(peaks_mat)
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
+        
         decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat,
                                                  correlation_limit=self.correlation_limit)
         sampled_peaks_mask = self.select_peaks_uniform(mean_density, decent_peaks_mask,
-                                                       sample_method=sample_method)
+                                                       sample_method=self.sample_method)
         logger.info(
-            f'Found {decent_peaks_mask.sum():,} well-correlated peaks, using method "{sample_method}"'
+            f'Found {decent_peaks_mask.sum():,} well-correlated peaks, using method "{self.sample_method}"'
             f' and sampled {sampled_peaks_mask.sum():,} peaks')
 
         self.delta = np.percentile(mean_density, 99) * self.delta_fraction
 
-        return xvalues, sampled_peaks_mask, diffs
+        return sampled_peaks_mask
 
-    def lowess_normalize(self, diffs: np.ndarray, xvalues: np.ndarray, sampled_peaks_mask: np.ndarray,
-                         cv_number: int = 5):
+    def fit_lowess_params(self, diffs: np.ndarray, xvalues: np.ndarray,
+        sampled_peaks_mask: np.ndarray, cv_number: int = 5):
+        _, S = diffs.shape
+        logger.info('Computing LOWESS smoothing parameter via cross-validation')
+        cv_set = self.seed.choice(S, size=min(cv_number, S), replace=False)
+
+        cv_fraction = np.mean(self.parallel_apply_2D(self.choose_fraction_cv, axis=0,
+                                                     arr=diffs[:, cv_set], x=xvalues,
+                                                     sampled=sampled_peaks_mask, delta=self.delta))
+        self.cv_fraction = cv_fraction
+
+    def lowess_normalize(self, diffs: np.ndarray, xvalues: np.ndarray,
+        sampled_peaks_mask: np.ndarray):
         """
         Normalizes to the mean of of the dataset
         Uses only well-correlated peaks to perform normalization
         """
-        N, S = diffs.shape
-        logger.info('Computing LOWESS smoothing parameter via cross-validation')
 
-        cv_set = self.seed.choice(S, size=min(cv_number, S), replace=False)
-        cv_fraction = np.mean(self.parallel_apply_2D(self.choose_fraction_cv, axis=0,
-                                                     arr=diffs[:, cv_set], x=xvalues,
-                                                     sampled=sampled_peaks_mask, delta=self.delta))
-        logger.info(f'Computing LOWESS on all the data with params - delta = {self.delta}, frac = {cv_fraction}')
+        logger.info(f'Computing LOWESS on all the data with params - delta = {self.delta}, frac = {self.cv_fraction}')
 
         norm = self.parallel_apply_2D(self.fit_and_extrapolate, axis=0,
                                       arr=diffs, x=xvalues, sampled=sampled_peaks_mask,
-                                      delta=self.delta, frac=cv_fraction)
+                                      delta=self.delta, frac=self.cv_fraction)
 
         logger.info('Normalizing finished')
         return np.exp(norm)
 
+    def load_params(self, model_params):
+        # unpack params from npz array
+        arrays = np.load(model_params)
+        for key, value in zip(arrays['param_keys'], arrays['param_values']):
+            setattr(self, key, value)
+        return arrays['xvalues'], arrays['sampled_mask']
+        
+    
+    def save_params(self, save_path, xvals, sampled_mask):
+        if os.path.exists(save_path):
+            logger.warning(f'File {save_path} exists, model params were not saved')
+            return
+        
+        param_keys, param_values = zip(*[(x,y) for x,y in self.__dict__.items() if x != 'seed'])
+        np.savez(save_path,
+            xvalues=xvals,
+            sampled_mask=sampled_mask,
+            param_keys=np.array(param_keys),
+            param_values=np.array(param_values),
+        )
+        
+
     @staticmethod
-    def get_scale_factor(matrix):
+    def get_scale_factors(matrix):
         return np.divide(1., (matrix.sum(axis=0) * 2 / 1.e5), dtype=dtype)
 
 
 def check_and_open_matrix_file(path, outpath):
     if not os.path.exists(path):
         raise ValueError(f'{path} do not exist')
-    base_path, ext = os.path.splitext(path)
+    _, ext = os.path.splitext(path)
     if ext == '.npy':
         return np.load(path)
     else:
-        np_arr = dt.fread(path, sep='\t', header=False).to_numpy()
+        np_arr = read_matrix(path)
         if np.ma.isMA(np_arr):
             np_arr = np_arr.filled(0)
         np.save(outpath, np_arr)
         return np_arr
 
 
-def make_out_path(outdir, prefix, matrix_type='signal', mode='sparse'):
+def make_out_path(outdir, prefix, matrix_type='signal', mode='npz'):
     basename = os.path.join(outdir, f'{prefix}.{matrix_type}')
-    if mode == 'sparse':
+    if mode == 'npz':
         return basename + '.npz'
     elif mode == 'numpy':
         return basename + '.npy'
     elif mode == 'txt':
         return basename + '.txt'
     else:
-        raise ValueError(f'Mode {mode} not in (sparse, numpy, txt)')
+        raise ValueError(f'Mode {mode} not in (npz, numpy, txt)')
 
 
 if __name__ == '__main__':
@@ -343,51 +368,82 @@ if __name__ == '__main__':
     parser.add_argument('--jobs', type=int,
                         help='Number of jobs to parallelize calculations '
                              '(can\'t be larger than number of samples. If 0 is provided - uses all available cores')
+    parser.add_argument('--model_params', help='File with lowess params', default=None)
     p_args = parser.parse_args()
+
+    model_params = p_args.model_params
+
     if not os.path.exists(p_args.output):
         os.mkdir(p_args.output)
     sign_outpath = make_out_path(p_args.output, p_args.prefix, 'signal', 'numpy')
     peaks_outpath = make_out_path(p_args.output, p_args.prefix, 'bin', 'numpy')
     dens_outpath = make_out_path(p_args.output, p_args.prefix, 'density', 'numpy')
     lowess_outpath = make_out_path(p_args.output, p_args.prefix, 'lowess', 'numpy')
+    
+    model_save_params_path = make_out_path(p_args.output, p_args.prefix, 'params', 'npz')
 
     logger.info('Reading matrices')
     counts_matrix = check_and_open_matrix_file(p_args.signal_matrix, sign_outpath)
     peaks_matrix = check_and_open_matrix_file(p_args.peak_matrix, peaks_outpath)
+    
+    N, S = counts_matrix.shape
+    assert counts_matrix.shape == peaks_matrix.shape
+    logger.info(f'Normalizing matrix with shape: {N:,};{S}')
+
     data_norm = DataNormalize(jobs=p_args.jobs)
-    scale_factors = data_norm.get_scale_factor(counts_matrix)
+    scale_factors = data_norm.get_scale_factors(counts_matrix)
     density_matrix = counts_matrix * scale_factors
-
-    np.save(dens_outpath, density_matrix)
-
+    pseudocounts = data_norm.get_pseudocounts(density_matrix)
+    
+    mean_scale_factors = scale_factors.mean()
+    mat_and_pseudo = np.log(density_matrix + pseudocounts)
+    del scale_factors
     del counts_matrix
-    gc.collect()
 
-    xvals, sampled_mask, differences = data_norm.sample_peaks(density_mat=density_matrix,
-                                                              peaks_mat=peaks_matrix)
+    if model_params is None:
+        xvals = data_norm.preprocess_peaks(density_matrix)
+        sampled_mask = data_norm.sample_peaks(
+            density_mat=density_matrix,
+            peaks_mat=peaks_matrix)
+        
+        differences = (mat_and_pseudo.T - xvals).T
+        np.save(dens_outpath, density_matrix)
+        
+        del density_matrix
+        del peaks_matrix
+        gc.collect()
 
-    del density_matrix
-    del peaks_matrix
-    gc.collect()
+        data_norm.fit_lowess_params(diffs=differences,
+            xvalues=xvals,
+            sampled_peaks_mask=sampled_mask,
+            cv_number=5)
+    else:
+        del density_matrix
+        del peaks_matrix
+        gc.collect()
 
-    lowess_norm = data_norm.lowess_normalize(diffs=differences, xvalues=xvals, sampled_peaks_mask=sampled_mask)
-    np.save(lowess_outpath, lowess_norm)
+        xvals, sampled_mask = data_norm.load_params(model_params)
+        differences = (mat_and_pseudo.T - xvals).T
 
+    lowess_norm = data_norm.lowess_normalize(diffs=differences,
+        xvalues=xvals, sampled_peaks_mask=sampled_mask)
+    
+    data_norm.save_params(model_save_params_path, xvals, sampled_mask)
     del xvals
     del sampled_mask
     del differences
     gc.collect()
+    np.save(lowess_outpath, lowess_norm)
 
     logger.info('Reconstructing normed matrix')
     density_matrix = np.load(dens_outpath)
     normed = density_matrix / lowess_norm
-    normed = normed / scale_factors.mean()
+    normed = normed / mean_scale_factors
 
     del density_matrix
     del lowess_norm
     gc.collect()
-
+    
     logger.info('Saving results')
     np.save(make_out_path(p_args.output, p_args.prefix, 'normed', 'numpy'), normed)
     np.savetxt(make_out_path(p_args.output, p_args.prefix, 'normed', 'txt'), normed, delimiter='\t', fmt="%0.4f")
-    convert_to_sparse(normed, make_out_path(p_args.output, p_args.prefix, 'normed', 'sparse'))
