@@ -244,5 +244,5 @@ workflow test {
 	)
 	
 	mask = filter_index().mask
-	out = apply_filter_to_matrix(count_matrices.matrices, mask)
+	out = apply_filter_to_matrix(mats, mask)
 }
