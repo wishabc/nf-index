@@ -259,7 +259,7 @@ class DataNormalize:
         xvalues = np.log(mean_density + mean_pseudocount)
         return mean_density, xvalues
 
-    def sample_peaks(self, density_mat: np.ndarray, peaks_mat: np.ndarray):
+    def sample_peaks(self, density_mat: np.ndarray, mean_density: np.ndarray, peaks_mat: np.ndarray):
         """
         Select well-correlated peaks and sample a subset
         """
