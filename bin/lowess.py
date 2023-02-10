@@ -218,7 +218,8 @@ class DataNormalize:
         for ind, i in enumerate(thresholds):
             over = num_samples_per_peak >= i
             logger.info(over)
-            logger.info(correlations)
+            logger.info(i)
+            logger.info(ref_peaks[over])
             correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
                                                arr=density_mat[over, :])
             print(correlations)
