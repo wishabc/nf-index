@@ -45,7 +45,7 @@ process generate_count_matrix {
 
 process filter_index {
 	publishDir "${params.outdir}"
-	scratch true
+	//scratch true
 	conda params.conda
 
 	output:
