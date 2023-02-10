@@ -45,7 +45,7 @@ process generate_count_matrix {
 
 process filter_index {
 	publishDir "${params.outdir}"
-	//scratch true
+	scratch true
 	conda params.conda
 
 	output:
@@ -63,7 +63,7 @@ process filter_index {
 	python3 $moduleDir/bin/filter_index.py \
         ${params.index_file} \
         blacklisted_mask.txt \
-        ${filtered_mask}
+        ${filtered_mask} \
 		${filtered_index}
 	"""
 }
