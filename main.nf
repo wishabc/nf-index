@@ -85,19 +85,19 @@ process apply_filter_to_matrix {
 	peaks_filt_matrix = "binary.filtered.matrix.npy"
 	"""
 	(
-		trap 'kill 0' SIGINT; \
-		
-		python3 $moduleDir/bin/convert_to_numpy.py \
-			${signal_matrix} \
-			${signal_filt_matrix} \
-			--mask ${filtered_mask} & \
-		
-		python3 $moduleDir/bin/convert_to_numpy.py \
-			${peaks_matrix} \
-			${peaks_filt_matrix} \
-			--mask ${filtered_mask} & \
-		
-		wait \
+	trap 'kill 0' SIGINT; \
+	
+	python3 $moduleDir/bin/convert_to_numpy.py \
+		${signal_matrix} \
+		${signal_filt_matrix} \
+		--mask ${filtered_mask} & \
+	
+	python3 $moduleDir/bin/convert_to_numpy.py \
+		${peaks_matrix} \
+		${peaks_filt_matrix} \
+		--mask ${filtered_mask} & \
+	
+	wait \
 	)
 	"""
 }
@@ -226,8 +226,8 @@ workflow {
 // Debug code, defunc
 workflow test2 {
 	mats = Channel.of(tuple(
-		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.signal.txt.gz'),
-		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.peaks.txt.gz')
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/matrix.all.signal.txt.gz'),
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/matrix.all.peaks.txt.gz')
 		)
 	)
 	indivs_order = Channel.of('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt')
