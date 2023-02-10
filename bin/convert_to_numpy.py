@@ -3,9 +3,11 @@
 import sys
 from scipy.sparse import coo_matrix, csr_matrix, save_npz
 import logging
-#import datatable as dt
+import datatable as dt
 import argparse
 import numpy as np
+
+
 datatable = {}
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler(sys.stdout)
