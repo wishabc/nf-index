@@ -44,10 +44,10 @@ if __name__ == '__main__':
     logger.info('Starting processing')
     matrix_dense = read_matrix(input_path, dtype=int)
     logger.info(f'Matrix size: {matrix_dense.shape}. '
-                f'Density: {matrix_dense.sum() / matrix_dense.size}'
+                f'Density: {(matrix_dense != 0).size / matrix_dense.size}'
                 )
     if args.mask is not None:
-        mask = np.loadtxt(args.mask)
+        mask = np.loadtxt(args.mask, dtype=bool)
         assert mask.shape[0] == matrix_dense.shape[1]
         matrix_dense = matrix_dense[:, mask]
     np.save(args.outpath, matrix_dense)

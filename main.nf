@@ -240,11 +240,5 @@ workflow test {
 	bams_hotspots = Channel.fromPath(params.samples_file)
 		| splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.uniq_id, file(row.bam_file), file("${row.bam_file}.crai"), file(row.hotspots_file)))
-
-	count_matrices = bams_hotspots
-		| count_tags
-		| toList()
-		| transpose()
-		| toList()
-		| generate_count_matrix
+		| generateMatrix
 }
