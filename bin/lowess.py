@@ -254,19 +254,17 @@ class DataNormalize:
     
     def get_xcounts(self, density_mat, pseudocounts):
         logger.info('Computing mean and pseudocounts for each peak')
-        
         mean_density = density_mat.mean(axis=1)
         mean_pseudocount = pseudocounts.mean()
         xvalues = np.log(mean_density + mean_pseudocount)
-        return xvalues
+        return mean_density, xvalues
 
-    def sample_peaks(self, density_mat: np.ndarray, mean_density: np.ndarray, peaks_mat: np.ndarray):
+    def sample_peaks(self, density_mat: np.ndarray, peaks_mat: np.ndarray):
         """
         Select well-correlated peaks and sample a subset
         """
         num_samples_per_peak = self.get_num_samples_per_peak(peaks_mat)
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
-        
         decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat,
                                                  correlation_limit=self.correlation_limit)
         sampled_peaks_mask = self.select_peaks_uniform(mean_density, decent_peaks_mask,
@@ -419,9 +417,10 @@ if __name__ == '__main__':
     del counts_matrix
 
     if model_params is None:
-        xvals = data_norm.get_xcounts(density_mat=density_matrix, pseudocounts=pseudocounts)
+        mean_density, xvals = data_norm.get_xcounts(density_mat=density_matrix, pseudocounts=pseudocounts)
         sampled_mask = data_norm.sample_peaks(
             density_mat=density_matrix,
+            mean_density=mean_density,
             peaks_mat=peaks_matrix)
         
         differences = (mat_and_pseudo.T - xvals).T
