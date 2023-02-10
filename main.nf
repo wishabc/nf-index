@@ -187,7 +187,7 @@ workflow generateMatrix {
 			| generate_count_matrix
 
 		mask = filter_index().mask
-		out = apply_filter_to_matrix(count_matrices, mask)
+		out = apply_filter_to_matrix(count_matrices.matrices, mask)
 	emit:
 		out
 		count_matrices.indivs
