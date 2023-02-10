@@ -15,7 +15,7 @@ def main(index, mask):
     index['avg_score'] = index.eval('score / n_samples')
     cutoff = index[total_mask]['avg_score'].quantile(0.05)
     print(f'Cutoff = {cutoff}')
-    return (index['avg_score'] >= cutoff) * total_mask
+    return (index['avg_score'] >= cutoff) & total_mask
 
 
 if __name__ == '__main__':
