@@ -70,7 +70,7 @@ class DataNormalize:
         p = ~arr.mask
         return self.seed.choice(np.arange(arr.size)[p], size=int(size), replace=False)
 
-    def select_peaks_uniform(self, peaks, decent_peaks_mask, ignore=None, sample_method='raw'):
+    def select_peaks_uniform(self, peaks, decent_peaks_mask, ignore=None):
         """
         Returns row indices of selected peaks
         """
@@ -82,12 +82,12 @@ class DataNormalize:
         masked_peaks = ma.masked_array(peaks, ~peaks_mask)
         k = min(self.sample_number, masked_peaks.count())
 
-        if sample_method == 'random':
+        if self.sample_method == 'random':
             result_indices = self.sample_masked_array(masked_peaks, k)
         else:
-            if sample_method == 'log':
+            if self.sample_method == 'log':
                 vls = np.log(masked_peaks + 1)
-            elif sample_method == 'raw':
+            elif self.sample_method == 'raw':
                 max_value = self.outlier_limit(masked_peaks)
                 new_mask = ~masked_peaks.mask & (masked_peaks < max_value)
                 vls = ma.masked_where(~new_mask, masked_peaks)
@@ -272,10 +272,8 @@ class DataNormalize:
         """
         num_samples_per_peak = self.get_num_samples_per_peak(peaks_mat)
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
-        decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat,
-                                                 correlation_limit=self.correlation_limit)
-        sampled_peaks_mask = self.select_peaks_uniform(mean_density, decent_peaks_mask,
-                                                       sample_method=self.sample_method)
+        decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat)
+        sampled_peaks_mask = self.select_peaks_uniform(mean_density, decent_peaks_mask)
         logger.info(
             f'Found {decent_peaks_mask.sum():,} well-correlated peaks, using method "{self.sample_method}"'
             f' and sampled {sampled_peaks_mask.sum():,} peaks')
