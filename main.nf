@@ -71,6 +71,7 @@ process filter_index {
 process apply_filter_to_matrix {
 	publishDir "${params.outdir}"
 	label "bigmem"
+	conda params.conda
 
 	input:
 		tuple path(signal_matrix), path(peaks_matrix)
