@@ -30,13 +30,13 @@ class DataNormalize:
                  seed_number=1832245,
                  sample_number=75_000,
                  bin_number=100,
-                 mean_peak_replication=0.25,
+                 min_peak_replication=0.25,
                  sample_method='raw',
                  cv_number=5,
                  jobs=1,
                  ):
         self.cv_number = cv_number
-        self.mean_peak_replication = mean_peak_replication
+        self.min_peak_replication = min_peak_replication
         self.seed_number = seed_number
         self.sample_number = sample_number
         self.bin_number = bin_number
