@@ -252,7 +252,7 @@ class DataNormalize:
         else:
             return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
     
-    def preprocess_peaks(self, density_mat, pseudocounts):
+    def get_xcounts(self, density_mat, pseudocounts):
         logger.info('Computing mean and pseudocounts for each peak')
         
         mean_density = density_mat.mean(axis=1)
@@ -419,7 +419,7 @@ if __name__ == '__main__':
     del counts_matrix
 
     if model_params is None:
-        xvals = data_norm.preprocess_peaks(density_matrix)
+        xvals = data_norm.get_xcounts(density_mat=density_matrix, pseudocounts=pseudocounts)
         sampled_mask = data_norm.sample_peaks(
             density_mat=density_matrix,
             peaks_mat=peaks_matrix)
