@@ -10,12 +10,12 @@ autosomes = [f'chr{x}' for x in range(1, 23)]
 
 
 def main(index, mask):
-    autosomes_index = index['chr'].isin(autosomes)
-    ind = index[autosomes_index]
-    ind['avg_score'] = ind.eval('score / n_samples')
-    cutoff = ind[mask]['avg_score'].quantile(0.05)
+    autosomes_mask = index['chr'].isin(autosomes)
+    total_mask = autosomes_mask & mask
+    index[total_mask]['avg_score'] = index[total_mask].eval('score / n_samples')
+    cutoff = index[total_mask]['avg_score'].quantile(0.05)
     print(f'Cutoff = {cutoff}')
-    return (index['avg_score'] >= cutoff) * mask * autosomes_index
+    return (index['avg_score'] >= cutoff) * total_mask
 
 
 if __name__ == '__main__':
