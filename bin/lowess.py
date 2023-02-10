@@ -211,14 +211,14 @@ class DataNormalize:
         --------
         Indices for selected subset of peaks
         """
-
         n = np.max(num_samples_per_peak)
         thresholds = np.floor(self.min_peak_replication * density_mat.shape[1])
-
+        np.save('thresholds.npy', thresholds)
+        np.save('num_samples_per_peak.npy', num_samples_per_peak)
+        np.save('density_mat.npy', density_mat)
+        np.save('ref_peaks.npy', ref_peaks)
         for ind, i in enumerate(thresholds):
             over = num_samples_per_peak >= i
-            logger.info(over)
-            logger.info(i)
             logger.info(ref_peaks[over])
             correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
                                                arr=density_mat[over, :])
