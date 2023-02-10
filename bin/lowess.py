@@ -219,11 +219,11 @@ class DataNormalize:
         thresholds = np.floor(perc[i] * density_mat.shape[1])
 
         for ind, i in enumerate(thresholds):
-            logger.info(f'Selecting threshold, iteration #{ind}')
             over = num_samples_per_peak >= i
             correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
                                                arr=density_mat[over, :])
             avg_cor = np.mean(correlations)
+            logger.info(f'Selecting threshold, iteration #{ind}. Correlation {avg_cor}')
             if avg_cor > self.correlation_limit:
                 break
 
@@ -318,7 +318,6 @@ class DataNormalize:
         self.set_randomizer()
         return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf']
         
-    
     def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf):
         if os.path.exists(save_path):
             logger.warning(f'File {save_path} exists, model params were not saved')
@@ -332,7 +331,6 @@ class DataNormalize:
             param_values=np.array(param_values),
             deseq2_mean_sf=deseq2_mean_sf
         )
-        
 
     @staticmethod
     def get_scale_factors(matrix):
