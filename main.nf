@@ -150,7 +150,8 @@ process reorder_meta {
 
 process deseq2 {
 	conda params.conda
-	publishDir "${params.outdir}"
+	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
+	publishDir "${params.outdir}/vst_params", pattern: "${prefix}*.RDS"
 	label "bigmem"
 
 	input:
