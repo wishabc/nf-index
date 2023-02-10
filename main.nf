@@ -222,9 +222,19 @@ workflow {
 	generateAndNormalize(bams_hotspots)
 }
 
-
-
 // Debug code, defunc
+workflow test2 {
+	mats = Channel.of(tuple(
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.signal.txt.gz'),
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/matrix.all.peaks.txt.gz')
+		)
+	)
+	indivs_order = Channel.of('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt')
+	mask = filter_index().mask
+	out = apply_filter_to_matrix(mats, mask)
+	normalizeMatrix(out, indivs_order)
+}
+
 workflow test {
 	bams_hotspots = Channel.fromPath(params.samples_file)
 		| splitCsv(header:true, sep:'\t')
