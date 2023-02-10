@@ -201,9 +201,9 @@ class DataNormalize:
         """
         return np.nanmin(ma.masked_where(matrix <= 0.0, matrix), axis=0)
 
-    @staticmethod
+
     def get_peak_subset(self, ref_peaks, num_samples_per_peak: np.ndarray,
-                        density_mat) -> np.ndarray:
+                        density_mat: np.ndarray) -> np.ndarray:
         """
         Select a subset of peaks well correlated to a reference (mean or geometric mean)
 
