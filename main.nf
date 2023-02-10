@@ -237,17 +237,12 @@ workflow test2 {
 }
 
 workflow test {
-	bams_hotspots = Channel.fromPath(params.samples_file)
-		| splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.uniq_id, file(row.bam_file), file("${row.bam_file}.crai"), file(row.hotspots_file)))
+	mats = Channel.of(tuple(
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/raw_matrices/matrix.all.signal.txt.gz'),
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/raw_matrices/matrix.all.peaks.txt.gz')
+		)
+	)
 	
-	count_matrices = bams_hotspots
-			| count_tags
-			| toList()
-			| transpose()
-			| toList()
-			| generate_count_matrix
-
-		mask = filter_index().mask
-		out = apply_filter_to_matrix(count_matrices.matrices, mask)
+	mask = filter_index().mask
+	out = apply_filter_to_matrix(count_matrices.matrices, mask)
 }
