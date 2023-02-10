@@ -30,11 +30,14 @@ class DataNormalize:
                  seed_number=1832245,
                  sample_number=75_000,
                  bin_number=100,
+                 mean_peak_replication=0.25,
                  sample_method='raw',
+                 cv_number=5,
                  jobs=1,
                  ):
+        self.cv_number = cv_number
+        self.mean_peak_replication = mean_peak_replication
         self.seed_number = seed_number
-        self.seed = np.random.RandomState(self.seed_number)
         self.sample_number = sample_number
         self.bin_number = bin_number
         self.peak_outlier_threshold = peak_outlier_threshold
@@ -45,7 +48,11 @@ class DataNormalize:
         self.delta = None
         self.sample_method = sample_method
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
-        
+        self.set_randomizer()
+    
+
+    def set_randomizer(self):
+        self.seed = np.random.RandomState(self.seed_number)
     
     def outlier_limit(self, x):
         """
@@ -195,8 +202,8 @@ class DataNormalize:
         return np.nanmin(ma.masked_where(matrix <= 0.0, matrix), axis=0)
 
     @staticmethod
-    def get_peak_subset(ref_peaks, num_samples_per_peak: np.ndarray, density_mat, correlation_limit,
-                        min_peak_replication=0.25) -> np.ndarray:
+    def get_peak_subset(self, ref_peaks, num_samples_per_peak: np.ndarray,
+                        density_mat) -> np.ndarray:
         """
         Select a subset of peaks well correlated to a reference (mean or geometric mean)
 
@@ -208,16 +215,16 @@ class DataNormalize:
         n = np.max(num_samples_per_peak)
 
         perc = np.linspace(0, 1, 21)[:-1]
-        i = np.where(perc >= min_peak_replication)[0]
+        i = np.where(perc >= self.min_peak_replication)[0]
         thresholds = np.floor(perc[i] * density_mat.shape[1])
 
-        for i in thresholds:
-            logger.info(f'Selecting threshold, iteration #{i}')
+        for ind, i in enumerate(thresholds):
+            logger.info(f'Selecting threshold, iteration #{ind}')
             over = num_samples_per_peak >= i
             correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
                                                arr=density_mat[over, :])
             avg_cor = np.mean(correlations)
-            if avg_cor > correlation_limit:
+            if avg_cor > self.correlation_limit:
                 break
 
         if i > n:
@@ -278,14 +285,15 @@ class DataNormalize:
         return sampled_peaks_mask
 
     def fit_lowess_params(self, diffs: np.ndarray, xvalues: np.ndarray,
-        sampled_peaks_mask: np.ndarray, cv_number: int = 5):
+        sampled_peaks_mask: np.ndarray):
         _, S = diffs.shape
         logger.info('Computing LOWESS smoothing parameter via cross-validation')
-        cv_set = self.seed.choice(S, size=min(cv_number, S), replace=False)
+        cv_set = self.seed.choice(S, size=min(self.cv_number, S), replace=False)
 
         cv_fraction = np.mean(self.parallel_apply_2D(self.choose_fraction_cv, axis=0,
                                                      arr=diffs[:, cv_set], x=xvalues,
-                                                     sampled=sampled_peaks_mask, delta=self.delta))
+                                                     sampled=sampled_peaks_mask,
+                                                     delta=self.delta))
         self.cv_fraction = cv_fraction
 
     def lowess_normalize(self, diffs: np.ndarray, xvalues: np.ndarray,
@@ -309,6 +317,7 @@ class DataNormalize:
         arrays = np.load(model_params)
         for key, value in zip(arrays['param_keys'], arrays['param_values']):
             setattr(self, key, value)
+        self.set_randomizer()
         return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf']
         
     
@@ -417,7 +426,11 @@ if __name__ == '__main__':
     del counts_matrix
 
     if model_params is None:
-        mean_density, xvals = data_norm.get_xcounts(density_mat=density_matrix, pseudocounts=pseudocounts)
+        mean_density, xvals = data_norm.get_xcounts(
+            density_mat=density_matrix,
+            pseudocounts=pseudocounts
+        )
+    
         sampled_mask = data_norm.sample_peaks(
             density_mat=density_matrix,
             mean_density=mean_density,
@@ -432,8 +445,7 @@ if __name__ == '__main__':
 
         data_norm.fit_lowess_params(diffs=differences,
             xvalues=xvals,
-            sampled_peaks_mask=sampled_mask,
-            cv_number=5)
+            sampled_peaks_mask=sampled_mask)
         deseq2_mean_sf = None
     else:
         del density_matrix
