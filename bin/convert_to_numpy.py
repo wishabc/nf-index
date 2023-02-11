@@ -21,7 +21,7 @@ def read_matrix(input_file, dtype=int):
     # Make sure to say there is NO header in this file. Otherwise will be off by 1
     df = dt.fread(input_file, header=False)
     logger.info('Converting to numpy array')
-    return df.to_numpy().astype(dtype).transpose()
+    return df.to_numpy().astype(dtype)
 
 
 def convert_to_sparse(matrix, outpath):
@@ -48,7 +48,7 @@ if __name__ == '__main__':
                 )
     if args.mask is not None:
         mask = np.loadtxt(args.mask, dtype=bool)
-        assert mask.shape[0] == matrix_dense.shape[1]
-        matrix_dense = matrix_dense[:, mask]
+        assert mask.shape[0] == matrix_dense.shape[0]
+        matrix_dense = matrix_dense[mask, :]
     np.save(args.outpath, matrix_dense)
     #convert_to_sparse(matrix_dense, out_path)
