@@ -466,7 +466,6 @@ if __name__ == '__main__':
     
     logger.info('Saving normed matrix')
     np.save(make_out_path(p_args.output, p_args.prefix, 'normed', 'numpy'), normed)
-    np.savetxt(make_out_path(p_args.output, p_args.prefix, 'normed', 'txt'), normed, delimiter='\t', fmt="%0.4f")
     logger.info('Reading raw tags...')
     counts_matrix = check_and_open_matrix_file(p_args.signal_matrix, sign_outpath)
 
