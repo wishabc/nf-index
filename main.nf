@@ -44,13 +44,15 @@ process generate_count_matrix {
 }
 
 process filter_index {
-	publishDir "${params.outdir}"
+	publishDir "${params.outdir}", pattern: "${filtered_index}"
+	publishDir "${params.outdir}/masks", pattern: "*_mask.txt"
 	scratch true
 	conda params.conda
 
 	output:
 		path filtered_mask, emit: mask
 		path filtered_index, emit: filtered_index
+		path 'blacklisted_mask.txt', emit: blacklist_mask
 		
 
 	script:
@@ -107,8 +109,9 @@ process normalize_matrix {
 	conda params.conda
 	label "bigmem"
 	publishDir "${params.outdir}/norm", pattern: "${prefix}.normed.npy"
-	publishDir "${params.outdir}/norm", pattern: "${prefix}.params.npz"
 	publishDir "${params.outdir}/norm", pattern: "${prefix}.scale_factors.npy"
+	publishDir "${params.outdir}/params", pattern: "${prefix}.params.npz"
+
 
 	input:
 		tuple path(signal_matrix), path(peaks_matrix)
@@ -133,8 +136,7 @@ process normalize_matrix {
 
 process reorder_meta {
 	conda params.conda
-	publishDir "${params.outdir}"
-
+	publishDir "${params.outdir}" // Not sure if needs to be published
 	input:
 		path indivs_order
 
@@ -152,7 +154,7 @@ process reorder_meta {
 process deseq2 {
 	conda params.conda
 	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
-	publishDir "${params.outdir}/vst_params", pattern: "${prefix}*.RDS"
+	publishDir "${params.outdir}/params", pattern: "${prefix}*.RDS"
 	label "bigmem"
 
 	input:
