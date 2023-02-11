@@ -212,7 +212,10 @@ class DataNormalize:
         Indices for selected subset of peaks
         """
         n = np.max(num_samples_per_peak)
-        thresholds = np.floor(self.min_peak_replication * density_mat.shape[1])
+        perc = np.linspace(0, 1, 21)[:-1]
+        i = np.where(perc >= self.min_peak_replication)[0]
+        thresholds = np.floor(perc[i] * density_mat.shape[1])
+        #thresholds = np.floor(self.min_peak_replication * density_mat.shape[1])
         np.save('thresholds.npy', thresholds)
         np.save('num_samples_per_peak.npy', num_samples_per_peak)
         np.save('density_mat.npy', density_mat)
