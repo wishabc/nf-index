@@ -215,17 +215,10 @@ class DataNormalize:
         perc = np.linspace(0, 1, 21)[:-1]
         i = np.where(perc >= self.min_peak_replication)[0]
         thresholds = np.floor(perc[i] * density_mat.shape[1])
-        #thresholds = np.floor(self.min_peak_replication * density_mat.shape[1])
-        np.save('thresholds.npy', thresholds)
-        np.save('num_samples_per_peak.npy', num_samples_per_peak)
-        np.save('density_mat.npy', density_mat)
-        np.save('ref_peaks.npy', ref_peaks)
         for ind, i in enumerate(thresholds):
             over = num_samples_per_peak >= i
-            logger.info(over)
             correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
                                                arr=density_mat[over, :])
-            print(correlations)
             avg_cor = np.mean(correlations)
             logger.info(f'Selecting threshold, iteration #{ind}. Correlation {avg_cor}')
             if avg_cor > self.correlation_limit:
