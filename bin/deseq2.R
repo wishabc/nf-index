@@ -17,7 +17,10 @@ np <- import("numpy")
 # 3) sample_names - sample names order, will be used as colnames for the matrices
 # 4) metadata_file - metadata, one row for each sample. 
 # Should be in the same order as sample_names
-# 5) params_file - (optional!) already calculated VST parameters (from previous run
+# 5) prefix - prefix of output filenames:
+# if normalization factors are provided - creates files <prefix>.sf.vst.params.RDS and <prefix>.sf.vst.npy
+# else creates files <prefix>.no_sf.vst.params.RDS and <prefix>.no_sf.vst.npy
+# 6) params_file - (optional!) already calculated VST parameters (from previous run
 # of this script). Normalize the data according to the provided model.
 
 args = commandArgs(trailingOnly=TRUE)
@@ -38,19 +41,22 @@ colnames(counts) <- sample_names
 
 metadata <- read_delim(args[4], delim = '\t', col_names=T)
 rownames(metadata) <- metadata$uniq_id
+prefix <- args[5]
 
-params_file = ifelse((length(args) < 5), NULL, args[5])
+params_file = ifelse((length(args) < 6), NULL, args[6])
 # Applying DESEQ with norm_factors
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
 if (is.null(norm_factors)) {
   normalizationFactors(dds) <- norm_factors
 }
+suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
+
 
 dds <- estimateSizeFactors(dds)
 if (is.null(params_file)) {
   dds <- estimateDispersions(dds)
   df <- dispersionFunction(dds)
-  saveRDS(df, file=paste(args[5], ".vst.params.RDS", sep=''))
+  saveRDS(df, file=paste(prefix, suffix, ".params.RDS", sep=''))
   rm(df)
 } else {
   df <- readRDS(params_file)
@@ -59,4 +65,4 @@ if (is.null(params_file)) {
 vsd <- vst(dds, blind = F)
 rm(dds)
 gc()
-np$save(paste(args[5], ifelse(is.null(norm_factors), ".no_sf", ""), ".vst.npy", sep=''), np$array(assay(vsd)))
+np$save(paste(prefix, suffix, ".npy", sep=''), np$array(assay(vsd)))

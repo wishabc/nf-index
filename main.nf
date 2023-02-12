@@ -115,6 +115,7 @@ process normalize_matrix {
 
 	input:
 		tuple path(signal_matrix), path(peaks_matrix)
+		val norm_params
 
 	output:
 		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
@@ -124,13 +125,15 @@ process normalize_matrix {
 
 	script:
 	prefix = 'normalized'
+	normalization_params = norm_params ? "--model_params ${norm_params}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
 		${signal_matrix} \
 		./ \
 		--jobs ${task.cpus} \
-		--prefix ${prefix}
+		--prefix ${prefix} \
+		${normalization_params}
 	"""
 }
 
@@ -161,21 +164,23 @@ process deseq2 {
 		tuple path(signal_matrix), path(scale_factors)
 		path indivs_order
 		path meta_path
+		val norm_params
 
 	output:
 		path "${prefix}*"
 
 	script:
 	prefix = "deseq.normalized"
+	normalization_params = norm_params ?: ""
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
 	  ${signal_matrix} \
 	  ${scale_factors} \
 	  ${indivs_order} \
 	  ${meta_path} \
-	  ${prefix}
+	  ${prefix} \
+	  ${normalization_params}
 	"""
-
 }
 
 workflow generateMatrix {
@@ -200,10 +205,17 @@ workflow normalizeMatrix {
 	take:
 		matrices
 		indivs_order
+		normalization_params
 	main:
-		sf = normalize_matrix(matrices).scale_factors
+		lowess_params = normalization_params
+			| filter { it.name =~ /params\.npz/ }
+			| ifEmpty(null)
+		sf = normalize_matrix(matrices, lowess_params).scale_factors
 		new_meta = reorder_meta(indivs_order)
-		out = deseq2(sf, indivs_order, new_meta)
+		deseq_params = normalization_params
+			| filter { it.name =~ /params\.RDS/ }
+			| ifEmpty(null)
+		out = deseq2(sf, indivs_order, new_meta, deseq_params)
 	emit:
 		out
 }
@@ -211,21 +223,50 @@ workflow normalizeMatrix {
 workflow generateAndNormalize {
 	take:
 		bams_hotspots
+		normalization_params
 	main:
 		matrices = generateMatrix(bams_hotspots)
-		out = normalizeMatrix(matrices[0], matrices[1])
+		out = normalizeMatrix(matrices[0], matrices[1], normalization_params)
 	emit:
 		out
 }
 
+
+workflow readSamplesFile {
+	main:
+		bams_hotspots = Channel.fromPath(params.samples_file)
+			| splitCsv(header:true, sep:'\t')
+			| map(row -> tuple(row.uniq_id, file(row.bam_file),
+				file("${row.bam_file}.crai"), file(row.hotspots_file)))
+	emit:
+		bams_hotspots
+}
 workflow {
-	bams_hotspots = Channel.fromPath(params.samples_file)
-		| splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.uniq_id, file(row.bam_file), file("${row.bam_file}.crai"), file(row.hotspots_file)))
-	generateAndNormalize(bams_hotspots)
+	bams_hotspots = readSamplesFile()
+	out = generateAndNormalize(bams_hotspots, Channel.empty())
+}
+
+workflow existingModel {
+	params.normalization_params_dir = "$launchDir/${params.outdir}/params"
+	existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
+		| map(it -> file(it))
+	bams_hotspots = readSamplesFile()
+	out = generateAndNormalize(bams_hotspots, existing_params)
 }
 
 // Debug code, defunc
+workflow test3 {
+	mats = Channel.of(tuple(
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/signal.filtered.matrix.npy'),
+		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/binary.filtered.matrix.npy')
+		)
+	)
+	indivs_order = Channel.of()
+	params.normalization_params_dir = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/params"
+	existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
+		| map(it -> file(it))
+	normalizeMatrix(mats, indivs_order, existing_params)
+}
 workflow test2 {
 	mats = Channel.of(tuple(
 		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/matrix.all.signal.txt.gz'),
