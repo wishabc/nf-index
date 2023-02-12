@@ -38,10 +38,15 @@ if (length(args) >= 6) {
   params_f <- args[6]
 }
 
-# Data reformatting
+print("Reading input matrix")
 counts <- np$load(args[1])
 # Provide non-existent norm_factors file for conventional VST
-norm_factors <- ifelse(file.exists(args[2]), np$load(args[2]), NULL)
+if (file.exists(args[2])) {
+  print('Reading norm factors')
+  norm_factors <- np$load(args[2])
+} else {
+  norm_factors <- NULL
+}
 sample_names <- fread(args[3], header=FALSE)
 sample_names <- data.table(sample_names)
 
@@ -51,13 +56,16 @@ colnames(counts) <- sample_names
 metadata <- read_delim(args[4], delim = '\t', col_names=T)
 rownames(metadata) <- metadata$uniq_id
 
-print("Applying DESEQ with norm_factors")
+print('Making DESeq dataset')
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
 if (is.null(norm_factors)) {
+  print("Calculating size factors")
   dds <- estimateSizeFactors(dds)
 } else {
+  print("Applying DESEQ with norm_factors")
   normalizationFactors(dds) <- norm_factors
 }
+
 suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
 if (is.null(params_f)) {
