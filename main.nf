@@ -139,7 +139,7 @@ process normalize_matrix {
 
 process reorder_meta {
 	conda params.conda
-	publishDir "${params.outdir}" // Not sure if needs to be published
+
 	input:
 		path indivs_order
 
