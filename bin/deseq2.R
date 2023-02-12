@@ -32,7 +32,6 @@ if (length(args) < 5) {
 
 prefix <- args[5]
 
-print('Reading params')
 params_f <- NULL
 
 if (length(args) >= 6) {
