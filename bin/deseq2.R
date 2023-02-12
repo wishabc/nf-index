@@ -61,12 +61,12 @@ dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
 if (is.null(norm_factors)) {
   print("Calculating size factors")
   dds <- estimateSizeFactors(dds)
+  suffix <- ".no_sf.vst"
 } else {
   print("Applying DESEQ with norm_factors")
   normalizationFactors(dds) <- norm_factors
+  suffix <- ".sf.vst"
 }
-
-suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
