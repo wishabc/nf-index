@@ -97,7 +97,7 @@ if (is.null(params_f)) {
   df <- readRDS(params_f)
   dispersionFunction(dds) <- df
 }
-vsd <- vst(dds, blind = F)
+vsd <- varianceStabilizingTransformation(dds, blind = F)
 rm(dds)
 gc()
 np$save(paste(prefix, suffix, ".npy", sep=''), np$array(assay(vsd)))
