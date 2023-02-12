@@ -31,7 +31,6 @@ if (length(args) < 5) {
 }
 
 prefix <- args[5]
-suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
 print('Reading params')
 params_f <- NULL
@@ -60,7 +59,7 @@ if (is.null(norm_factors)) {
 } else {
   normalizationFactors(dds) <- norm_factors
 }
-
+suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
