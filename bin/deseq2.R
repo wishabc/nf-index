@@ -73,7 +73,7 @@ if (is.null(params_f)) {
   # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
   # dispersionFunction is not saved otherwise
   baseMean <- rowMeans(counts(dds, normalized=TRUE))
-  if (sum(baseMean > 5) < nsub) {
+  if (sum(baseMean > 5) < 1000) {
     stop("less than 'nsub' rows with mean normalized count > 5, 
   it is recommended to use varianceStabilizingTransformation directly")
   }
