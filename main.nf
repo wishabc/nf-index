@@ -246,8 +246,22 @@ workflow {
 	out = generateAndNormalize(bams_hotspots, Channel.empty())
 }
 
+
+workflow normalizeExistingMatrices {
+	mats = Channel.of(tuple(
+		file("$launchDir/${params.outdir}/signal.filtered.matrix.npy"),
+		file("$launchDir/${params.outdir}/binary.filtered.matrix.npy")
+		)
+	)
+	params.normalization_params_dir = "$launchDir/${params.outdir}/params"
+	file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
+	existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
+		| map(it -> file(it))
+}
+
 workflow existingModel {
 	params.normalization_params_dir = "$launchDir/${params.outdir}/params"
+	file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
 	existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
 		| map(it -> file(it))
 	bams_hotspots = readSamplesFile()
@@ -261,7 +275,7 @@ workflow test3 {
 		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/binary.filtered.matrix.npy')
 		)
 	)
-	indivs_order = Channel.of()
+	indivs_order = Channel.of('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/indivs_order.txt')
 	params.normalization_params_dir = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/params"
 	existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
 		| map(it -> file(it))
@@ -276,7 +290,7 @@ workflow test2 {
 	indivs_order = Channel.of('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt')
 	mask = filter_index().mask
 	out = apply_filter_to_matrix(mats, mask)
-	normalizeMatrix(out, indivs_order)
+	normalizeMatrix(out, indivs_order, Channel.empty())
 }
 
 workflow test {
