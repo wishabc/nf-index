@@ -5,7 +5,7 @@ params.conda = "$moduleDir/environment.yml"
 
 process count_tags {
 	tag "${indiv_id}"
-	conda params.conda
+	conda "${params.conda}"
 
 	input:
 		tuple val(indiv_id), path(bam_file), path(bam_file_index), path(peaks_file)
@@ -28,6 +28,7 @@ process generate_count_matrix {
 	publishDir params.outdir, pattern: "indivs_order.txt"
 
 	input:
+
 		tuple val(indiv_ids), path(count_files), path(bin_files)
 
 	output:
@@ -35,9 +36,8 @@ process generate_count_matrix {
 		path "indivs_order.txt", emit: indivs
 
 	script:
-	indiv_ids_join = indiv_ids.join("\t")
 	"""
-	echo "${indiv_ids_join}" > indivs_order.txt
+	cat ${count_files} | xargs -I file basename file | cut -d. -f1 > indivs_order.txt
 	paste - ${count_files} | cut -c2- | gzip -c > matrix.all.signal.txt.gz
 	paste - ${bin_files} | cut -c2- | gzip -c > matrix.all.peaks.txt.gz
 	"""
