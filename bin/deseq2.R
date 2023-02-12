@@ -41,9 +41,10 @@ colnames(counts) <- sample_names
 
 metadata <- read_delim(args[4], delim = '\t', col_names=T)
 rownames(metadata) <- metadata$uniq_id
+print(paste('Prefix is', args[5], sep=''))
 prefix <- args[5]
-
-params_file <- ifelse((length(args) < 6), NULL, args[6])
+print('Reading params')
+params_f <- ifelse((length(args) < 6), NULL, args[6])
 print("Applying DESEQ with norm_factors")
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
 if (is.null(norm_factors)) {
@@ -52,7 +53,7 @@ if (is.null(norm_factors)) {
 suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
 dds <- estimateSizeFactors(dds)
-if (is.null(params_file)) {
+if (is.null(params_f)) {
   print('Calculating and saving VST params')
   dds <- estimateDispersions(dds)
   df <- dispersionFunction(dds)
@@ -60,7 +61,7 @@ if (is.null(params_file)) {
   rm(df)
 } else {
   print('Use existing VST params')
-  df <- readRDS(params_file)
+  df <- readRDS(params_f)
   dispersionFunction(dds) <- df
 }
 vsd <- vst(dds, blind = F)
