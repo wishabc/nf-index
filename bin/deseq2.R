@@ -48,7 +48,7 @@ suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 print('Reading params')
 params_f <- NULL
 
-if (length(args) < 6) {
+if (length(args) >= 6) {
   params_f <- args[6]
 }
 
