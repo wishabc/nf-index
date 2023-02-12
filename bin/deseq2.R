@@ -26,8 +26,8 @@ np <- import("numpy")
 args = commandArgs(trailingOnly=TRUE)
 
 # test if there is at least four arguments: if not, return an error
-if (length(args) < 4) {
-  stop("At least four input files should be supplied", call.=FALSE)
+if (length(args) < 5) {
+  stop("At least five input arguments should be supplied", call.=FALSE)
 }
 # Data reformatting
 counts <- np$load(args[1])
@@ -43,22 +43,23 @@ metadata <- read_delim(args[4], delim = '\t', col_names=T)
 rownames(metadata) <- metadata$uniq_id
 prefix <- args[5]
 
-params_file = ifelse((length(args) < 6), NULL, args[6])
-# Applying DESEQ with norm_factors
+params_file <- ifelse((length(args) < 6), NULL, args[6])
+print("Applying DESEQ with norm_factors")
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
 if (is.null(norm_factors)) {
   normalizationFactors(dds) <- norm_factors
 }
 suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
-
 dds <- estimateSizeFactors(dds)
 if (is.null(params_file)) {
+  print('Calculating and saving VST params')
   dds <- estimateDispersions(dds)
   df <- dispersionFunction(dds)
   saveRDS(df, file=paste(prefix, suffix, ".params.RDS", sep=''))
   rm(df)
 } else {
+  print('Use existing VST params')
   df <- readRDS(params_file)
   dispersionFunction(dds) <- df
 }
