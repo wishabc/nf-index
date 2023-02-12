@@ -46,7 +46,12 @@ prefix <- args[5]
 suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
 print('Reading params')
-params_f <- ifelse((length(args) < 6), NULL, args[6])
+params_f <- NULL
+
+if (length(args) < 6) {
+  params_f <- args[6]
+}
+
 print("Applying DESEQ with norm_factors")
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
 if (is.null(norm_factors)) {
@@ -58,6 +63,8 @@ if (is.null(norm_factors)) {
 
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
+  # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
+  # dispersionFunction is not saved otherwise
   baseMean <- rowMeans(counts(dds, normalized=TRUE))
   if (sum(baseMean > 5) < nsub) {
     stop("less than 'nsub' rows with mean normalized count > 5, 
