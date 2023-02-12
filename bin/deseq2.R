@@ -29,18 +29,6 @@ args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 5) {
   stop("At least five input arguments should be supplied", call.=FALSE)
 }
-# Data reformatting
-counts <- np$load(args[1])
-# Provide non-existent norm_factors file to perform conventional VST
-norm_factors <- ifelse(file.exists(args[2]), np$load(args[2]), NULL)
-sample_names <- fread(args[3], header=FALSE)
-sample_names <- data.table(sample_names)
-
-counts <- as.data.frame(counts, stringsAsFactors = F)
-colnames(counts) <- sample_names
-
-metadata <- read_delim(args[4], delim = '\t', col_names=T)
-rownames(metadata) <- metadata$uniq_id
 
 prefix <- args[5]
 suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
@@ -51,6 +39,19 @@ params_f <- NULL
 if (length(args) >= 6) {
   params_f <- args[6]
 }
+
+# Data reformatting
+counts <- np$load(args[1])
+# Provide non-existent norm_factors file for conventional VST
+norm_factors <- ifelse(file.exists(args[2]), np$load(args[2]), NULL)
+sample_names <- fread(args[3], header=FALSE)
+sample_names <- data.table(sample_names)
+
+counts <- as.data.frame(counts, stringsAsFactors = F)
+colnames(counts) <- sample_names
+
+metadata <- read_delim(args[4], delim = '\t', col_names=T)
+rownames(metadata) <- metadata$uniq_id
 
 print("Applying DESEQ with norm_factors")
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
@@ -80,7 +81,7 @@ if (is.null(params_f)) {
 
   # estimate dispersion trend
   dds.sub <- estimateDispersionsGeneEst(dds.sub, quiet=TRUE)
-  dds.sub <- estimateDispersionsFit(dds.sub, fitType=fitType, quiet=TRUE)
+  dds.sub <- estimateDispersionsFit(dds.sub, fitType="parametric", quiet=TRUE)
 
   # assign to the full object
   dispersionFunction(dds) <- dispersionFunction(dds.sub)
