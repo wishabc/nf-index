@@ -41,24 +41,43 @@ colnames(counts) <- sample_names
 
 metadata <- read_delim(args[4], delim = '\t', col_names=T)
 rownames(metadata) <- metadata$uniq_id
-print(paste('Prefix is', args[5], sep=''))
+
 prefix <- args[5]
+suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
+
 print('Reading params')
 params_f <- ifelse((length(args) < 6), NULL, args[6])
 print("Applying DESEQ with norm_factors")
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
 if (is.null(norm_factors)) {
+  dds <- estimateSizeFactors(dds)
+} else {
   normalizationFactors(dds) <- norm_factors
 }
-suffix <- ifelse(is.null(norm_factors), ".no_sf.vst", ".sf.vst")
 
-dds <- estimateSizeFactors(dds)
+
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
-  dds <- estimateDispersions(dds)
-  df <- dispersionFunction(dds)
-  saveRDS(df, file=paste(prefix, suffix, ".params.RDS", sep=''))
-  rm(df)
+  baseMean <- rowMeans(counts(dds, normalized=TRUE))
+  if (sum(baseMean > 5) < nsub) {
+    stop("less than 'nsub' rows with mean normalized count > 5, 
+  it is recommended to use varianceStabilizingTransformation directly")
+  }
+
+  # subset to a specified number of genes with mean normalized count > 5
+  dds.sub <- dds[baseMean > 5,]
+  baseMean <- baseMean[baseMean > 5]
+  o <- order(baseMean)
+  idx <- o[round(seq(from=1, to=length(o), length=1000))]
+  dds.sub <- dds.sub[idx,]
+
+  # estimate dispersion trend
+  dds.sub <- estimateDispersionsGeneEst(dds.sub, quiet=TRUE)
+  dds.sub <- estimateDispersionsFit(dds.sub, fitType=fitType, quiet=TRUE)
+
+  # assign to the full object
+  dispersionFunction(dds) <- dispersionFunction(dds.sub)
+  saveRDS(dispersionFunction(dds), file=paste(prefix, suffix, ".params.RDS", sep=''))
 } else {
   print('Use existing VST params')
   df <- readRDS(params_f)
