@@ -314,7 +314,7 @@ class DataNormalize:
             setattr(self, key, value)
         self.set_randomizer()
         arrays = np.load(f'{model_params}.npz')
-        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf']
+        return arrays['xvalues'][:, None], arrays['sampled_mask'], arrays['deseq2_mean_sf']
         
     def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf):
         for ext in '.npz', '.json':
