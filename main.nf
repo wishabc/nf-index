@@ -125,8 +125,8 @@ process normalize_matrix {
 
 	script:
 	prefix = 'normalized'
-	n = norm_params.size() == 2 ? file(norm_params[0]).baseName : ""
-	normalization_params = n ? "--model_params ${n}" : ""
+	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
+	normalization_params = n ? "--model_params ${n.parent}/${n.baseName}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
