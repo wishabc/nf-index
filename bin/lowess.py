@@ -391,7 +391,7 @@ if __name__ == '__main__':
     parser.add_argument('--jobs', type=int,
                         help='Number of jobs to parallelize calculations '
                              '(can\'t be larger than number of samples. If 0 is provided - uses all available cores')
-    parser.add_argument('--model_params', help='File with lowess params', default=None)
+    parser.add_argument('--model_params', help='Use existing lowess params ffor normalization. Expected to provide basename of the files with lowess params. E.g. provide "prefix.lowess_params" to load both params files: "prefix.lowess_params.json" and "prefix.lowess_params.npz".', default=None)
     p_args = parser.parse_args()
 
     model_params = p_args.model_params
