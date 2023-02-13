@@ -120,12 +120,12 @@ process normalize_matrix {
 	output:
 		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
 		path "${prefix}.normed.npy", emit: normed_matrix
-		path "${prefix}.params.npz", emit: model_params
+		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json") emit: model_params
 		
 
 	script:
 	prefix = 'normalized'
-	normalization_params = norm_params ? "--model_params ${norm_params}" : ""
+	normalization_params = norm_params ? "--model_params ${file(norm_params[0]).baseName}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
@@ -208,8 +208,10 @@ workflow normalizeMatrix {
 		normalization_params
 	main:
 		lowess_params = normalization_params
-			| filter { it.name =~ /params\.npz/ }
+			| filter { it.name =~ /lowess_params/ }
 			| ifEmpty(null)
+			| collect()
+
 		sf = normalize_matrix(matrices, lowess_params).scale_factors
 		new_meta = reorder_meta(indivs_order)
 		deseq_params = normalization_params

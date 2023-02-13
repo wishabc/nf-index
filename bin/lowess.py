@@ -9,7 +9,7 @@ import logging
 import sys
 import argparse
 import gc
-
+import json
 
 handler = logging.StreamHandler(sys.stdout)
 logger = logging.getLogger(__name__)
@@ -309,23 +309,27 @@ class DataNormalize:
 
     def load_params(self, model_params):
         # unpack params from npz array
-        arrays = np.load(model_params)
-        for key, value in zip(arrays['param_keys'], arrays['param_values']):
+        with open(f'{model_params}.json') as f:
+            class_params = json.load(f)
+        for key, value in class_params.items():
             setattr(self, key, value)
         self.set_randomizer()
+        arrays = np.load(f'{model_params}.npz')
         return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf']
         
     def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf):
-        if os.path.exists(save_path):
-            logger.warning(f'File {save_path} exists, model params were not saved')
-            return
+        for ext in '.npz', '.json':
+            if os.path.exists(f'{save_path}{ext}'):
+                logger.warning(f'File {save_path}{ext} exists, model params were not saved')
+                return
         
-        param_keys, param_values = zip(*[(x,y) for x,y in self.__dict__.items() if x != 'seed'])
-        np.savez(save_path,
+        with json.open(f'{save_path}.json', 'w') as f:
+            params_dict  = {x:y for x,y in self.__dict__.items() if x != 'seed'}
+            json.dump(f, params_dict, indent=2)
+
+        np.savez_compressed(f'{save_path}.npz',
             xvalues=xvals,
             sampled_mask=sampled_mask,
-            param_keys=np.array(param_keys),
-            param_values=np.array(param_values),
             deseq2_mean_sf=deseq2_mean_sf
         )
 
@@ -356,6 +360,8 @@ def make_out_path(outdir, prefix, matrix_type='signal', mode='npz'):
         return basename + '.npy'
     elif mode == 'txt':
         return basename + '.txt'
+    elif mode == '':
+        return basename
     else:
         raise ValueError(f'Mode {mode} not in (npz, numpy, txt)')
 
@@ -393,16 +399,16 @@ if __name__ == '__main__':
 
     if not os.path.exists(p_args.output):
         os.mkdir(p_args.output)
-    sign_outpath = make_out_path(p_args.output, p_args.prefix, 'signal', 'numpy')
-    peaks_outpath = make_out_path(p_args.output, p_args.prefix, 'bin', 'numpy')
-    dens_outpath = make_out_path(p_args.output, p_args.prefix, 'density', 'numpy')
-    lowess_outpath = make_out_path(p_args.output, p_args.prefix, 'lowess', 'numpy')
+    base_path = os.path.join(p_args.output, p_args.prefix)
     
-    model_save_params_path = make_out_path(p_args.output, p_args.prefix, 'params', 'npz')
+    dens_outpath = f'{base_path}.density.npy'
+    lowess_outpath = f'{base_path}.lowess.npy'
+    
+    model_save_params_path = f'{base_path}.lowess_params'
 
     logger.info('Reading matrices')
-    counts_matrix = check_and_open_matrix_file(p_args.signal_matrix, sign_outpath)
-    peaks_matrix = check_and_open_matrix_file(p_args.peak_matrix, peaks_outpath)
+    counts_matrix = np.load(p_args.signal_matrix)
+    peaks_matrix = np.load(p_args.peak_matrix)
     
     N, S = counts_matrix.shape
     assert counts_matrix.shape == peaks_matrix.shape
@@ -465,13 +471,13 @@ if __name__ == '__main__':
     gc.collect()
     
     logger.info('Saving normed matrix')
-    np.save(make_out_path(p_args.output, p_args.prefix, 'normed', 'numpy'), normed)
+    np.save(f'{base_path}.normed.npy', normed)
     logger.info('Reading raw tags...')
-    counts_matrix = check_and_open_matrix_file(p_args.signal_matrix, sign_outpath)
+    counts_matrix = np.load(p_args.signal_matrix)
 
     deseq2_mean_sf = get_deseq2_scale_factors(counts_matrix,
         normed,
-        make_out_path(p_args.output, p_args.prefix, 'scale_factors', 'numpy'),
+        f'{base_path}.scale_factors.npy',
         deseq2_mean_sf
     )
     data_norm.save_params(model_save_params_path, xvals, sampled_mask, deseq2_mean_sf)
