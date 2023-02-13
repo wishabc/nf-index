@@ -18,7 +18,7 @@ def main(params, normalized_matrix):
     gini = 2 * (q[None, :] - gini / gini[:, -1:]).mean(axis=1)
     means = np.mean(normalized_matrix, axis=1)
 
-    data_norm = DataNormalize(jobs=1, sample_method='raw', frac=0.2, delta=0.001)
+    data_norm = DataNormalize(jobs=1, sample_method='raw', cv_fraction=0.2, delta_fraction=0.001)
     sampled_peaks_mask = data_norm.select_peaks_uniform(means, np.ones(means.shape[0], dtype=bool))
     smoothed_gini_samp = data_norm.run_lowess(gini, means, sampled_peaks_mask)
 
