@@ -20,7 +20,7 @@ def main(params, normalized_matrix):
 
     data_norm = DataNormalize(jobs=1, sample_method='raw', cv_fraction=0.2, delta_fraction=0.001)
     sampled_peaks_mask = data_norm.select_peaks_uniform(means, np.ones(means.shape[0], dtype=bool))
-    smoothed_gini_samp = data_norm.run_lowess(gini, means, sampled_peaks_mask)
+    smoothed_gini_samp = data_norm.run_lowess(gini, means, sampled_peaks_mask, frac=0.2, delta_frac=0.001)
 
     smoothed_gini_final = get_interpolation_for_gini(means, smoothed_gini_samp, sampled_peaks_mask)
     gini_index = gini - smoothed_gini_final
