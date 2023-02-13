@@ -211,7 +211,7 @@ workflow normalizeMatrix {
 		lowess_params = normalization_params
 			| filter { it.name =~ /lowess_params/ }
 			| ifEmpty(null)
-			| collect()
+			| collect(sort: true)
 
 		sf = normalize_matrix(matrices, lowess_params).scale_factors
 		new_meta = reorder_meta(indivs_order)
