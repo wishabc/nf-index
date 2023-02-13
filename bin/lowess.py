@@ -417,7 +417,7 @@ if __name__ == '__main__':
     scale_factors = data_norm.get_scale_factors(counts_matrix)
     density_matrix = counts_matrix * scale_factors
     pseudocounts = data_norm.get_pseudocounts(density_matrix)
-    
+    np.save(dens_outpath, density_matrix)
     mean_scale_factors = scale_factors.mean()
     mat_and_pseudo = np.log(density_matrix + pseudocounts)
     del scale_factors
@@ -435,8 +435,6 @@ if __name__ == '__main__':
             peaks_mat=peaks_matrix)
         
         differences = (mat_and_pseudo.T - xvals).T
-        np.save(dens_outpath, density_matrix)
-        
         del density_matrix
         del peaks_matrix
         gc.collect()
