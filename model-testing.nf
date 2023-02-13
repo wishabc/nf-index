@@ -2,58 +2,37 @@
 nextflow.enable.dsl = 2
 
 
+params.hyper_params_list = "/home/sabramov/projects/SuperIndex/hyperparams_clustering+ids.tsv"
+
 params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
 params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
-params.meta_params = "/home/sabramov/projects/SuperIndex/hyperparams_clustering+ids.tsv"
 
 params.indivs_order = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt"
-
-
-// TODO: remove after redoing normalization
-process filter_singletons {
-    conda params.conda
-    publishDir "${params.outdir}/index", pattern: "${name}"
-    scratch true
-
-    output:
-        path name
-
-    script:
-    name = "singletons_mask.txt"
-    """
-    cat ${params.index_file} | grep -v chrX | grep -v chrY > filtered_index.bed
-    bedmap --indicator --sweep-all --bp-ovr 1 filtered_index.bed \
-        ${params.encode_blacklist_regions} > blacklisted_mask.txt
-    
-    python3 $moduleDir/bin/filter_index.py \
-        filtered_index.bed \
-        blacklisted_mask.txt \
-        ${name}
-    """
-}
 
 
 process subset_peaks {
     conda params.conda
     tag "${id}"
     publishDir "${params.outdir}/matrix", pattern: "${name}"
+    publishDir "${params.outdir}/mask", pattern: "${prefix}.mask.txt"
     memory 350.GB
     input:
 		tuple val(id), val(peaks_params)
-        path singletons_mask
 
 	output:
-		tuple val(id), path(name)
+		tuple val(id), path(name), emit: matrix
+        path "${prefix}.mask.txt", emit: mask
+
     
     script:
-    name = "${id}.peaks.npy"
+    prefix = "${id}.peaks"
+    name = "${prefix}.npy"
     """
     echo -e '${peaks_params}' > params.json
     python3 $moduleDir/bin/subset_peaks.py \
         params.json \
         ${params.normalized_matrix} \
-        ${singletons_mask} \
-        ${name}
+        ${prefix}
     """
 }
 
@@ -138,12 +117,10 @@ workflow fitModels {
         // clustering_alg, clustering_params
         hyperparams 
     main:
-        out_mask = filter_singletons()
-
         subset_peaks_params = hyperparams
             | map(it -> tuple(it[1], it[2]))
             | unique()
-        peaks = subset_peaks(subset_peaks_params, out_mask) // peaks_id, peaks_subset
+        peaks = subset_peaks(subset_peaks_params).matrix // peaks_id, peaks_subset
         
         embedding = hyperparams
             | map(it -> tuple(it[1], it[3], it[4])) // peaks_id, encoder_id, encoder_params
@@ -161,7 +138,7 @@ workflow fitModels {
 
 
 workflow {
-    Channel.fromPath(params.meta_params)
+    Channel.fromPath(params.hyper_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(row.id,
             row.peak_id,

@@ -29,7 +29,7 @@ def main(params, normalized_matrix):
 
     num_peaks = params['num_peaks']
     new_mask = gini_index > gini_index[np.argsort(gini_index)[::-1][num_peaks]]
-    np.save(out_path,
+    np.save(f'{prefix}.npy',
         normalized_matrix[
             (new_mask), :
         ]
@@ -42,12 +42,7 @@ if __name__ == '__main__':
         params = json.load(json_file)
     
     normalized_matrix = np.load(sys.argv[2])
-    singletons_mask = np.loadtxt(sys.argv[3]).astype(bool)
-    out_path = sys.argv[4]
-    assert normalized_matrix.shape[0] == singletons_mask.shape[0]
-    normalized_matrix = normalized_matrix[singletons_mask, :]
+    prefix = sys.argv[3]
     new_mask = main(params, normalized_matrix)
-
-    singletons_mask[singletons_mask][~new_mask] = False
-    np.savetxt(singletons_mask, fmt="%5i")
+    np.savetxt(f'{prefix}.mask.txt', new_mask, fmt="%5i")
     
