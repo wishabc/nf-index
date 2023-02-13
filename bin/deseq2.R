@@ -63,7 +63,7 @@ if (is.null(norm_factors)) {
   dds <- estimateSizeFactors(dds)
   suffix <- ".no_sf.vst"
 } else {
-  print("Applying DESEQ with norm_factors")
+  print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
   suffix <- ".sf.vst"
 }
@@ -100,7 +100,7 @@ params_file_name <- paste(prefix, suffix, ".params.RDS", sep='')
 if (file.exists(params_file_name )) {
   saveRDS(dispersionFunction(dds), file=params_file_name)
 } else {
-  print(paste('Parameters were not saved. File ', params_file_name, ' exists.' sep=''))
+  print(paste('Parameters were not saved. File ', params_file_name, ' exists.', sep=''))
 }
 
 vsd <- varianceStabilizingTransformation(dds, blind = F)
