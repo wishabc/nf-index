@@ -120,12 +120,13 @@ process normalize_matrix {
 	output:
 		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
 		path "${prefix}.normed.npy", emit: normed_matrix
-		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json") emit: model_params
+		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
 		
 
 	script:
 	prefix = 'normalized'
-	normalization_params = norm_params ? "--model_params ${file(norm_params[0]).baseName}" : ""
+	n = norm_params.size() == 2 ? file(norm_params[0]).baseName : ""
+	normalization_params = n ? "--model_params ${n}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
