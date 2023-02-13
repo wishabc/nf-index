@@ -322,7 +322,7 @@ class DataNormalize:
                 logger.warning(f'File {save_path}{ext} exists, model params were not saved')
                 return
         
-        with json.open(f'{save_path}.json', 'w') as f:
+        with open(f'{save_path}.json', 'w') as f:
             params_dict  = {x:y for x,y in self.__dict__.items() if x != 'seed'}
             json.dump(params_dict, f, indent=2)
 
