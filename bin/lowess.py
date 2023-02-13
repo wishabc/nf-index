@@ -373,7 +373,7 @@ def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calc
 
     sf[np.isnan(sf)] = 1
     sf[~np.isfinite(sf)] = 1
-    if calculated_mean != None:
+    if calculated_mean is not None:
         sf_geomean = calculated_mean
     else:
         sf_geomean = np.exp(np.mean(np.log(sf), axis=1))
