@@ -324,7 +324,7 @@ class DataNormalize:
         
         with json.open(f'{save_path}.json', 'w') as f:
             params_dict  = {x:y for x,y in self.__dict__.items() if x != 'seed'}
-            json.dump(f, params_dict, indent=2)
+            json.dump(params_dict, f, indent=2)
 
         np.savez_compressed(f'{save_path}.npz',
             xvalues=xvals,
