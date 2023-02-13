@@ -40,8 +40,8 @@ if (length(args) >= 6) {
 
 print("Reading input matrix")
 counts <- np$load(args[1])
-# Provide non-existent norm_factors file for conventional VST
-if (file.exists(args[2])) {
+# Provide NULL or non-existent norm_factors file for conventional VST
+if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
   norm_factors <- np$load(args[2])
 } else {
@@ -91,12 +91,18 @@ if (is.null(params_f)) {
 
   # assign to the full object
   dispersionFunction(dds) <- dispersionFunction(dds.sub)
-  saveRDS(dispersionFunction(dds), file=paste(prefix, suffix, ".params.RDS", sep=''))
 } else {
   print('Use existing VST params')
   df <- readRDS(params_f)
   dispersionFunction(dds) <- df
 }
+params_file_name <- paste(prefix, suffix, ".params.RDS", sep='')
+if (file.exists(params_file_name )) {
+  saveRDS(dispersionFunction(dds), file=params_file_name)
+} else {
+  print(paste('Parameters were not saved. File ', params_file_name, ' exists.' sep=''))
+}
+
 vsd <- varianceStabilizingTransformation(dds, blind = F)
 rm(dds)
 gc()
