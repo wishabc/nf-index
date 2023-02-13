@@ -1,20 +1,19 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-
 params.hyper_params_list = "/home/sabramov/projects/SuperIndex/hyperparams_clustering+ids.tsv"
 
 params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
-params.normalized_matrix = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/deseq.normalized.vst.txt.npy"
 
-params.indivs_order = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/output/index/indivs_order.txt"
+params.normalized_matrix = "$launchDir/${params.outdir}/deseq.normalized.sf.vst.npy"
+params.indivs_order = "$launchDir/${params.outdir}/indivs_order.txt"
 
 
 process subset_peaks {
     conda params.conda
     tag "${id}"
-    publishDir "${params.outdir}/matrix", pattern: "${name}"
-    publishDir "${params.outdir}/mask", pattern: "${prefix}.mask.txt"
+    publishDir "${params.outdir}/peaks", pattern: "${name}"
+    publishDir "${params.outdir}/peaks_masks", pattern: "${prefix}.mask.txt"
     memory 350.GB
     input:
 		tuple val(id), val(peaks_params)
