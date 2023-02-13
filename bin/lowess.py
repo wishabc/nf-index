@@ -44,7 +44,6 @@ class DataNormalize:
         self.delta_fraction = delta_fraction
         self.correlation_limit = correlation_limit
         self.cv_fraction = cv_fraction
-        self.scale_factor = None
         self.delta = None
         self.sample_method = sample_method
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
