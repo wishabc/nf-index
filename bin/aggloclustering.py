@@ -8,7 +8,7 @@ from sklearn.preprocessing import LabelEncoder
 import pickle
 from itertools import product
 import csv
-
+import h5py
 
 linkages = ["ward", "complete", "average", "single"]
 metrics = ["euclidean", "manhattan"]
@@ -89,8 +89,8 @@ if __name__ == '__main__':
                 'raj_dataset', 'tag', 'footprintdir', 'num_footprints']
     
     meta = pd.read_table(sys.argv[3], header=None, names=meta_columns).set_index('id')
-    with open(sys.argv[4]) as f:
-        indivs_order = f.readline().strip().split()
+    with h5py.File(sys.argv[2]) as f:
+        indivs_order = f['samples']
     run_id = sys.argv[5]
 
     # Double check if meta is sorted correctly

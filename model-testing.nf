@@ -5,8 +5,7 @@ params.hyper_params_list = "/home/sabramov/projects/SuperIndex/hyperparams_clust
 
 params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
 
-params.normalized_matrix = "$launchDir/${params.outdir}/deseq.normalized.sf.vst.npy"
-params.indivs_order = "$launchDir/${params.outdir}/indivs_order.txt"
+params.normalized_matrices = "$launchDir/${params.outdir}/normalized_matrices.hdf5"
 
 
 process subset_peaks {
@@ -92,7 +91,7 @@ process clustering {
                 params.json \
                 ${embedding} \
                 ${params.meta} \
-                ${params.indivs_order} \
+                ${params.normalized_matrices} \
                 ${id}
             """
             break;
