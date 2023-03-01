@@ -12,7 +12,7 @@ def get_interpolation_for_gini(x, lowess_est, sampled):
     return interpolated
 
 
-def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample):
+def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, save=None):
     gini = np.cumsum(np.sort(normalized_matrix, axis=1) - normalized_matrix.min(axis=1)[:, None], axis=1)
     q = np.linspace(0, 1, normalized_matrix.shape[1])
     gini = 2 * (q[None, :] - gini / gini[:, -1:]).mean(axis=1)
@@ -41,13 +41,14 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample):
                 continue
             
             top_gini_mask[((peaks_pool * gini_argsort) != 0)[:to_add_peaks]] = 1
-
-    np.save(f'{prefix}.npy',
-        normalized_matrix[
-            (top_gini_mask), :
-        ]
-    )
+    if save is not None:
+        np.save(f'{save}.npy',
+            normalized_matrix[
+                (top_gini_mask), :
+            ]
+        )
     return top_gini_mask
+
 
 
 if __name__ == '__main__':
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     prefix = sys.argv[3]
     num_peaks = params['num_peaks']
     min_peaks_per_sample = params.get('min_peaks_per_sample')
-    new_mask = main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample)
+    new_mask = main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, save=prefix)
     
     np.savetxt(f'{prefix}.mask.txt', new_mask, fmt="%5i")
     
