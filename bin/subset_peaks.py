@@ -40,7 +40,8 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, save
                 top_gini_mask[peaks_pool] = 1
                 continue
             
-            top_gini_mask[((peaks_pool * gini_argsort) != 0)[:to_add_peaks]] = 1
+            to_add_argsort = peaks_pool * gini_argsort
+            top_gini_mask[to_add_argsort[to_add_argsort != 0][:to_add_peaks]] = 1
     if save is not None:
         np.save(f'{save}.npy',
             normalized_matrix[
