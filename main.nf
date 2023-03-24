@@ -127,6 +127,7 @@ process normalize_matrix {
 	prefix = 'normalized'
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
 	normalization_params = n ? "--model_params ${n.parent}/${n.baseName}" : ""
+	sample_weights = params.sample_weights ? "--weights ${params.sample_weights}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
@@ -134,6 +135,7 @@ process normalize_matrix {
 		./ \
 		--jobs ${task.cpus} \
 		--prefix ${prefix} \
+		${sample_weights} \
 		${normalization_params}
 	"""
 }

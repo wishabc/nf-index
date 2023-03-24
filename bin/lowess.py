@@ -26,13 +26,12 @@ class DataNormalize:
                  peak_outlier_threshold=0.999,
                  delta_fraction=0.001,
                  correlation_limit=0.8,
-                 cv_fraction=0.33,
                  seed_number=1832245,
                  sample_number=75_000,
                  bin_number=100,
                  min_peak_replication=0.25,
                  sample_method='raw',
-                 cv_number=5,
+                 cv_number=30,
                  jobs=1,
                  ):
         self.cv_number = cv_number
@@ -43,8 +42,7 @@ class DataNormalize:
         self.peak_outlier_threshold = peak_outlier_threshold
         self.delta_fraction = delta_fraction
         self.correlation_limit = correlation_limit
-        self.cv_fraction = cv_fraction
-        self.delta = None
+        self.cv_fraction = self.delta = None
         self.sample_method = sample_method
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
         self.set_randomizer()
@@ -202,7 +200,7 @@ class DataNormalize:
 
 
     def get_peak_subset(self, ref_peaks, num_samples_per_peak: np.ndarray,
-                        density_mat: np.ndarray) -> np.ndarray:
+                        density_mat: np.ndarray, weights: np.ndarray) -> np.ndarray:
         """
         Select a subset of peaks well correlated to a reference (mean or geometric mean)
 
@@ -218,7 +216,7 @@ class DataNormalize:
             over = num_samples_per_peak >= i
             correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
                                                arr=density_mat[over, :])
-            avg_cor = np.mean(correlations)
+            avg_cor = np.average(correlations, weights=weights)
             logger.info(f'Selecting threshold, iteration #{ind}. Correlation {avg_cor}')
             if avg_cor > self.correlation_limit:
                 break
@@ -255,20 +253,19 @@ class DataNormalize:
         else:
             return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
     
-    def get_xcounts(self, density_mat, pseudocounts):
+    def get_xcounts(self, density_mat, mean_pseudocount, weights):
         logger.info('Computing mean and pseudocounts for each peak')
-        mean_density = density_mat.mean(axis=1)
-        mean_pseudocount = pseudocounts.mean()
+        mean_density = np.average(density_mat, axis=1, weights=weights)
         xvalues = np.log(mean_density + mean_pseudocount)
         return mean_density, xvalues
 
-    def sample_peaks(self, density_mat: np.ndarray, mean_density: np.ndarray, peaks_mat: np.ndarray):
+    def sample_peaks(self, density_mat: np.ndarray, mean_density: np.ndarray, peaks_mat: np.ndarray, weights: np.ndarray):
         """
         Select well-correlated peaks and sample a subset
         """
         num_samples_per_peak = self.get_num_samples_per_peak(peaks_mat)
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
-        decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat)
+        decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat, weights)
         sampled_peaks_mask = self.select_peaks_uniform(mean_density, decent_peaks_mask)
         logger.info(
             f'Found {decent_peaks_mask.sum():,} well-correlated peaks, using method "{self.sample_method}"'
@@ -279,10 +276,10 @@ class DataNormalize:
         return sampled_peaks_mask
 
     def fit_lowess_params(self, diffs: np.ndarray, xvalues: np.ndarray,
-        sampled_peaks_mask: np.ndarray):
+        sampled_peaks_mask: np.ndarray, weights: np.ndarray):
         _, S = diffs.shape
         logger.info('Computing LOWESS smoothing parameter via cross-validation')
-        cv_set = self.seed.choice(S, size=min(self.cv_number, S), replace=False)
+        cv_set = self.seed.choice(S, size=min(self.cv_number, S), replace=False, p=weights)
 
         cv_fraction = np.mean(self.parallel_apply_2D(self.choose_fraction_cv, axis=0,
                                                      arr=diffs[:, cv_set], x=xvalues,
@@ -314,9 +311,9 @@ class DataNormalize:
             setattr(self, key, value)
         self.set_randomizer()
         arrays = np.load(f'{model_params}.npz')
-        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf']
+        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf'], arrays['weights']
         
-    def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf):
+    def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf, weights):
         for ext in '.npz', '.json':
             if os.path.exists(f'{save_path}{ext}'):
                 logger.warning(f'File {save_path}{ext} exists, model params were not saved')
@@ -329,7 +326,8 @@ class DataNormalize:
         np.savez_compressed(f'{save_path}.npz',
             xvalues=xvals,
             sampled_mask=sampled_mask,
-            deseq2_mean_sf=deseq2_mean_sf
+            deseq2_mean_sf=deseq2_mean_sf,
+            weights=weights
         )
 
     @staticmethod
@@ -365,7 +363,7 @@ def make_out_path(outdir, prefix, matrix_type='signal', mode='npz'):
         raise ValueError(f'Mode {mode} not in (npz, numpy, txt)')
 
 
-def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calculated_mean):
+def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calculated_mean, weights):
     logger.info('Calculating scale factors...')
     sf = raw_tags / as_normed_matrix
     i = (raw_tags == 0) | (as_normed_matrix == 0)
@@ -376,7 +374,7 @@ def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calc
     if calculated_mean is not None:
         sf_geomean = calculated_mean
     else:
-        sf_geomean = np.exp(np.mean(np.log(sf), axis=1))
+        sf_geomean = np.exp(np.average(np.log(sf), axis=1, weights=weights))
     as_scale_factors = (sf.T / sf_geomean).T
     np.save(scale_factor_path, as_scale_factors)
     return sf_geomean
@@ -388,6 +386,7 @@ if __name__ == '__main__':
     parser.add_argument('signal_matrix', help='Path to matrix with read counts for each peak in every sample')
     parser.add_argument('output', help='Path to directory to save normalized matrix into.')
     parser.add_argument('--prefix', help='Filenames prefix', default='matrix')
+    parser.add_argument('--weights', help='Path to weights')
     parser.add_argument('--jobs', type=int,
                         help='Number of jobs to parallelize calculations '
                              '(can\'t be larger than number of samples. If 0 is provided - uses all available cores')
@@ -413,10 +412,16 @@ if __name__ == '__main__':
     assert counts_matrix.shape == peaks_matrix.shape
     logger.info(f'Normalizing matrix with shape: {N:,};{S}')
 
+    if p_args.weights is not None:
+        weights = np.load(p_args.weights)
+    else:
+        weights = np.ones(S)
+
     data_norm = DataNormalize(jobs=p_args.jobs)
     scale_factors = data_norm.get_scale_factors(counts_matrix)
     density_matrix = counts_matrix * scale_factors
     pseudocounts = data_norm.get_pseudocounts(density_matrix)
+    mean_pseudocount = pseudocounts.mean()
     np.save(dens_outpath, density_matrix)
     mean_scale_factors = scale_factors.mean()
     mat_and_pseudo = np.log(density_matrix + pseudocounts)
@@ -426,7 +431,8 @@ if __name__ == '__main__':
     if model_params is None:
         mean_density, xvals = data_norm.get_xcounts(
             density_mat=density_matrix,
-            pseudocounts=pseudocounts
+            mean_pseudocount=mean_pseudocount,
+            weights=weights
         )
     
         sampled_mask = data_norm.sample_peaks(
@@ -441,14 +447,15 @@ if __name__ == '__main__':
 
         data_norm.fit_lowess_params(diffs=differences,
             xvalues=xvals,
-            sampled_peaks_mask=sampled_mask)
+            sampled_peaks_mask=sampled_mask,
+            weights=weights)
         deseq2_mean_sf = None
     else:
         del density_matrix
         del peaks_matrix
         gc.collect()
 
-        xvals, sampled_mask, deseq2_mean_sf = data_norm.load_params(model_params)
+        xvals, sampled_mask, deseq2_mean_sf, weights = data_norm.load_params(model_params)
         differences = (mat_and_pseudo.T - xvals).T
 
     lowess_norm = data_norm.lowess_normalize(diffs=differences,
@@ -475,6 +482,7 @@ if __name__ == '__main__':
     deseq2_mean_sf = get_deseq2_scale_factors(counts_matrix,
         normed,
         f'{base_path}.scale_factors.npy',
-        deseq2_mean_sf
+        calculated_mean=deseq2_mean_sf,
+        weights=weights
     )
-    data_norm.save_params(model_save_params_path, xvals, sampled_mask, deseq2_mean_sf)
+    data_norm.save_params(model_save_params_path, xvals, sampled_mask, deseq2_mean_sf, weights)
