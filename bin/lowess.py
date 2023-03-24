@@ -438,7 +438,8 @@ if __name__ == '__main__':
         sampled_mask = data_norm.sample_peaks(
             density_mat=density_matrix,
             mean_density=mean_density,
-            peaks_mat=peaks_matrix)
+            peaks_mat=peaks_matrix,
+            weights=weights)
         
         differences = (mat_and_pseudo.T - xvals).T
         del density_matrix
