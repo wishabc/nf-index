@@ -258,10 +258,12 @@ workflow normalizeExistingMatrices {
 		file("$launchDir/${params.outdir}/binary.filtered.matrix.npy")
 		)
 	)
-	params.normalization_params_dir = "$launchDir/${params.outdir}/params"
-	file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
-	existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
-		| map(it -> file(it))
+	indivs_order = Channel.of(file("$launchDir/${params.outdir}/indivs_order.txt"))
+	normalizeMatrix(mats, indivs_order, Channel.empty())
+	// params.normalization_params_dir = "$launchDir/${params.outdir}/params"
+	// file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
+	// existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
+	// 	| map(it -> file(it))
 }
 
 workflow existingModel {
