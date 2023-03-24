@@ -14,7 +14,7 @@ def get_interpolation_for_gini(x, lowess_est, sampled):
 
 def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta_labels, save=None):
     unique_labels = np.unique(meta_labels)
-    new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape),
+    new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
                                 dtype=normalized_matrix.dtype)
     for label in unique_labels:
         new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
