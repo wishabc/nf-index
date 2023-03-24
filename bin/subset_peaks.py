@@ -16,11 +16,8 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
     unique_labels = np.unique(meta_labels)
     new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape),
                                 dtype=normalized_matrix.dtype)
-    new_binary_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape),
-                                dtype=binary_matrix.dtype)
     for label in unique_labels:
         new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
-        new_binary_matrix[:, label] = binary_matrix[:, meta_labels == label].mean(axis=1) >= 0.5
 
     gini = np.cumsum(np.sort(new_norm_matrix, axis=1) - new_norm_matrix.min(axis=1)[:, None], axis=1)
     q = np.linspace(0, 1, new_norm_matrix.shape[1])
@@ -36,8 +33,8 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
     gini_argsort = np.argsort(gini_index)[::-1]
     top_gini_mask = gini_index > gini_index[gini_argsort[num_peaks]]
     if min_peaks_per_sample is not None and min_peaks_per_sample != 0:
-        for sample_id in range(new_norm_matrix.shape[1]):
-            sample_binary_mask = new_binary_matrix[:, sample_id]
+        for sample_id in range(normalized_matrix.shape[1]):
+            sample_binary_mask = binary_matrix[:, sample_id]
             chosen_peaks_mask = top_gini_mask * sample_binary_mask
             to_add_peaks = min_peaks_per_sample - chosen_peaks_mask.sum()
             if to_add_peaks <= 0:
@@ -53,7 +50,7 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
             top_gini_mask[to_add_argsort[to_add_argsort != 0][:to_add_peaks]] = 1
     if save is not None:
         np.save(f'{save}.npy',
-            new_norm_matrix[
+            normalized_matrix[
                 (top_gini_mask), :
             ]
         )
