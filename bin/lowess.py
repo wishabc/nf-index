@@ -417,6 +417,7 @@ if __name__ == '__main__':
     else:
         weights = np.ones(S)
 
+    weights = weights / weights.sum()
     data_norm = DataNormalize(jobs=p_args.jobs)
     scale_factors = data_norm.get_scale_factors(counts_matrix)
     density_matrix = counts_matrix * scale_factors
