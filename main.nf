@@ -2,6 +2,8 @@
 nextflow.enable.dsl = 2
 
 params.conda = "$moduleDir/environment.yml"
+params.sample_weights = ""
+
 
 process count_tags {
 	tag "${indiv_id}"
@@ -275,7 +277,9 @@ workflow existingModel {
 	out = generateAndNormalize(bams_hotspots, existing_params)
 }
 
-// Debug code, defunc
+
+
+// Debug code below, defunc
 workflow test3 {
 	mats = Channel.of(tuple(
 		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/signal.filtered.matrix.npy'),

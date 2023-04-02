@@ -25,4 +25,4 @@ if __name__ == '__main__':
     out_mask = main(index_df, mask)
     assert len(index_df.index) == len(out_mask)
     np.savetxt(sys.argv[3], out_mask, fmt="%5i")
-    index_df[out_mask].to_csv(sys.argv[4], sep='\t', index=False, header=None)
+    index_df[index_cols][out_mask].to_csv(sys.argv[4], sep='\t', index=False)

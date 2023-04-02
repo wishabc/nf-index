@@ -386,7 +386,7 @@ if __name__ == '__main__':
     parser.add_argument('signal_matrix', help='Path to matrix with read counts for each peak in every sample')
     parser.add_argument('output', help='Path to directory to save normalized matrix into.')
     parser.add_argument('--prefix', help='Filenames prefix', default='matrix')
-    parser.add_argument('--weights', help='Path to weights')
+    parser.add_argument('--weights', help='Path to weights (for weighted lowess)')
     parser.add_argument('--jobs', type=int,
                         help='Number of jobs to parallelize calculations '
                              '(can\'t be larger than number of samples. If 0 is provided - uses all available cores')
