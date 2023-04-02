@@ -12,11 +12,17 @@ def get_interpolation_for_gini(x, lowess_est, sampled):
     return interpolated
 
 
-def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, save=None):
-    gini = np.cumsum(np.sort(normalized_matrix, axis=1) - normalized_matrix.min(axis=1)[:, None], axis=1)
-    q = np.linspace(0, 1, normalized_matrix.shape[1])
+def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta_labels, save=None):
+    unique_labels = np.unique(meta_labels)
+    new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
+                                dtype=normalized_matrix.dtype)
+    for label in unique_labels:
+        new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
+
+    gini = np.cumsum(np.sort(new_norm_matrix, axis=1) - new_norm_matrix.min(axis=1)[:, None], axis=1)
+    q = np.linspace(0, 1, new_norm_matrix.shape[1])
     gini = 2 * (q[None, :] - gini / gini[:, -1:]).mean(axis=1)
-    means = np.mean(normalized_matrix, axis=1)
+    means = np.mean(new_norm_matrix, axis=1)
 
     data_norm = DataNormalize(jobs=1, sample_method='raw')
     sampled_peaks_mask = data_norm.select_peaks_uniform(means, np.ones(means.shape[0], dtype=bool))
@@ -48,7 +54,7 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, save
                 (top_gini_mask), :
             ]
         )
-    return top_gini_mask
+    return gini_argsort, top_gini_mask
 
 
 
@@ -59,9 +65,11 @@ if __name__ == '__main__':
         normalized_matrix = f['vsd']
         binary_matrix = f['binary']
     prefix = sys.argv[3]
+    meta_labels = sys.argv[4]
     num_peaks = params['num_peaks']
     min_peaks_per_sample = params.get('min_peaks_per_sample')
-    new_mask = main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, save=prefix)
+    _, new_mask = main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample,
+                    meta_labels=meta_labels, save=prefix)
     
     np.savetxt(f'{prefix}.mask.txt', new_mask, fmt="%5i")
     
