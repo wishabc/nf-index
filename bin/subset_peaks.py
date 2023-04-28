@@ -31,6 +31,8 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
     smoothed_gini_final = get_interpolation_for_gini(means, smoothed_gini_samp, sampled_peaks_mask)
     gini_index = gini - smoothed_gini_final
     gini_argsort = np.argsort(gini_index)[::-1]
+    np.save("gini_sort_argsort_mask.npy", gini_argsort, fmt="%5i")
+
     top_gini_mask = gini_index > gini_index[gini_argsort[num_peaks]]
     if min_peaks_per_sample is not None and min_peaks_per_sample != 0:
         for sample_id in range(normalized_matrix.shape[1]):
