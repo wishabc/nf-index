@@ -157,7 +157,7 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     embedding = reducer.fit_transform(decomp.Basis)
 
     plt.clf()
-    plt.figure(figsize=(10,10))
+    fig = plt.figure(figsize=(10,10))
     decomp.define_colors()
     plt.scatter(embedding[:,0], embedding[:,1], color=np.array(decomp.Comp_colors)[majcomp], alpha=1, marker='.')
     plt.ylabel('UMAP axis 2')
