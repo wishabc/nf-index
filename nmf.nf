@@ -42,17 +42,18 @@ process visualize_nmf {
 		tuple val(n_components), val(method), path(nmf_results)
 
 	output:
-        tuple val(n_components), val(method), path("./figures/*")
+        tuple val(n_components), val(method), path("figures/*")
 
 	script:
 	"""
+    mkdir figures/
     python3 $moduleDir/bin/visualize_nmf.py \
         ${params.sample_order_path} \
         ${params.meta_path} \
         ${params.cluster_meta_path} \
         ${params.gen_meta_path} \
-        ./ \
-        ./figures/ \
+        \$PWD \
+        figures/ \
         ${method} \
         ${n_components}
 	"""
