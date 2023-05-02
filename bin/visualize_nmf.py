@@ -113,10 +113,10 @@ def load_meta(sample_order_path, meta_path, cluster_meta_path, gen_meta_path):
 
 def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_slice_size='full'):
     colors_order = get_colors_order(n_components)
+    os.makedirs(dir_path_mat, exist_ok=True)
 
     # Data loading
     allnames = metadata['taxonomy_name'].to_list()
-    va_tags = metadata['VA_cluster'].to_list()
 
     decomp = OONMF.NMFobject(n_components)
     decomp.matrix_input_name(
@@ -131,14 +131,14 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     # heatmap
     decomp.make_standard_heatmap_plot(decomp.Basis.shape[0], 
                                 decomp.Basis, 
-                                dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.heatmap.svg', 
+                                dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.heatmap.pdf', 
                                 names=np.array(allnames), 
                                 barsortorder= bar_graph_sort_order)
     
     # Stacked barplot
     decomp.make_stacked_bar_plot_sorted(decomp.Basis.shape[0], 
                         decomp.Basis.T, 
-                        dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.stacked_bar_plot.svg', 
+                        dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.stacked_bar_plot.pdf', 
                         names=np.array(allnames), 
                         barsortorder=bar_graph_sort_order)
 
@@ -163,7 +163,7 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     plt.ylabel('UMAP axis 2')
     plt.xlabel('UMAP axis 1')
     plt.title(f'VST data, {method} Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
-    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.umap.png', )
+    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.umap.pdf', )
     plt.close(fig)
     
     # UMAP, comparing with VA and meta
@@ -187,7 +187,7 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     ax.set_xlabel('UMAP axis 1')
     ax.set_title(f'VST data, {method} Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
 
-    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.umap.comparing.png', bbox_inches='tight')
+    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.umap.comparing.pdf', bbox_inches='tight')
     plt.close(fig)
 
     ### Iterpretation part
@@ -243,7 +243,7 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
 
     # Adjust layout and show the figure
     #fig.tight_layout()
-    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.iterpretation.10barplot.png', bbox_inches='tight')
+    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.iterpretation.10barplot.pdf', bbox_inches='tight')
     plt.close(fig)
 
 
@@ -253,4 +253,4 @@ def main(sample_order_path, meta_path, cluster_meta_path, gen_meta_path, dir_pat
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(*sys.argv[1:])

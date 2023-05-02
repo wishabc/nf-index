@@ -5,7 +5,10 @@ params.params_list = "/home/sboytsov/NMF/nmf_hyperparams.tsv"
 
 params.weights_file_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/sample_weights_annotation_ontology.tsv"
 params.matrix_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/deseq.normalized.sf.vst.npy"
-
+params.sample_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
+params.meta_path = "/home/sabramov/projects/SuperIndex/index_clustering_2023-02-08/ENCODE4_altius_index_clustering_metadata_2023-02-08.tsv"
+params.cluster_meta_path = "/home/sboytsov/poster_clustering/2902_cluster_meta_0303.tsv"
+params.gen_meta_path = "/home/sabramov/projects/ENCODE4/release_0103/genotyping_meta_230206+ids.tsv"
 
 process fit_nmf {
 	tag "${n_components}:${method}"
@@ -33,21 +36,23 @@ process fit_nmf {
 process visualize_nmf {
 	tag "${vae_id}:${peaks_id}"
 	conda params.conda
-    publishDir "${params.outdir}/visualize"
+    publishDir "${params.outdir}"
 
 	input:
-		tuple val(n_components), val(method)
+		tuple val(n_components), val(method), path(nmf_results)
 
 	output:
-        tuple val(n_components), val(method), path("${prefix}*")
+        tuple val(n_components), val(method), path("./figures/*")
 
 	script:
-    prefix = "${method}*"
 	"""
-    python3 $moduleDir/bin/perfrom_NMF.py \
-        ${params.weights_file_path} \
-        ${params.matrix_path} \
+    python3 $moduleDir/bin/visualize_nmf.py \
+        ${params.sample_order_path} \
+        ${params.meta_path} \
+        ${params.cluster_meta_path} \
+        ${params.gen_meta_path} \
         ./ \
+        ./figures/ \
         ${method} \
         ${n_components}
 	"""
@@ -55,13 +60,9 @@ process visualize_nmf {
 
 workflow runNMF {
     take:
-        // ID,
-        // peaks_id, peaks_params,
-        // encoder_id, encoder_params,
-        // clustering_alg, clustering_params
         hyperparams 
     main:
-        out = fit_nmf(hyperparams) // | visualize_nmf
+        out = fit_nmf(hyperparams) | visualize_nmf
     emit:
         out
 }
