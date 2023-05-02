@@ -9,7 +9,7 @@ params.matrix_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/out
 
 process fit_nmf {
 	tag "${n_components}:${method}"
-	conda params.conda
+	conda "/home/sabramov/miniconda3/envs/jupyter2"
     publishDir "${params.outdir}/nmf_results"
 
 	input:
