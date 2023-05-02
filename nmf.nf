@@ -20,7 +20,7 @@ process fit_nmf {
 
 	script:
 	"""
-    python3 $moduleDir/bin/perfrom_NMF.py \
+    python3 $moduleDir/bin/perform_NMF.py \
         ${params.weights_file_path} \
         ${params.matrix_path} \
         ./ \
