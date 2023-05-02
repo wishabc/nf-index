@@ -68,7 +68,7 @@ workflow runNMF {
 
 workflow visualize {
     Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/NMF0501/output/nmf_results/*')
-        | map(it -> tuple(it.name.split('.', 0), it.name.split('.', 0), it))
+        | map(it -> tuple(it.name.tokenize('.'), it.name.tokenize('.', 0), it))
         | view()
         | groupTuple(by:[0,1])
         | visualize_nmf
