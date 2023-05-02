@@ -1,49 +1,25 @@
-import os
 import sys
 import time
 import numpy as np
 import pandas as pd
-import gzip
-import matplotlib.pyplot as plt
-import umap
-import glob
 
 
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
-import matplotlib.font_manager as font_manager
-import seaborn as sns
-import random
-import math
-
-
-from sklearn.decomposition._nmf import _BaseNMF, _beta_loss_to_float, _initialize_nmf, _fit_coordinate_descent
-from abc import ABC
-from numbers import Integral, Real
+from sklearn.decomposition._nmf import _BaseNMF, _beta_loss_to_float, _fit_coordinate_descent
 import numpy as np
 import scipy.sparse as sp
 import time
-import itertools
 import warnings
-from math import sqrt
-from scipy import linalg
 
 
 #from ._cdnmf_fast import _update_cdnmf_fast
 from sklearn._config import config_context
-from sklearn.base import BaseEstimator, TransformerMixin, ClassNamePrefixFeaturesOutMixin
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.utils import check_random_state, check_array, gen_batches
-from sklearn.utils.extmath import randomized_svd, safe_sparse_dot, squared_norm
+from sklearn.utils.extmath import safe_sparse_dot, squared_norm
 from sklearn.utils.validation import (
     check_is_fitted,
     check_non_negative,
 )
-from sklearn.utils._param_validation import (
-    Interval,
-    StrOptions,
-    validate_params,
-)
+from sklearn.utils._param_validation import StrOptions
 
 from common import get_matrix_path
 
@@ -657,7 +633,7 @@ def main(weights_file_path, matrix_path, save_dir, method, n_components):
     weights_vector = weights_df.set_index("id").to_numpy().squeeze()
 
     mat = np.load(matrix_path)
-    perform_NMF(mat, weights_vector, n_components=n_components, method=method, save_dir=save_dir)
+    perform_NMF(mat, weights_vector, n_components=int(n_components), method=method, save_dir=save_dir)
 
 
 if __name__ == '__main__':
