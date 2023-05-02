@@ -34,7 +34,7 @@ process fit_nmf {
 }
 
 process visualize_nmf {
-	tag "${vae_id}:${peaks_id}"
+	tag "${n_components}:${method}"
 	conda params.conda
     publishDir "${params.outdir}"
 
