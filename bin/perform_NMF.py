@@ -637,4 +637,4 @@ def main(weights_file_path, matrix_path, save_dir, method, n_components):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main(*sys.argv[1:])
