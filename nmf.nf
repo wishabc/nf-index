@@ -11,6 +11,7 @@ process fit_nmf {
 	tag "${n_components}:${method}"
 	conda "/home/sabramov/miniconda3/envs/jupyter2"
     publishDir "${params.outdir}/nmf_results"
+    memory { 150.GB * task.attempt }
 
 	input:
 		tuple val(n_components), val(method)
