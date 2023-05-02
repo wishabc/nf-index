@@ -14,7 +14,7 @@ process fit_nmf {
 	tag "${n_components}:${method}"
 	conda "/home/sabramov/miniconda3/envs/jupyter2"
     publishDir "${params.outdir}/nmf_results"
-    memory { 150.GB * task.attempt }
+    memory { 400.GB * task.attempt }
 
 	input:
 		tuple val(n_components), val(method)
@@ -65,6 +65,14 @@ workflow runNMF {
         out = fit_nmf(hyperparams) | visualize_nmf
     emit:
         out
+}
+
+workflow visualize {
+    Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/NMF0501/output/nmf_results/*')
+        | map(it -> tuple(it.name.split('\\.')[0], it.name.split('\\.')[2], it))
+        | view()
+        | groupTuple(by:[0,1])
+        | visualize_nmf
 }
 
 
