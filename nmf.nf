@@ -19,19 +19,20 @@ process fit_nmf {
     memory { 400.GB * task.attempt }
 
 	input:
-		tuple val(n_components), val(method)
+		tuple val(n_components), val(method), path(matrix_path), val(weights_file_path)
 
 	output:
         tuple val(n_components), val(method), path("${method}*")
 
 	script:
+    weights_path = weights_file_path ?? ""
 	"""
     python3 $moduleDir/bin/perform_NMF.py \
         ${params.weights_file_path} \
         ${params.matrix_path} \
         ./ \
         ${method} \
-        ${n_components}
+        ${n_components} \
 	"""
 }
 
@@ -65,7 +66,7 @@ workflow runNMF {
     take:
         hyperparams 
     main:
-        out = fit_nmf(hyperparams) | visualize_nmf
+        out = fit_nmf(hyperparams) // | visualize_nmf
     emit:
         out
 }
@@ -81,7 +82,7 @@ workflow visualize {
 workflow {
     Channel.fromPath(params.params_list)
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.n_components, row.method))
+		| map(row -> tuple(row.n_components, row.method, file(row.matrix_path), row?.weights_path))
         | runNMF
 }
 
