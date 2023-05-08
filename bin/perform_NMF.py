@@ -632,7 +632,7 @@ def main(weights_file_path, matrix_path, save_dir, method, n_components):
     weights_df = pd.read_table(weights_file_path)
     weights_vector = weights_df.set_index("id").to_numpy().squeeze()
 
-    mat = np.load(matrix_path)
+    mat = np.load(matrix_path).astype(float)
     perform_NMF(mat, weights_vector, n_components=int(n_components), method=method, save_dir=save_dir)
 
 
