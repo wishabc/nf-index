@@ -12,20 +12,20 @@ def non_required_arg(value, key) {
 }
 
 process fit_nmf {
-	tag "${n_components}:${method}"
+	tag "${prefix}:${n_components}"
 	conda "/home/sabramov/miniconda3/envs/jupyter2"
     publishDir "${params.outdir}/nmf_results"
     memory { 400.GB * task.attempt }
 
 	input:
-		tuple val(n_components), val(method), val(fname), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
+		tuple val(n_components), val(fname), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
 
 	output:
         tuple val(prefix), path("${prefix}*")
 
 	script:
     weights = weights_path ? "--sampels_weights ${weights_path}": ""
-    prefix = "${fname}.${method}.${n_components}"
+    prefix = "${fname}.${n_components}"
 	"""
     python3 $moduleDir/bin/perform_NMF.py \
         ${matrix_path} \
@@ -81,7 +81,6 @@ workflow {
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
             row.n_components,
-            row.method,
             row.prefix,
             file(row.matrix_path),
             row?.weights_path,
