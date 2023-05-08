@@ -6,9 +6,8 @@ params.params_list = "/home/sboytsov/NMF/nmf_downsampled_hyperparams.tsv"
 params.weights_file_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/sample_weights_annotation_ontology.tsv"
 params.matrix_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/binary.filtered.matrix.npy"
 params.sample_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
-params.meta_path = "/home/sabramov/projects/SuperIndex/index_clustering_2023-02-08/ENCODE4_altius_index_clustering_metadata_2023-02-08.tsv"
 params.cluster_meta_path = "/home/sboytsov/poster_clustering/2902_cluster_meta_0303.tsv"
-params.gen_meta_path = "/home/sabramov/projects/ENCODE4/release_0103/genotyping_meta_230206+ids.tsv"
+
 params.samples_mask = "/home/sabramov/projects/ENCODE4/release_0103/genotyping_meta_230206+ids.tsv"
 
 
@@ -52,9 +51,7 @@ process visualize_nmf {
     mkdir figures/
     python3 $moduleDir/bin/visualize_nmf.py \
         ${params.sample_order_path} \
-        ${params.meta_path} \
         ${params.cluster_meta_path} \
-        ${params.gen_meta_path} \
         \$PWD \
         figures/ \
         ${n_components} \
@@ -72,8 +69,8 @@ workflow runNMF {
 }
 
 workflow visualize {
-    data = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/NMF0501/output/nmf_results/*')
-        | map(it -> tuple(it.name.split('\\.')[0], it.name.split('\\.')[2], it))
+    data = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/NMF0508/output/nmf_results/*')
+        | map(it -> tuple(it.name.split('\\.')[2], it.name.split('\\.')[0], it))
         | groupTuple(by:[0,1])
         | visualize_nmf
 }

@@ -88,25 +88,16 @@ def get_colors_order(n_components):
     return colors_order
 
 
-def load_meta(sample_order_path, meta_path, cluster_meta_path, gen_meta_path):
+def load_meta(sample_order_path, cluster_meta_path):
     # Sample order matrix to metadata 
     with open(sample_order_path) as f:
-        indivs_order = np.array(f.readline().strip().split())
+        samples_order = np.array(f.readline().strip().split())
 
     # metadata with cluster names
-    clust = pd.read_table(meta_path)
-    clust = clust.set_index('id')
-
-    # sorting metada in matrix's samples order
-    metadata = pd.read_table(gen_meta_path)
-    metadata = metadata.set_index('ag_id').loc[indivs_order]
-    metadata = metadata.join(clust.loc[:, ['cluster']], how='left')
-
+    metadata = pd.read_table(cluster_meta_path).set_index('id').loc[samples_order]
     # Here in column 'VA_cluster' I load Sasha's clustering labels
-    z = pd.read_table(cluster_meta_path)
-    metadata['VA_cluster'] = metadata['ln_number'].map(z.set_index('ln_number')['cluster'])
-
-    metadata.reset_index(drop=True, inplace=True)
+    metadata.rename(columns={'cluster': 'VA_cluster'}, inplace=True)
+    metadata.reset_index(inplace=True)
 
     return metadata
 
@@ -247,8 +238,8 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     plt.close(fig)
 
 
-def main(sample_order_path, meta_path, cluster_meta_path, gen_meta_path, dir_path_mat, dir_path_pic, n_components, method):
-    metadata = load_meta(sample_order_path, meta_path, cluster_meta_path, gen_meta_path)
+def main(sample_order_path, cluster_meta_path, dir_path_mat, dir_path_pic, n_components, method):
+    metadata = load_meta(sample_order_path, cluster_meta_path)
     vis_nmf(dir_path_mat, dir_path_pic, int(n_components), method, metadata)
 
 
