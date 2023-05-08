@@ -56,8 +56,8 @@ process visualize_nmf {
         ${params.gen_meta_path} \
         \$PWD \
         figures/ \
-        ${method} \
-        ${n_components}
+        ${n_components} \
+        ${method}
 	"""
 }
 
