@@ -2,7 +2,7 @@ import sys
 import time
 import numpy as np
 import pandas as pd
-
+import argparse
 
 from sklearn.decomposition._nmf import _BaseNMF, _beta_loss_to_float, _fit_coordinate_descent
 import numpy as np
@@ -620,21 +620,38 @@ def perform_NMF(X, weights=None, n_components=16, method='weighted', save_dir=No
                 random_state=0, init="custom",
                 max_iter=1000, tol=1e-4, verbose=True)
     H, W = initialize_u_v(X, n_components)
-    W = model.fit_transform(X.T, W=W.T, H=H.T, weights=weights if method=='weighted' else None)
+    W = model.fit_transform(X.T, W=W.T, H=H.T, weights=weights)
     H = model.components_
-        
     if save_dir is not None:
         np.save(get_matrix_path(save_dir, method, 'full', n_components, 'W'), W)
         np.save(get_matrix_path(save_dir, method, 'full', n_components, 'H'), H)
 
 
-def main(weights_file_path, matrix_path, save_dir, method, n_components):
-    weights_df = pd.read_table(weights_file_path)
-    weights_vector = weights_df.set_index("id").to_numpy().squeeze()
-
-    mat = np.load(matrix_path).astype(float)
-    perform_NMF(mat, weights_vector, n_components=int(n_components), method=method, save_dir=save_dir)
+def main(matrix, save_dir, method, n_components, weights=None):
+    perform_NMF(matrix,
+        weights=weights,
+        n_components=n_components, 
+        method=method, 
+        save_dir=save_dir)
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser('Matrix normalization using lowess')
+    parser.add_argument('matrix', help='Path to matrix to run NMF on')
+    parser.add_argument('output', help='Path to directory to save result into.')
+    parser.add_argument('method', help='Method of NMF. either weighted or unweighted')
+    parser.add_argument('n_components', help='Path to weights (for weighted NMF)', type=int)
+    parser.add_argument('--weights', help='Path to weights (for weighted NMF)', default=None)
+
+    
+    args = parser.parse_args()
+    weights_vector = None
+    if args.weights and args.method == 'weighted':
+        weights_df = pd.read_table(args.weights)
+        weights_vector = weights_df.set_index("id").to_numpy().squeeze()
+    mat = np.load(args.matrix).astype(float)
+    perform_NMF(mat, 
+        save_dir=args.output,
+        method=args.method,
+        weights=weights_vector,
+        n_components=args.n_components)
