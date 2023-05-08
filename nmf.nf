@@ -25,7 +25,7 @@ process fit_nmf {
         tuple val(n_components), val(method), path("${method}*")
 
 	script:
-    weights_path = weights_file_path ?? ""
+    weights_path = weights_file_path ?: ""
 	"""
     python3 $moduleDir/bin/perform_NMF.py \
         ${params.weights_file_path} \
