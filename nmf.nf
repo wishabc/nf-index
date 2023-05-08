@@ -3,13 +3,13 @@ nextflow.enable.dsl = 2
 
 params.params_list = "/home/sboytsov/NMF/nmf_downsampled_hyperparams.tsv"
 
-params.weights_file_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/sample_weights_annotation_ontology.tsv"
-params.matrix_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/binary.filtered.matrix.npy"
-params.sample_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
-params.cluster_meta_path = "/home/sboytsov/poster_clustering/2902_cluster_meta_0303.tsv"
 
-params.samples_mask = "/home/sabramov/projects/ENCODE4/release_0103/genotyping_meta_230206+ids.tsv"
+params.samples_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
+params.clustering_meta = "/home/sboytsov/poster_clustering/2902_cluster_meta_0303.tsv"
 
+def non_required_arg(value, key) {
+    return value ? "${key} ${value}": ""
+}
 
 process fit_nmf {
 	tag "${n_components}:${method}"
@@ -18,44 +18,44 @@ process fit_nmf {
     memory { 400.GB * task.attempt }
 
 	input:
-		tuple val(n_components), val(method), path(matrix_path), val(weights_file_path)
+		tuple val(n_components), val(method), val(fname), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
 
 	output:
-        tuple val(n_components), val(method), path("${method}*")
+        tuple val(prefix), path("${prefix}*")
 
 	script:
-    weights_path = weights_file_path ?: ""
+    weights = weights_path ? "--sampels_weights ${weights_path}": ""
+    prefix = "${fname}.${method}.${n_components}"
 	"""
     python3 $moduleDir/bin/perform_NMF.py \
-        ${params.weights_file_path} \
         ${matrix_path} \
-        ./ \
-        ${method} \
+        ${prefix} \
         ${n_components} \
+        ${non_required_arg(weights_path, '--samples_weights')} \
+        ${non_required_arg(samples_mask, '--samples_mask')} \
+        ${non_required_arg(peaks_mask, '--peaks_mask')}
 	"""
 }
 
 process visualize_nmf {
-	tag "${n_components}:${method}"
+	tag "${prefix}"
 	conda params.conda
-    publishDir "${params.outdir}"
+    errorStrategy 'ignore'
+    publishDir "${params.outdir}/figures"
 
 	input:
-		tuple val(n_components), val(method), path(nmf_results)
+		tuple val(prefix), path(nmf_results)
 
 	output:
-        tuple val(n_components), val(method), path("figures/*")
+        tuple val(prefix), path("*.pdf")
 
 	script:
 	"""
-    mkdir figures/
     python3 $moduleDir/bin/visualize_nmf.py \
-        ${params.sample_order_path} \
-        ${params.cluster_meta_path} \
-        \$PWD \
-        figures/ \
-        ${n_components} \
-        ${method}
+        ${params.clustering_meta} \
+        ${params.samples_order_path} \
+        ${prefix} \
+        ${n_components}
 	"""
 }
 
@@ -79,7 +79,15 @@ workflow visualize {
 workflow {
     Channel.fromPath(params.params_list)
         | splitCsv(header:true, sep:'\t')
-		| map(row -> tuple(row.n_components, row.method, file(row.matrix_path), row?.weights_path))
+		| map(row -> tuple(
+            row.n_components,
+            row.method,
+            row.prefix,
+            file(row.matrix_path),
+            row?.weights_path,
+            row?.peaks_mask,
+            row?.samples_mask
+            ))
         | runNMF
 }
 

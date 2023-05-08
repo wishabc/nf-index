@@ -21,7 +21,6 @@ from sklearn.utils.validation import (
 )
 from sklearn.utils._param_validation import StrOptions
 
-from common import get_matrix_path
 
 EPSILON = np.finfo(np.float32).eps
 
@@ -614,7 +613,7 @@ def initialize_u_v(X, n_components,random_state = 0):
 
     return U,V
 
-def perform_NMF(X, weights=None, n_components=16, method='weighted', save_dir=None):
+def perform_NMF(X, weights=None, n_components=16):
     model = NMF(n_components=n_components,
                 solver='mu', beta_loss='frobenius',
                 random_state=0, init="custom",
@@ -622,36 +621,40 @@ def perform_NMF(X, weights=None, n_components=16, method='weighted', save_dir=No
     H, W = initialize_u_v(X, n_components)
     W = model.fit_transform(X.T, W=W.T, H=H.T, weights=weights)
     H = model.components_
-    if save_dir is not None:
-        np.save(get_matrix_path(save_dir, method, 'full', n_components, 'W'), W)
-        np.save(get_matrix_path(save_dir, method, 'full', n_components, 'H'), H)
+    return W, H
 
-
-def main(matrix, save_dir, method, n_components, weights=None):
-    perform_NMF(matrix,
-        weights=weights,
-        n_components=n_components, 
-        method=method, 
-        save_dir=save_dir)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
-    parser.add_argument('output', help='Path to directory to save result into.')
-    parser.add_argument('method', help='Method of NMF. either weighted or unweighted')
-    parser.add_argument('n_components', help='Path to weights (for weighted NMF)', type=int)
-    parser.add_argument('--weights', help='Path to weights (for weighted NMF)', default=None)
-
-    
+    parser.add_argument('prefix', help='Prefix for the output file')
+    parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
+    parser.add_argument('--samples_mask', help='Mask of used samples, numpy array', defaul=None)
+    parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array', defaul=None)
+    parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     args = parser.parse_args()
-    weights_vector = None
-    if args.weights and args.method == 'weighted':
-        weights_df = pd.read_table(args.weights)
-        weights_vector = weights_df.set_index("id").to_numpy().squeeze()
+
     mat = np.load(args.matrix).astype(float)
-    perform_NMF(mat, 
-        save_dir=args.output,
-        method=args.method,
-        weights=weights_vector,
-        n_components=args.n_components)
+    
+    weights_vector = None
+    if args.samples_weights:
+        weights_df = pd.read_table(args.samples_weights)
+        weights_vector = weights_df.set_index("id").to_numpy().squeeze()
+    
+    if args.samples_mask:
+        samples_m = np.load(args.samples_mask)
+    else:
+        samples_m = np.ones(mat.shape[1], dtype=bool)
+    
+    if args.peaks_mask:
+        peaks_m = np.load(args.peaks_mask)
+    else:
+        peaks_m = np.ones(mat.shape[0], dtype=bool)
+
+    mat = mat[peaks_m, samples_m]
+
+    W_np, H_np = perform_NMF(X=mat, weights=weights_vector, n_components=args.n_components)
+    
+    np.save(f'{args.prefix}.W.npy', W_np)
+    np.save(f'{args.prefix}.H.npy', H_np)

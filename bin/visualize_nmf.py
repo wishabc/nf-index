@@ -13,7 +13,6 @@ import OONMF
 import OONMFhelpers
 from OONMFhelpers import get_barsortorder
 
-from common import get_matrix_path
 
 def make_stacked_bar_plot_sorted(self, Nrelevant, BarMatrix, bargraph_out, names=[], barsortorder=[], plot_title='', figdim1=150, figdim2=40):
     if len(barsortorder) < 1:
@@ -102,17 +101,16 @@ def load_meta(sample_order_path, cluster_meta_path):
     return metadata
 
 
-def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_slice_size='full'):
+def visualize_nmf(metadata, prefix, n_components):
     colors_order = get_colors_order(n_components)
-    os.makedirs(dir_path_mat, exist_ok=True)
 
     # Data loading
     allnames = metadata['taxonomy_name'].to_list()
 
     decomp = OONMF.NMFobject(n_components)
     decomp.matrix_input_name(
-        get_matrix_path(dir_path_mat, method, data_slice_size, n_components, 'W'),
-        get_matrix_path(dir_path_mat, method, data_slice_size, n_components, 'H')
+        f'{prefix}W.npy',
+        f'{prefix}H.npy',
     )
     decomp.read_matrix_input(compressed=False)
     print(decomp.Basis.shape, decomp.Mixture.shape, "matrices loaded for n_components", n_components)
@@ -122,21 +120,21 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     # heatmap
     decomp.make_standard_heatmap_plot(decomp.Basis.shape[0], 
                                 decomp.Basis, 
-                                dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.heatmap.pdf', 
+                                f'{prefix}.heatmap.pdf', 
                                 names=np.array(allnames), 
                                 barsortorder= bar_graph_sort_order)
     
     # Stacked barplot
     decomp.make_stacked_bar_plot_sorted(decomp.Basis.shape[0], 
                         decomp.Basis.T, 
-                        dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.stacked_bar_plot.pdf', 
+                        f'{prefix}.stacked_bar_plot.pdf', 
                         names=np.array(allnames), 
                         barsortorder=bar_graph_sort_order)
 
     # Normolized stcked barplot
     decomp.make_stacked_bar_plot_sorted(decomp.Basis.shape[0], 
                             decomp.NormedBasis.T, 
-                            os.path.join(dir_path_pic, f'{method}.{data_slice_size}.{n_components}.stacked_bar_plot.normed.sorted.pdf'), 
+                            f'{prefix}.stacked_bar_plot.normed.sorted.pdf', 
                             names=np.array(allnames), 
                             barsortorder=bar_graph_sort_order)
     
@@ -153,8 +151,8 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     plt.scatter(embedding[:,0], embedding[:,1], color=np.array(decomp.Comp_colors)[majcomp], alpha=1, marker='.')
     plt.ylabel('UMAP axis 2')
     plt.xlabel('UMAP axis 1')
-    plt.title(f'VST data, {method} Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
-    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.umap.pdf', )
+    plt.title(f'VST data, Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
+    plt.savefig(f'{prefix}.umap.pdf', bbox_inches='tight')
     plt.close(fig)
     
     # UMAP, comparing with VA and meta
@@ -176,9 +174,9 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
     ax.scatter(embedding[:, 0], embedding[:, 1], color=np.array(decomp.Comp_colors)[majcomp], alpha=1, marker='.')
     ax.set_ylabel('UMAP axis 2')
     ax.set_xlabel('UMAP axis 1')
-    ax.set_title(f'VST data, {method} Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
+    ax.set_title(f'VST data, Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
 
-    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.umap.comparing.pdf', bbox_inches='tight')
+    plt.savefig(f'{prefix}.umap.comparing.pdf', bbox_inches='tight')
     plt.close(fig)
 
     ### Iterpretation part
@@ -234,13 +232,17 @@ def vis_nmf(dir_path_mat, dir_path_pic, n_components, method, metadata, data_sli
 
     # Adjust layout and show the figure
     #fig.tight_layout()
-    plt.savefig(dir_path_pic+str(method)+'.'+str(data_slice_size)+'.'+str(n_components)+'.iterpretation.10barplot.pdf', bbox_inches='tight')
+    plt.savefig(f'{prefix}.iterpretation.10barplot.pdf', bbox_inches='tight')
     plt.close(fig)
 
 
-def main(sample_order_path, cluster_meta_path, dir_path_mat, dir_path_pic, n_components, method):
+def main(cluster_meta_path, sample_order_path, prefix, n_components):
     metadata = load_meta(sample_order_path, cluster_meta_path)
-    vis_nmf(dir_path_mat, dir_path_pic, int(n_components), method, metadata)
+    visualize_nmf(
+        metadata,
+        prefix,
+        int(n_components),
+    )
 
 
 if __name__ == '__main__':
