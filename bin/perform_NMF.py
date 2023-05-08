@@ -652,7 +652,7 @@ if __name__ == '__main__':
     else:
         peaks_m = np.ones(mat.shape[0], dtype=bool)
 
-    mat = mat[peaks_m, samples_m]
+    mat = mat[peaks_m, :][:, samples_m]
 
     W_np, H_np = perform_NMF(X=mat, weights=weights_vector, n_components=args.n_components)
     
