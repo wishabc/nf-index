@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-params.params_list = "/home/sboytsov/NMF/nmf_hyperparams.tsv"
+params.params_list = "/home/sboytsov/NMF/nmf_downsampled_hyperparams.tsv"
 
 params.weights_file_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/sample_weights_annotation_ontology.tsv"
 params.matrix_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/binary.filtered.matrix.npy"
