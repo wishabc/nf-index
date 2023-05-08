@@ -28,7 +28,7 @@ process fit_nmf {
 	"""
     python3 $moduleDir/bin/perform_NMF.py \
         ${params.weights_file_path} \
-        ${params.matrix_path} \
+        ${matrix_path} \
         ./ \
         ${method} \
         ${n_components} \
