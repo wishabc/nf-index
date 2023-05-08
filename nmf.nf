@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-params.params_list = "/home/sboytsov/NMF/nmf_downsampled_hyperparams.tsv"
+params.params_list = "/home/sboytsov/NMF/nmf_hyperparams.tsv"
 
 
 params.samples_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
