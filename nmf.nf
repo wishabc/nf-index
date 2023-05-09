@@ -12,7 +12,7 @@ def non_required_arg(value, key) {
 }
 
 process fit_nmf {
-	tag "${prefix}:${n_components}"
+	tag "${prefix}"
 	conda "/home/sabramov/miniconda3/envs/jupyter2"
     publishDir "${params.outdir}/nmf_results"
     memory { 400.GB * task.attempt }
@@ -21,7 +21,7 @@ process fit_nmf {
 		tuple val(n_components), val(fname), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
 
 	output:
-        tuple val(prefix), path("${prefix}*")
+        tuple val(prefix), val(n_components), path("${prefix}*")
 
 	script:
     weights = weights_path ? "--sampels_weights ${weights_path}": ""
@@ -44,7 +44,7 @@ process visualize_nmf {
     publishDir "${params.outdir}/figures"
 
 	input:
-		tuple val(prefix), path(nmf_results)
+		tuple val(prefix), val(n_components), path(nmf_results)
 
 	output:
         tuple val(prefix), path("*.pdf")
@@ -63,7 +63,7 @@ workflow runNMF {
     take:
         hyperparams 
     main:
-        out = fit_nmf(hyperparams) // | visualize_nmf
+        out = fit_nmf(hyperparams) | visualize_nmf
     emit:
         out
 }
