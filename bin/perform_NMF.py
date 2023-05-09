@@ -621,8 +621,10 @@ def perform_NMF(X, weights=None, n_components=16):
     H, W = initialize_u_v(X, n_components)
     W = model.fit_transform(X.T, W=W.T, H=H.T, weights=weights)
     H = model.components_
-    return W, H
+    return W, H, model
 
+def project_samples(data, model):
+    return model.transform(data)
 
 
 if __name__ == '__main__':
@@ -642,19 +644,21 @@ if __name__ == '__main__':
         weights_df = pd.read_table(args.samples_weights)
         weights_vector = weights_df.set_index("id").to_numpy().squeeze()
     
-    if args.samples_mask:
+    if args.samples_mask is not None:
         samples_m = np.load(args.samples_mask)
     else:
         samples_m = np.ones(mat.shape[1], dtype=bool)
     
-    if args.peaks_mask:
+    if args.peaks_mask is not None:
         peaks_m = np.load(args.peaks_mask)
     else:
         peaks_m = np.ones(mat.shape[0], dtype=bool)
-
-    mat = mat[peaks_m, :][:, samples_m]
-
-    W_np, H_np = perform_NMF(X=mat, weights=weights_vector, n_components=args.n_components)
     
+    mat = mat[peaks_m, :]
+    matrix = mat[:, samples_m]
+
+    W_np, H_np, model = perform_NMF(X=matrix, weights=weights_vector, n_components=args.n_components)
+    if args.samples_mask is not None:
+        W_np = project_samples(mat, model)
     np.save(f'{args.prefix}.W.npy', W_np)
     np.save(f'{args.prefix}.H.npy', H_np)

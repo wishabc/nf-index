@@ -87,22 +87,21 @@ def get_colors_order(n_components):
     return colors_order
 
 
-def load_meta(sample_order_path, cluster_meta_path, samples_mask):
+def load_meta(sample_order_path, cluster_meta_path):
     # Sample order matrix to metadata 
     samples_order = np.loadtxt(sample_order_path, delimiter='\t', dtype=str)
-    samples_mask = np.load(samples_mask)
     # metadata with cluster names
     metadata = pd.read_table(cluster_meta_path).set_index('id').loc[samples_order]
     # Here in column 'VA_cluster' I load Sasha's clustering labels
     metadata.rename(columns={'cluster': 'VA_cluster'}, inplace=True)
     metadata.reset_index(inplace=True)
-    print(samples_mask.dtype, samples_mask.shape, len(metadata.index))
-    return metadata.iloc[samples_mask, :]
+    return metadata
 
 
-def visualize_nmf(metadata, prefix, n_components):
+
+# TODO: use samples_mask to distiguish between projected and initial data
+def visualize_nmf(metadata, prefix, n_components, samples_mask=None):
     colors_order = get_colors_order(n_components)
-
     # Data loading
     allnames = metadata['taxonomy_name'].to_list()
 
@@ -236,11 +235,14 @@ def visualize_nmf(metadata, prefix, n_components):
 
 
 def main(cluster_meta_path, sample_order_path, prefix, n_components, samples_mask=None):
-    metadata = load_meta(sample_order_path, cluster_meta_path, samples_mask)
+    metadata = load_meta(sample_order_path, cluster_meta_path)
+    if samples_mask is not None:
+        samples_mask = np.load(samples_mask)
     visualize_nmf(
         metadata,
         prefix,
         int(n_components),
+        samples_mask
     )
 
 
