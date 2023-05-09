@@ -68,7 +68,7 @@ workflow runNMF {
         out
 }
 
-
+// nextflow run ~/projects/SuperIndex/nf-index/nmf.nf -profile Altius -resume
 workflow {
     Channel.fromPath(params.params_list)
         | splitCsv(header:true, sep:'\t')

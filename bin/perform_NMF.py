@@ -639,11 +639,6 @@ if __name__ == '__main__':
 
     mat = np.load(args.matrix).astype(float)
     
-    weights_vector = None
-    if args.samples_weights:
-        weights_df = pd.read_table(args.samples_weights)
-        weights_vector = weights_df.set_index("id").to_numpy().squeeze()
-    
     if args.samples_mask is not None:
         samples_m = np.load(args.samples_mask)
     else:
@@ -654,6 +649,13 @@ if __name__ == '__main__':
     else:
         peaks_m = np.ones(mat.shape[0], dtype=bool)
     
+    weights_vector = None
+    if args.samples_weights:
+        weights_df = pd.read_table(args.samples_weights)
+        weights_vector = weights_df.set_index("id").to_numpy().squeeze()
+        if args.samples_mask is not None:
+            weights_vector = weights_vector[samples_m]
+
     mat = mat[peaks_m, :]
     matrix = mat[:, samples_m]
 
