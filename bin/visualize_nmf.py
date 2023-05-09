@@ -91,7 +91,7 @@ def load_meta(sample_order_path, cluster_meta_path, samples_mask):
     # Sample order matrix to metadata 
     with open(sample_order_path) as f:
         samples_order = np.array(f.readline().strip().split())
-
+    samples_mask = np.load(samples_mask)
     # metadata with cluster names
     metadata = pd.read_table(cluster_meta_path).set_index('id').loc[samples_order]
     # Here in column 'VA_cluster' I load Sasha's clustering labels
