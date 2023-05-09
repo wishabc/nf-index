@@ -21,7 +21,7 @@ process fit_nmf {
 		tuple val(n_components), val(fname), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
 
 	output:
-        tuple val(prefix), val(n_components), path("${prefix}*")
+        tuple val(prefix), val(n_components), val(samples_mask), path("${prefix}*")
 
 	script:
     weights = weights_path ? "--sampels_weights ${weights_path}": ""
@@ -44,7 +44,7 @@ process visualize_nmf {
     publishDir "${params.outdir}/figures"
 
 	input:
-		tuple val(prefix), val(n_components), path(nmf_results)
+		tuple val(prefix), val(n_components), val(samples_mask), path(nmf_results)
 
 	output:
         tuple val(prefix), path("*.pdf")
@@ -55,7 +55,8 @@ process visualize_nmf {
         ${params.clustering_meta} \
         ${params.samples_order_path} \
         ${prefix} \
-        ${n_components}
+        ${n_components} \
+        ${samples_mask}
 	"""
 }
 

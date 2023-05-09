@@ -87,7 +87,7 @@ def get_colors_order(n_components):
     return colors_order
 
 
-def load_meta(sample_order_path, cluster_meta_path):
+def load_meta(sample_order_path, cluster_meta_path, samples_mask):
     # Sample order matrix to metadata 
     with open(sample_order_path) as f:
         samples_order = np.array(f.readline().strip().split())
@@ -98,7 +98,7 @@ def load_meta(sample_order_path, cluster_meta_path):
     metadata.rename(columns={'cluster': 'VA_cluster'}, inplace=True)
     metadata.reset_index(inplace=True)
 
-    return metadata
+    return metadata.iloc[samples_mask, :]
 
 
 def visualize_nmf(metadata, prefix, n_components):
@@ -236,8 +236,8 @@ def visualize_nmf(metadata, prefix, n_components):
     plt.close(fig)
 
 
-def main(cluster_meta_path, sample_order_path, prefix, n_components):
-    metadata = load_meta(sample_order_path, cluster_meta_path)
+def main(cluster_meta_path, sample_order_path, prefix, n_components, samples_mask=None):
+    metadata = load_meta(sample_order_path, cluster_meta_path, samples_mask)
     visualize_nmf(
         metadata,
         prefix,
