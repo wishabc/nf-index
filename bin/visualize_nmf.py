@@ -97,7 +97,7 @@ def load_meta(sample_order_path, cluster_meta_path, samples_mask):
     # Here in column 'VA_cluster' I load Sasha's clustering labels
     metadata.rename(columns={'cluster': 'VA_cluster'}, inplace=True)
     metadata.reset_index(inplace=True)
-
+    print(samples_mask.dtype, samples_mask.shape, len(metadata.index))
     return metadata.iloc[samples_mask, :]
 
 
