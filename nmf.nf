@@ -24,7 +24,6 @@ process fit_nmf {
         tuple val(prefix), val(n_components), val(samples_mask), path("${prefix}*")
 
 	script:
-    weights = weights_path ? "--sampels_weights ${weights_path}": ""
     prefix = "${fname}.${n_components}"
 	"""
     python3 $moduleDir/bin/perform_NMF.py \
@@ -69,13 +68,6 @@ workflow runNMF {
         out
 }
 
-workflow visualize {
-    data = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/NMF0508/output/nmf_results/*')
-        | map(it -> tuple(it.name.split('\\.')[2], it.name.split('\\.')[0], it))
-        | groupTuple(by:[0,1])
-        | visualize_nmf
-}
-
 
 workflow {
     Channel.fromPath(params.params_list)
@@ -91,3 +83,17 @@ workflow {
         | runNMF
 }
 
+// Entry for visuzizations only
+workflow visualize {
+    params.nmf_results_path = "/net/seq/data2/projects/sabramov/SuperIndex/NMF0508/output/nmf_results/"
+    Channel.fromPath(params.params_list)
+        | splitCsv(header:true, sep:'\t')
+		| map(row -> tuple(
+            row.prefix,
+            row.n_components,
+            row?.samples_mask,
+            file("${params.nmf_results_path}/${row.prefix}.${row.n_components}*")
+            ))
+        | groupTuple(by:[0,1])
+        | visualize_nmf
+}
