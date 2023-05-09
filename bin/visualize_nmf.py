@@ -89,8 +89,7 @@ def get_colors_order(n_components):
 
 def load_meta(sample_order_path, cluster_meta_path, samples_mask):
     # Sample order matrix to metadata 
-    with open(sample_order_path) as f:
-        samples_order = np.array(f.readline().strip().split())
+    samples_order = np.loadtxt(sample_order_path, delimiter='\t', dtype=str)
     samples_mask = np.load(samples_mask)
     # metadata with cluster names
     metadata = pd.read_table(cluster_meta_path).set_index('id').loc[samples_order]
@@ -109,8 +108,8 @@ def visualize_nmf(metadata, prefix, n_components):
 
     decomp = OONMF.NMFobject(n_components)
     decomp.matrix_input_name(
-        f'{prefix}W.npy',
-        f'{prefix}H.npy',
+        f'{prefix}.W.npy',
+        f'{prefix}.H.npy',
     )
     decomp.read_matrix_input(compressed=False)
     print(decomp.Basis.shape, decomp.Mixture.shape, "matrices loaded for n_components", n_components)
