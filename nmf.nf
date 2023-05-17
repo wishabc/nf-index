@@ -76,7 +76,7 @@ workflow {
             row.n_components,
             row.prefix,
             file(row.matrix_path),
-            row?.weights_path,
+            row?.samples_weights,
             row?.peaks_mask,
             row?.samples_mask
             ))
