@@ -263,12 +263,13 @@ workflow readSamplesFile {
 	main:
 		bams_hotspots = Channel.fromPath(params.samples_file)
 			| splitCsv(header:true, sep:'\t')
-			| map(row -> tuple(row.id,
+			| map(row -> tuple(
+				row.id,
 				file(row.filtered_alignments_bam),
 				file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"),
-				file(row.hotspot_peaks_point1per)),
+				file(row.hotspot_peaks_point1per),
 				row.paired_aligned != 0
-			)
+			))
 	emit:
 		bams_hotspots
 }
