@@ -25,17 +25,19 @@ process count_tags {
 	scratch true
 
 	input:
-		tuple val(indiv_id), path(bam_file), path(bam_file_index), path(peaks_file), path(saf)
+		tuple val(indiv_id), path(bam_file), path(bam_file_index), path(peaks_file), val(has_paired), path(saf)
 
 	output:
 		tuple val(indiv_id), path("${prefix}.counts.txt"), path("${prefix}.bin.txt")
 
 	script:
 	prefix = "${indiv_id}"
+	tag = has_paired ? '-p' : ''
 	"""
 	samtools view -bh ${bam_file} > align.bam
 	samtools index align.bam
-	featureCounts -a ${saf} -o counts.txt -F SAF -p align.bam
+
+	featureCounts -a ${saf} -o counts.txt -F SAF ${tag} align.bam
 	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${prefix}.counts.txt
 	
 	bedmap --indicator --sweep-all ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
@@ -261,8 +263,12 @@ workflow readSamplesFile {
 	main:
 		bams_hotspots = Channel.fromPath(params.samples_file)
 			| splitCsv(header:true, sep:'\t')
-			| map(row -> tuple(row.id, file(row.filtered_alignments_bam),
-				file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"), file(row.hotspot_peaks_point1per)))
+			| map(row -> tuple(row.id,
+				file(row.filtered_alignments_bam),
+				file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"),
+				file(row.hotspot_peaks_point1per)),
+				row.paired_aligned != 0
+			)
 	emit:
 		bams_hotspots
 }
