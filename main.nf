@@ -5,13 +5,27 @@ include { non_required_arg } from "./nmf"
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
 
+process bed2saf {
+	conda params.conda
+
+	output:
+		path name
+
+	script:
+	name = "masterlist.saf"
+	"""
+	cat ${params.index_file} | awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' > ${name}
+	"""
+}
+
 
 process count_tags {
 	tag "${indiv_id}"
 	conda "${params.conda}"
+	scratch true
 
 	input:
-		tuple val(indiv_id), path(bam_file), path(bam_file_index), path(peaks_file)
+		tuple val(indiv_id), path(bam_file), path(bam_file_index), path(peaks_file), path(saf)
 
 	output:
 		tuple val(indiv_id), path("${prefix}.counts.txt"), path("${prefix}.bin.txt")
@@ -19,9 +33,11 @@ process count_tags {
 	script:
 	prefix = "${indiv_id}"
 	"""
-	bedtools multicov -bams ${bam_file} \
-		-bed ${params.index_file} \
-		| awk '{print \$(NF)}' > ${prefix}.counts.txt
+	samtools view -bh ${bam_file} > align.bam
+	samtools index align.bam
+	featureCounts -a ${saf} -o counts.txt -F SAF -p align.bam
+	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${prefix}.counts.txt
+	
 	bedmap --indicator --sweep-all ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
 	"""
 }
