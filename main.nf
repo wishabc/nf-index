@@ -1,5 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
+include { non_required_arg } from "./nmf"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
@@ -129,7 +130,6 @@ process normalize_matrix {
 	prefix = 'normalized'
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
 	normalization_params = n ? "--model_params ${n.parent}/${n.baseName}" : ""
-	sample_weights = params.sample_weights ? "--weights ${params.sample_weights}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
@@ -137,7 +137,7 @@ process normalize_matrix {
 		./ \
 		--jobs ${task.cpus} \
 		--prefix ${prefix} \
-		${sample_weights} \
+		${non_required_arg(params.sample_weights, '--weights')} \
 		${normalization_params}
 	"""
 }
@@ -243,8 +243,8 @@ workflow readSamplesFile {
 	main:
 		bams_hotspots = Channel.fromPath(params.samples_file)
 			| splitCsv(header:true, sep:'\t')
-			| map(row -> tuple(row.uniq_id, file(row.bam_file),
-				file("${row.bam_file}.crai"), file(row.hotspots_file)))
+			| map(row -> tuple(row.id, file(row.bam_file),
+				file("${row.bam_file}.crai"), file(row.hotspot_peaks_point1per)))
 	emit:
 		bams_hotspots
 }

@@ -2,6 +2,7 @@
 nextflow.enable.dsl = 2
 
 params.hyper_params_list = "/home/sabramov/projects/SuperIndex/hyperparams_clustering+ids.tsv"
+params.gpu_conda = "/home/sabramov/miniconda3/envs/tensorflow"
 
 params.meta = "/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_22-11-28/metadata/ENCODE4plus_master_metadata_filtered.tsv"
 
