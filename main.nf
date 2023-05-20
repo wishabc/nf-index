@@ -208,7 +208,9 @@ workflow generateMatrix {
 	take:
 		bams_hotspots
 	main:
-		count_matrices = bams_hotspots
+		
+		count_matrices = bams_hotspots 
+			| combine(bed2saf())
 			| count_tags
 			| toList()
 			| transpose()
