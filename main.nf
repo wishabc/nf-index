@@ -47,6 +47,7 @@ process count_tags {
 process generate_count_matrix {
 	publishDir "${params.outdir}/raw_matrices", pattern: "matrix.all*"
 	publishDir params.outdir, pattern: "indivs_order.txt"
+	label "medmem"
 
 	input:
 
