@@ -48,6 +48,7 @@ process generate_count_matrix {
 	publishDir "${params.outdir}/raw_matrices", pattern: "matrix.all*"
 	publishDir params.outdir, pattern: "indivs_order.txt"
 	label "medmem"
+	cpus 2
 
 	input:
 
@@ -60,8 +61,12 @@ process generate_count_matrix {
 	script:
 	"""
 	echo "${count_files}" | tr " " "\n" | xargs -I file basename file | cut -d. -f1 | tr "\n" "\t" > indivs_order.txt
-	paste - ${count_files} | cut -c2- | gzip -c > matrix.all.signal.txt.gz
-	paste - ${bin_files} | cut -c2- | gzip -c > matrix.all.peaks.txt.gz
+	(
+		trap 'kill 0' SIGINT; \
+		paste - ${count_files} | cut -c2- | gzip -c > matrix.all.signal.txt.gz & \
+		paste - ${bin_files} | cut -c2- | gzip -c > matrix.all.peaks.txt.gz & \
+		wait \
+	)
 	"""
 }
 
