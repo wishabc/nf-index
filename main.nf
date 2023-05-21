@@ -59,7 +59,7 @@ process generate_count_matrix {
 
 	script:
 	"""
-	cat ${count_files} | xargs -I file basename file | cut -d. -f1 > indivs_order.txt
+	echo ${count_files} | xargs -I file basename file | cut -d. -f1 > indivs_order.txt
 	paste - ${count_files} | cut -c2- | gzip -c > matrix.all.signal.txt.gz
 	paste - ${bin_files} | cut -c2- | gzip -c > matrix.all.peaks.txt.gz
 	"""
