@@ -103,7 +103,7 @@ if (file.exists(params_file_name)) {
   saveRDS(dispersionFunction(dds), file=params_file_name)
 }
 
-vsd <- varianceStabilizingTransformation(dds, blind = F)
-rm(dds)
-gc()
-np$save(paste(prefix, suffix, ".npy", sep=''), np$array(assay(vsd)))
+# vsd <- varianceStabilizingTransformation(dds, blind = F)
+# rm(dds)
+# gc()
+# np$save(paste(prefix, suffix, ".npy", sep=''), np$array(assay(vsd)))
