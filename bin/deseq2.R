@@ -2,7 +2,6 @@
 library(readr)
 library(dplyr)
 library(reticulate)
-library(readr)
 library(stringr)
 library(data.table)
 library(DESeq2)
@@ -53,8 +52,8 @@ sample_names <- data.table(sample_names)
 counts <- as.data.frame(counts, stringsAsFactors = F)
 colnames(counts) <- sample_names
 
-metadata <- read_delim(args[4], delim = '\t', col_names=T)
-rownames(metadata) <- metadata$id
+metadata <- read_delim(args[4], delim='\t', col_names=T)
+#rownames(metadata) <- metadata$id
 
 print('Making DESeq dataset')
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
@@ -103,7 +102,7 @@ if (file.exists(params_file_name)) {
   saveRDS(dispersionFunction(dds), file=params_file_name)
 }
 
-vsd <- varianceStabilizingTransformation(dds, blind = F)
-rm(dds)
-gc()
-np$save(paste(prefix, suffix, ".npy", sep=''), np$array(assay(vsd)))
+# vsd <- varianceStabilizingTransformation(dds, blind = F)
+# rm(dds)
+# gc()
+# np$save(paste(prefix, suffix, ".npy", sep=''), np$array(assay(vsd)))
