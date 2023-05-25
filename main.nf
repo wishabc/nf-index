@@ -49,6 +49,7 @@ process generate_count_matrix {
 	publishDir params.outdir, pattern: "indivs_order.txt"
 	label "medmem"
 	cpus 2
+	scratch true
 
 	input:
 
@@ -60,7 +61,8 @@ process generate_count_matrix {
 
 	script:
 	"""
-	echo "${count_files}" | tr " " "\n" | xargs -I file basename file | cut -d. -f1 | tr "\n" "\t" > indivs_order.txt
+	echo "${count_files}" | tr " " "\n" | xargs -I file basename file | cut -d. -f1 | tr "\n" "\t" > order.txt
+	truncate -s -1 order.txt > indivs_order.txt
 	(
 		trap 'kill 0' SIGINT; \
 		paste - ${count_files} | cut -c2- | gzip -c > matrix.all.signal.txt.gz & \
@@ -137,7 +139,7 @@ process normalize_matrix {
 	label "bigmem"
 	publishDir "${params.outdir}/norm", pattern: "${prefix}.normed.npy"
 	publishDir "${params.outdir}/norm", pattern: "${prefix}.scale_factors.npy"
-	publishDir "${params.outdir}/params", pattern: "${prefix}.params.npz"
+	publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.*"
 
 
 	input:
