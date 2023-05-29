@@ -95,7 +95,8 @@ process filter_index {
         ${params.index_file} \
         blacklisted_mask.txt \
         ${filtered_mask} \
-		${filtered_index}
+		${filtered_index} \
+		${params.include_lowsig_singletons ? "--include_lowsig_singletons" : ""}
 	"""
 }
 
