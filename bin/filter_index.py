@@ -26,8 +26,8 @@ if __name__ == '__main__':
     parser.add_argument('blacklisted_mask', help='Path to blacklisted_mask')
     parser.add_argument('output_mask', help='Path to directory to save output mask.')
     parser.add_argument('filtered_index', help='Path to directory to save filtered index.')
-    parser.add_argument('--include_lowsig_singletons', help='Filenames prefix',
-        default='matrix')
+    parser.add_argument('--include_lowsig_singletons', help='Include low signal singletons',
+        default=False, action="store_true")
 
     args = parser.parse_args()
     index_df = pd.read_table(args.index_file, header=None, names=index_cols)
