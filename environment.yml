@@ -18,5 +18,7 @@ dependencies:
   - pysam
   - r-essentials
   - r
+  - r-reticulate
+  - subread
   - bioconductor-deseq2
 prefix: /home/sabramov/miniconda3/envs/super-index
