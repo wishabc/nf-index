@@ -5,7 +5,6 @@ library(reticulate)
 library(stringr)
 library(data.table)
 library(DESeq2)
-library(umap)
 
 np <- import("numpy")
 
