@@ -52,7 +52,6 @@ process generate_count_matrix {
 	scratch true
 
 	input:
-
 		tuple val(indiv_ids), path(count_files), path(bin_files)
 
 	output:
@@ -61,7 +60,11 @@ process generate_count_matrix {
 
 	script:
 	"""
-	echo "${count_files}" | tr " " "\n" | xargs -I file basename file | cut -d. -f1 | tr "\n" "\t" > order.txt
+	echo "${count_files}" | tr " " "\n"  \
+		| xargs -I file basename file \
+		| cut -d. -f1 \
+		| tr "\n" "\t" > order.txt
+	
 	truncate -s -1 order.txt > indivs_order.txt
 	(
 		trap 'kill 0' SIGINT; \
@@ -219,13 +222,10 @@ workflow generateMatrix {
 	take:
 		bams_hotspots
 	main:
-		
 		count_matrices = bams_hotspots 
 			| combine(bed2saf())
 			| count_tags
-			| toList()
-			| transpose()
-			| toList()
+			| collect(sort: true, flat: false)
 			| generate_count_matrix
 
 		mask = filter_index().mask
@@ -339,9 +339,10 @@ workflow test2 {
 }
 
 workflow test {
-	mats = Channel.of(tuple(
-		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/raw_matrices/matrix.all.signal.txt.gz'),
-		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/raw_matrices/matrix.all.peaks.txt.gz')
+	mats = Channel.of(
+		tuple(
+			file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/raw_matrices/matrix.all.signal.txt.gz'),
+			file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/raw_matrices/matrix.all.peaks.txt.gz')
 		)
 	)
 	
