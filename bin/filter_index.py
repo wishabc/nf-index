@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 
 
-index_cols = ["chr", "start", "end", "chunk_id", "score", "n_samples",
+index_cols = ["#chr", "start", "end", "chunk_id", "score", "n_samples",
      "n_peaks", "dhs_width", "summit", "start_core", "end_core"]
 
 autosomes = [f'chr{x}' for x in range(1, 23)]
