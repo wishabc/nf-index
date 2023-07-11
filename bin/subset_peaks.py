@@ -43,13 +43,13 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
             print(f"Adding peaks for {sample_id}. Shortfall: {to_add_peaks}")
             peaks_pool = sample_binary_mask * ~top_gini_mask
             if peaks_pool.sum() < to_add_peaks:
-                print(f'Not enough peaks to add for {sample_id}, adding {peaks_pool.sum()}/{to_add_peaks}. Total peaks for the sample: {top_gini_mask * sample_binary_mask}')
+                print(f'Not enough peaks to add for {sample_id}, adding {peaks_pool.sum()}/{to_add_peaks}. Total peaks for the sample: {(top_gini_mask * sample_binary_mask).sum()}')
                 top_gini_mask[peaks_pool] = 1
                 continue
             
             to_add_argsort = gini_argsort[np.where(peaks_pool)]
             top_gini_mask[to_add_argsort[:to_add_peaks]] = 1
-            print(f'Added {to_add_peaks}. Total peaks for the sample: {top_gini_mask * sample_binary_mask}')
+            print(f'Added {to_add_peaks}. Total peaks for the sample: {(top_gini_mask * sample_binary_mask).sum()}')
     if save is not None:
         np.save(f'{save}.npy',
             normalized_matrix[
