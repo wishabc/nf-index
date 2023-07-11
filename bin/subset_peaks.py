@@ -47,8 +47,10 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
                 top_gini_mask[peaks_pool] = 1
                 continue
             
-            to_add_argsort = gini_argsort[np.where(peaks_pool)]
-            top_gini_mask[to_add_argsort[:to_add_peaks]] = 1
+            pool_indexes = np.where(peaks_pool)[0]
+            mask = np.in1d(gini_argsort, pool_indexes)
+            to_add_argsort = gini_argsort[mask][:to_add_peaks]
+            top_gini_mask[to_add_argsort] = 1
             print(f'Added {to_add_peaks}. Total peaks for the sample: {(top_gini_mask * sample_binary_mask).sum()}')
     if save is not None:
         np.save(f'{save}.npy',
