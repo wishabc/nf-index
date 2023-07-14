@@ -16,8 +16,8 @@ def average_matrices(normalized_matrix, binary_matrix, meta_labels):
     unique_labels = np.unique(meta_labels)
     new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
                                 dtype=normalized_matrix.dtype)
-    new_binary_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
-                                dtype=normalized_matrix.dtype)
+    new_binary_matrix = np.zeros(shape=(binary_matrix.shape[0], unique_labels.shape[0]),
+                                dtype=bool)
     for label in unique_labels:
         new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
         new_binary_matrix[:, label] = binary_matrix[:, meta_labels == label].any(axis=1)
@@ -64,7 +64,7 @@ def add_peaks(normalized_matrix, binary_matrix, min_peaks_per_sample, gini_argso
             to_add_argsort = gini_argsort[mask][:to_add_peaks]
             new_mask[to_add_argsort] = 1
             print(f'Added {to_add_peaks}. Total peaks for the sample: {(new_mask * sample_binary_mask).sum()}')
-    return top_gini_mask
+    return new_mask
 
 
 def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta_labels,
