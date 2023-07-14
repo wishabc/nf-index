@@ -44,6 +44,7 @@ def get_gini_index_for_peaks(new_norm_matrix, num_peaks):
 
 
 def add_peaks(normalized_matrix, binary_matrix, min_peaks_per_sample, gini_argsort, top_gini_mask):
+    new_mask = top_gini_mask.copy()
     if min_peaks_per_sample is not None and min_peaks_per_sample != 0:
         for sample_id in range(normalized_matrix.shape[1]):
             sample_binary_mask = binary_matrix[:, sample_id]
@@ -54,15 +55,15 @@ def add_peaks(normalized_matrix, binary_matrix, min_peaks_per_sample, gini_argso
             print(f"Adding peaks for {sample_id}. Shortfall: {to_add_peaks}")
             peaks_pool = sample_binary_mask * ~top_gini_mask
             if peaks_pool.sum() < to_add_peaks:
-                print(f'Not enough peaks to add for {sample_id}, adding {peaks_pool.sum()}/{to_add_peaks}. Total peaks for the sample: {(top_gini_mask * sample_binary_mask).sum()}')
-                top_gini_mask[peaks_pool] = 1
+                new_mask[peaks_pool] = 1
+                print(f'Not enough peaks to add for {sample_id}, added {peaks_pool.sum()}/{to_add_peaks}. Total peaks for the sample: {(new_mask * sample_binary_mask).sum()}')
                 continue
             
             pool_indexes = np.where(peaks_pool)[0]
             mask = np.in1d(gini_argsort, pool_indexes)
             to_add_argsort = gini_argsort[mask][:to_add_peaks]
-            top_gini_mask[to_add_argsort] = 1
-            print(f'Added {to_add_peaks}. Total peaks for the sample: {(top_gini_mask * sample_binary_mask).sum()}')
+            new_mask[to_add_argsort] = 1
+            print(f'Added {to_add_peaks}. Total peaks for the sample: {(new_mask * sample_binary_mask).sum()}')
     return top_gini_mask
 
 
