@@ -58,7 +58,7 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
                 (top_gini_mask), :
             ]
         )
-    return gini_argsort, top_gini_mask
+    return gini_argsort, top_gini_mask, means, gini, smoothed_gini_final
 
 
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     meta_labels = sys.argv[4]
     num_peaks = params['num_peaks']
     min_peaks_per_sample = params.get('min_peaks_per_sample')
-    _, new_mask = main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample,
+    _, new_mask, *_ = main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample,
                     meta_labels=meta_labels, save=prefix)
     
     np.savetxt(f'{prefix}.mask.txt', new_mask, fmt="%5i")
