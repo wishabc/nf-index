@@ -12,13 +12,20 @@ def get_interpolation_for_gini(x, lowess_est, sampled):
     return interpolated
 
 
-def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta_labels, save=None):
+def average_matrices(normalized_matrix, binary_matrix, meta_labels):
     unique_labels = np.unique(meta_labels)
     new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
                                 dtype=normalized_matrix.dtype)
+    new_binary_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
+                                dtype=normalized_matrix.dtype)
     for label in unique_labels:
         new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
+        new_binary_matrix[:, label] = binary_matrix[:, meta_labels == label].any(axis=1)
 
+    return new_norm_matrix, new_binary_matrix
+
+
+def get_gini_index_for_peaks(new_norm_matrix, num_peaks):
     gini = np.cumsum(np.sort(new_norm_matrix, axis=1) - new_norm_matrix.min(axis=1)[:, None], axis=1)
     q = np.linspace(0, 1, new_norm_matrix.shape[1])
     gini = 2 * (q[None, :] - gini / gini[:, -1:]).mean(axis=1)
@@ -31,8 +38,12 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
     smoothed_gini_final = get_interpolation_for_gini(means, smoothed_gini_samp, sampled_peaks_mask)
     gini_index = gini - smoothed_gini_final
     gini_argsort = np.argsort(gini_index)[::-1]
-
     top_gini_mask = gini_index > gini_index[gini_argsort[num_peaks]]
+
+    return means, gini, smoothed_gini_final, gini_argsort, top_gini_mask
+
+
+def add_peaks(normalized_matrix, binary_matrix, min_peaks_per_sample, gini_argsort, top_gini_mask):
     if min_peaks_per_sample is not None and min_peaks_per_sample != 0:
         for sample_id in range(normalized_matrix.shape[1]):
             sample_binary_mask = binary_matrix[:, sample_id]
@@ -52,6 +63,23 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
             to_add_argsort = gini_argsort[mask][:to_add_peaks]
             top_gini_mask[to_add_argsort] = 1
             print(f'Added {to_add_peaks}. Total peaks for the sample: {(top_gini_mask * sample_binary_mask).sum()}')
+    return top_gini_mask
+
+
+def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta_labels,
+    meta_labels_in_gini=True, meta_labels_in_add=False, save=None):
+    new_norm_matrix, new_binary_matrix = average_matrices(normalized_matrix, binary_matrix, meta_labels)
+
+    if meta_labels_in_gini:
+        means, gini, smoothed_gini_final, gini_argsort, top_gini_mask = get_gini_index_for_peaks(new_norm_matrix, num_peaks)
+    else:
+        means, gini, smoothed_gini_final, gini_argsort, top_gini_mask = get_gini_index_for_peaks(normalized_matrix, num_peaks)
+
+    if meta_labels_in_add:
+        top_gini_mask = add_peaks(new_norm_matrix, new_binary_matrix, min_peaks_per_sample, gini_argsort, top_gini_mask)
+    else:
+        top_gini_mask = add_peaks(normalized_matrix, binary_matrix, min_peaks_per_sample, gini_argsort, top_gini_mask)
+
     if save is not None:
         np.save(f'{save}.npy',
             normalized_matrix[
