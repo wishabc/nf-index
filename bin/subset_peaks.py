@@ -45,8 +45,8 @@ def get_gini_index_for_peaks(new_norm_matrix, num_peaks):
 
 def add_peaks(binary_matrix, gini_argsort, num_peaks=0, min_peaks_per_sample=0):
     sorted_binary = binary_matrix[gini_argsort, :]
-    sorted_binary[(sorted_binary.cumsum(axis=0) > min_peaks_per_sample)] = False
-    sorted_binary[:num_peaks] = True
+    sorted_binary = np.where(sorted_binary.cumsum(axis=0) > min_peaks_per_sample, False, sorted_binary)
+    sorted_binary[:num_peaks, :] = True
 
     inv_argsort = np.zeros_like(gini_argsort)
     inv_argsort[gini_argsort] = np.arange(len(gini_argsort))
