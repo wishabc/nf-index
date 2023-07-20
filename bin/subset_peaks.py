@@ -50,7 +50,7 @@ def add_peaks(binary_matrix, gini_argsort, num_peaks=0, min_peaks_per_sample=0):
 
     inv_argsort = np.zeros_like(gini_argsort)
     inv_argsort[gini_argsort] = np.arange(len(gini_argsort))
-    
+
     return sorted_binary.any(axis=1)[inv_argsort]
 
 
@@ -64,9 +64,9 @@ def main(normalized_matrix, binary_matrix, num_peaks, min_peaks_per_sample, meta
         means, gini, smoothed_gini_final, gini_argsort, top_gini_mask = get_gini_index_for_peaks(normalized_matrix, num_peaks)
 
     if meta_labels_in_add:
-        top_gini_mask = add_peaks(new_norm_matrix, new_binary_matrix, min_peaks_per_sample, gini_argsort, top_gini_mask)
+        top_gini_mask = add_peaks(new_binary_matrix, gini_argsort, num_peaks, min_peaks_per_sample)
     else:
-        top_gini_mask = add_peaks(normalized_matrix, binary_matrix, min_peaks_per_sample, gini_argsort, top_gini_mask)
+        top_gini_mask = add_peaks(binary_matrix, gini_argsort, num_peaks, min_peaks_per_sample)
 
     if save is not None:
         np.save(f'{save}.npy',
