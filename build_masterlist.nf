@@ -3,7 +3,7 @@
 
 process collate_and_chunk {
     conda params.conda
-    module "R/3.3.3"
+    
     input:
         path peak_files
     
