@@ -92,6 +92,23 @@ process merge_chunks {
     """
 }
 
+process filter_masterlist {
+    publishDir params.outdir
+
+    input:
+        path "masterlist_DHSs_masterlist_all_chunkIDs.bed"
+
+    output:
+        path: "masterlist_DHSs_masterlist_all_chunkIDs.bed.filtered"
+
+    script:
+    prefix = "masterlist"
+    """
+    echo "filtered"
+
+    """
+}
+
 workflow {
     chunks = Channel.fromPath(params.peaks_file)
         | splitCsv(header:true, sep:'\t')
