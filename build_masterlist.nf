@@ -98,6 +98,7 @@ workflow {
         | map(it -> it.peaks)
         | collect(sort: true)
         | collate_and_chunk
+        | flatten()
         | process_chunk
         | resolve_overlaps
     
