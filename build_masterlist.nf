@@ -5,7 +5,7 @@ process collate_and_chunk {
     conda params.conda
     
     input:
-        path peak_files
+        path "peaks/*"
     
     output:
         path "chunk*.bed"
@@ -13,7 +13,7 @@ process collate_and_chunk {
     script:
     """
     
-    for f in ${peak_files}; 
+    for f in peaks/*; 
         do unstarch \$f >> tmp.bed;
     done
 
