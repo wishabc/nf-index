@@ -96,6 +96,7 @@ workflow {
     chunks = Channel.fromPath(params.peaks_file)
         | splitCsv(header:true, sep:'\t')
         | map(it -> it.peaks)
+        | collect(sort: true)
         | collate_and_chunk
         | process_chunk
         | resolve_overlaps
