@@ -5,7 +5,7 @@ process collate_and_chunk {
     conda params.conda
     
     input:
-        path "peaks/*"
+        path "peaks/peaks*.ext"
     
     output:
         path "chunk*.bed"
