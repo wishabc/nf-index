@@ -43,7 +43,7 @@ process process_chunk {
     Rscript $moduleDir/bin/code_build.R \
         ${prefix} \
         $moduleDir/bin \
-        ${chunk_file.parent} 
+        ./
     """
 }
 
