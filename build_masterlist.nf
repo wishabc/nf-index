@@ -38,9 +38,12 @@ process process_chunk {
         path "peaks_all/${prefix}.bed"
     
     script:
-    prefix = "${chunk_file.simpleName}"
+    prefix = "${chunk_file.baseName}"
     """
-    Rscript $moduleDir/bin/code_build.R ${prefix} ${chunk_file} 
+    Rscript $moduleDir/bin/code_build.R \
+        ${prefix} \
+        $moduleDir/bin \
+        ${chunk_file.parent} 
     """
 }
 
@@ -50,8 +53,8 @@ process resolve_overlaps {
     module "R/3.3.3"
 
     input:
-        path "DHSs_all/*"
-        path "peaks_all/*"
+        path chunk_file, name: "DHSs_all/*"
+        path peaks_file, name: "peaks_all/*"
     
     output:
         path "DHSs_all/${prefix}.bed"
@@ -59,9 +62,11 @@ process resolve_overlaps {
         path "DHSs_nonovl_any/${prefix}.bed"
     
     script:
-    prefix = "${chunk_file.simpleName}"
+    prefix = "${chunk_file.baseName}"
     """
-    Rscript $moduleDir/bin/code_build.R ${prefix} ${chunk_file} 
+    Rscript $moduleDir/bin/code_overlap.R \
+        ${prefix} \
+        $moduleDir/bin
     """
 }
 
@@ -83,7 +88,7 @@ process merge_chunks {
     bash $moduleDir/bin/code_gen_masterlist.sh \
         ${prefix} \
         ${params.chrom_sizes_bed} \
-        \$PWD
+        ./
     """
 }
 

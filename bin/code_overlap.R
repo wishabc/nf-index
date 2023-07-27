@@ -16,16 +16,14 @@ args=(commandArgs(TRUE))
 if (length(args)==0) {
   stop("No arguments supplied.")
 } else {
-  eval(parse(text=args[[1]])) # parse first argument: chunknum
-  eval(parse(text=args[[2]])) # parse second argument: workdir
-  eval(parse(text=args[[3]])) # parse third argument: sourcedir
+  prefix <- args[1]
+  sourcedir <- args[2]
+  
 }
 
-setwd(workdir)
+source(paste(sourcedir, "code_ML.R",sep="/"))
 
-source(paste(sourcedir,"code_ML.R",sep="/"))
-
-chunk <- paste("chunk", sprintf("%04d", chunknum), ".bed", sep="");
+chunk <- paste(prefix, ".bed", sep="");
 print(chunk)
 
 options(scipen=20)
