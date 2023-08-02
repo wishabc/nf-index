@@ -29,6 +29,7 @@ process collate_and_chunk {
 
 process process_chunk {
     conda params.conda
+    tag "${prefix}"
 
     input:
         path chunk_file
@@ -50,6 +51,7 @@ process process_chunk {
 
 process resolve_overlaps {
     conda params.conda
+    tag "${prefix}"
 
     input:
         path chunk_file, name: "DHSs_all/*"
@@ -70,8 +72,7 @@ process resolve_overlaps {
 }
 
 process merge_chunks {
-    // FIXME remove module
-    module "kentutil:bedops"
+    conda params.conda
     publishDir "${params.outdir}/unfiltered_masterlists"
 
     input:
@@ -93,7 +94,6 @@ process merge_chunks {
 }
 
 process filter_masterlist {
-    publishDir params.outdir
     conda params.conda
 
     input:

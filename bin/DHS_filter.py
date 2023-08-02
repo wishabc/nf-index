@@ -3,7 +3,6 @@
 #Load Dependencies
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
 
 masterlist_prefix = sys.argv[1]
