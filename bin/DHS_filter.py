@@ -10,11 +10,11 @@ masterlist_prefix = sys.argv[1]
 percentile = sys.argv[2]
 
 #Read in Rows to Remove for Encode Blacklist
-blacklist_rows = pd.read_table('blacklist_rows.txt', header=None)
+blacklist_rows = pd.read_table(sys.argv[3], header=None)
 
 #Read in masterlist file for calculating average score
 print("Reading Masterlist")
-masterlist = pd.read_table('masterlist_DHSs_' + str(masterlist_prefix) + '_all_chunkIDs.bed', header=None)
+masterlist = pd.read_table(sys.argv[4], header=None)
 print(masterlist.shape[0])
 
 #Assign headers to dataframes
@@ -52,8 +52,4 @@ new_masterlist = masterlist_filtered[['seqname', 'start', 'end', 'id', 'total_si
 #filtered_binary = filtered_binary.reset_index(drop=True)
 #filtered_binary = filtered_binary.drop(columns=['index_column'])
 
-
-
-
-new_masterlist.to_csv('masterlist_DHSs_' + str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.bed', index=False, header=False, sep="\t")
-#filtered_binary.to_csv(str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.binary.mtx', index=False, header=False, sep="\t")
+new_masterlist.to_csv(sys.argv[5], index=False, header=False, sep="\t")
