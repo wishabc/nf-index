@@ -86,9 +86,13 @@ process merge_chunks {
     
     script:
     """
+    cat ${params.chrom_sizes} \
+        | awk -v OFS='\t' '{ print \$1,0,\$2 }' \
+        > chrom_sizes.bed
+    
     bash $moduleDir/bin/code_gen_masterlist.sh \
         ${params.masterlist_id} \
-        ${params.chrom_sizes_bed} \
+        chrom_sizes.bed \
         ./
     """
 }
