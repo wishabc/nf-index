@@ -28,7 +28,7 @@ process collate_and_chunk {
 
 
 process process_chunk {
-    module "R/3.3.3"
+    module "R/4.0.5"
 
     input:
         path chunk_file
@@ -50,7 +50,7 @@ process process_chunk {
 
 process resolve_overlaps {
 
-    module "R/3.3.3"
+    module "R/4.0.5"
 
     input:
         path chunk_file, name: "DHSs_all/*"
@@ -96,18 +96,46 @@ process filter_masterlist {
     publishDir params.outdir
 
     input:
-        path "masterlist_DHSs_masterlist_all_chunkIDs.bed"
-
+        path masterlists
+    
     output:
-        path: "masterlist_DHSs_masterlist_all_chunkIDs.bed.filtered"
+	file 'masterlist_DHSs_masterlist.*.blacklistfiltered.bed'
 
     script:
     prefix = "masterlist"
     """
-    echo "filtered"
+    bedmap --bases  masterlist_DHSs_${prefix}_all_chunkIDs.bed ${params.encode_blacklist_regions} \
+    |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
+    > blacklist_rows.txt
+
+    python ${moduleDir}/bin/DHS_filter.py ${prefix} .5
 
     """
 }
+
+process annotate_masterlist {
+    publishDir params.outdir
+
+    input: 
+        file filtered_masterlist
+
+    output:
+        file 'masterlist_DHSs_masterlist.filtered.annotated.bed'
+
+    script:
+    """
+
+    bash ${moduleDir}/bin/simpleAnnotations.sh ${filtered_masterlist} ${params.encode3} ${params.gencode} ${params.gwas_catalog}
+    
+    echo -e "seqname\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
+    echo -e "is_encode3\tencode3_ovr-fraction\tdist_tss\tgene_name\tnum_gwasCatalog_variants" > simpleAnnotations_header.txt
+
+    paste masterlist_header.txt simpleAnnotations_header.txt > header.txt
+    paste ${filtered_masterlist} is_encode3.txt dist_gene.txt gwas_catalog_count.txt | cat header.txt - > masterlist_DHSs_masterlist.filtered.annotated.bed
+ 
+    """
+}
+
 
 workflow {
     chunks = Channel.fromPath(params.peaks_file)
@@ -119,9 +147,13 @@ workflow {
         | process_chunk
         | resolve_overlaps
     
-    merge_chunks(
+    masterlists = merge_chunks(
         chunks[0].collect(sort: true), 
         chunks[1].collect(sort: true), 
         chunks[2].collect(sort: true)
     )
+    | filter_masterlist
+    | annotate_masterlist
+	
+    	
 }
