@@ -17,6 +17,7 @@ dependencies:
   - pysam=0.19.1
   - r-essentials
   - samtools=1.15.1
+  - ucsc-bedtobigbed
   - r
   - r-reticulate
   - r-catools
