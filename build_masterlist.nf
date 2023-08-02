@@ -74,6 +74,7 @@ process resolve_overlaps {
 process merge_chunks {
     conda params.conda
     publishDir "${params.outdir}/unfiltered_masterlists"
+    scratch true
 
     input:
         path "DHSs_all/*"
@@ -125,6 +126,7 @@ process filter_masterlist {
 
 process annotate_masterlist {
     publishDir params.outdir
+    scratch true
 
     input: 
         path filtered_masterlist
