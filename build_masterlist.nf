@@ -140,11 +140,26 @@ process annotate_masterlist {
     echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
     echo -e "is_encode3\tencode3_ovr-fraction\tdist_tss\tgene_name\tnum_gwasCatalog_variants" > simpleAnnotations_header.txt
 
-    paste masterlist_header.txt simpleAnnotations_header.txt > header.txt
+    echo -e 'n_gc\tpercent_gc\tn_mappable' > gc_header.txt
+
+	
+	faidx -i nucleotide -b ${filtered_masterlist} ${params.genome_fasta} \
+		| awk -v OFS="\t" \
+            'NR>1 { 
+                total=\$4+\$5+\$6+\$7+\$8;
+                cg=\$6+\$7;
+                print \$1, \$2-1, \$3, cg, cg/total; }' \
+		| bedmap --delim "\t" --echo \
+			--bases-uniq - ${params.mappable_file} \
+        | cut -f4- \
+        > gc_content.txt
+
+    paste masterlist_header.txt simpleAnnotations_header.txt gc_header.txt > header.txt
     paste ${filtered_masterlist} \
         is_encode3.txt \
         dist_gene.txt \
         gwas_catalog_count.txt \
+        gc_content.txt \
         | cat header.txt - > ${name}
  
     """
