@@ -192,3 +192,10 @@ workflow {
 	
     	
 }
+
+workflow fromMasterlists {
+    params.masterlist_path = "$launchDir/${params.outdir}/unfiltered_masterlists/masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed"
+    Channel.fromPath(params.unfiltered_masterlists_path)
+        | filter_masterlist
+        | annotate_masterlist
+}
