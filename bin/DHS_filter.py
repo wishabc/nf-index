@@ -3,18 +3,17 @@
 #Load Dependencies
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
 
 masterlist_prefix = sys.argv[1]
 percentile = sys.argv[2]
 
 #Read in Rows to Remove for Encode Blacklist
-blacklist_rows = pd.read_table('blacklist_rows.txt', header=None)
+blacklist_rows = pd.read_table(sys.argv[3], header=None)
 
 #Read in masterlist file for calculating average score
 print("Reading Masterlist")
-masterlist = pd.read_table('masterlist_DHSs_' + str(masterlist_prefix) + '_all_chunkIDs.bed', header=None)
+masterlist = pd.read_table(sys.argv[4], header=None)
 print(masterlist.shape[0])
 m_size = masterlist.shape[0]
 
@@ -54,6 +53,7 @@ new_masterlist = masterlist_filtered[['seqname', 'start', 'end', 'id', 'total_si
 #filtered_binary = filtered_binary.reset_index(drop=True)
 #filtered_binary = filtered_binary.drop(columns=['index_column'])
 
+<<<<<<< HEAD
 new_masterlist.to_csv('masterlist_DHSs_' + str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.bed', index=False, header=False, sep="\t")
 #filtered_binary.to_csv(str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.binary.mtx', index=False, header=False, sep="\t")
 
@@ -66,3 +66,6 @@ def create_mask(arr, size):
 
 mask = create_mask(np.array(k), m_size)
 np.savetxt('masked_elements.txt', mask, fmt='%d')
+=======
+new_masterlist.to_csv(sys.argv[5], index=False, header=False, sep="\t")
+>>>>>>> a3f7e2bccc39ead88de870a50ae05727a4b13c04
