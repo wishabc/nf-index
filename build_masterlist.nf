@@ -106,10 +106,12 @@ process filter_masterlist {
     
     output:
 	    path name
+	    path mask
 
     script:
     prefix = "masterlist"
     name = "masterlist_DHSs.blacklistfiltered.bed"
+    mask = "masked_elements.txt"
     """
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
@@ -120,7 +122,8 @@ process filter_masterlist {
         .5 \
         blacklist_rows.txt \
         ${masterlist} \
-        ${name}
+        ${name} \
+        ${mask}
     """
 }
 
@@ -188,14 +191,16 @@ workflow {
         chunks[2].collect(sort: true)
     ).non_merged
         | filter_masterlist
-        | annotate_masterlist
+    
+    annotate_masterlist(masterlists[0])
 	
     	
 }
 
 workflow fromMasterlist {
     params.masterlist_path = "$launchDir/${params.outdir}/unfiltered_masterlists/masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed"
-    Channel.fromPath(params.unfiltered_masterlists_path)
+   masterlists =  Channel.fromPath(params.unfiltered_masterlists_path)
         | filter_masterlist
-        | annotate_masterlist
+        
+   annotate_masterlist(masterlists[0])
 }
