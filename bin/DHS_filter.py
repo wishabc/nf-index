@@ -43,6 +43,7 @@ print(np.sum(j))
 #Print Filtered Masterlist
 index_subset = blacklist_filtered[j]
 k = index_subset.index
+print(k)
 masterlist_filtered = masterlist.loc[k]
 masterlist_filtered['mean_signal'] = masterlist_filtered['total_signal'] / masterlist_filtered['num_samples']
 new_masterlist = masterlist_filtered[['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end', 'mean_signal']]
@@ -52,8 +53,21 @@ new_masterlist = masterlist_filtered[['seqname', 'start', 'end', 'id', 'total_si
 #filtered_binary = filtered_binary.reset_index(drop=True)
 #filtered_binary = filtered_binary.drop(columns=['index_column'])
 
-
-
-
 new_masterlist.to_csv('masterlist_DHSs_' + str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.bed', index=False, header=False, sep="\t")
 #filtered_binary.to_csv(str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.binary.mtx', index=False, header=False, sep="\t")
+
+def create_mask(arr):
+    result = []
+    for i in range(len(arr) - 1):
+        result.append(arr[i])
+        if arr[i] + 1 != arr[i + 1]:
+            # Fill the gap with zeros
+            gap_size = arr[i + 1] - arr[i] - 1
+            result.extend([0] * gap_size)
+	else:
+	   result.append(1)
+    result.append(arr[-1])  # Add the last element of the original array
+    return result
+
+mask = create_mask(k)
+np.savetxt(fname="masked_elements", mask, delimiter='\t')
