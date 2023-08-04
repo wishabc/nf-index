@@ -16,9 +16,10 @@ blacklist_rows = pd.read_table('blacklist_rows.txt', header=None)
 print("Reading Masterlist")
 masterlist = pd.read_table('masterlist_DHSs_' + str(masterlist_prefix) + '_all_chunkIDs.bed', header=None)
 print(masterlist.shape[0])
+m_size = masterlist.shape[0]
 
 #Assign headers to dataframes
-blacklist_rows.columns= ["row_id"]
+blacklist_rows.columns = ["row_id"]
 masterlist.columns = ['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end']
 
 #Remove blacklist rows from dataframe but keep index
@@ -56,18 +57,12 @@ new_masterlist = masterlist_filtered[['seqname', 'start', 'end', 'id', 'total_si
 new_masterlist.to_csv('masterlist_DHSs_' + str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.bed', index=False, header=False, sep="\t")
 #filtered_binary.to_csv(str(masterlist_prefix) + str(percentile) + '.blacklistfiltered.binary.mtx', index=False, header=False, sep="\t")
 
-def create_mask(arr):
-    result = []
-    for i in range(len(arr) - 1):
-        result.append(arr[i])
-        if arr[i] + 1 != arr[i + 1]:
-            # Fill the gap with zeros
-            gap_size = arr[i + 1] - arr[i] - 1
-            result.extend([0] * gap_size)
-	else:
-	   result.append(1)
-    result.append(arr[-1])  # Add the last element of the original array
+def create_mask(arr, size):
+    result = np.zeros(size)
+    for element in arr:
+	result[element] = 1
+
     return result
 
-mask = create_mask(k)
-np.savetxt(fname="masked_elements", mask, delimiter='\t')
+mask = create_mask(np.array(k), m_size)
+np.savetxt('masked_elements.txt', mask, fmt='%d')
