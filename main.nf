@@ -72,11 +72,9 @@ process generate_count_matrix {
 	truncate -s -1 order.txt > indivs_order.txt
 	(
 		trap 'kill 0' SIGINT; \
-		paste - ${count_files} \
-			| cut -c2- \
+		paste ${count_files} \
 			| gzip -c > matrix.all.signal.txt.gz & \
-		paste - ${bin_files} \
-			| cut -c2- \
+		paste ${bin_files} \
 			| gzip -c > matrix.all.peaks.txt.gz & \
 		wait \
 	)
