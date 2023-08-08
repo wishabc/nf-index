@@ -3,6 +3,7 @@
 process extract_max_density {
     conda params.conda
     publishDir "${params.outdir}/density"
+    tag "${ag_id}"
 
     input:
         tuple val(ag_id), path(peaks_file)
@@ -20,7 +21,6 @@ process extract_max_density {
         > ${density}
     """
 }
-
 
 
 workflow {	
