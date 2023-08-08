@@ -22,6 +22,10 @@ process extract_max_density {
     """
 }
 
+process collect_matrix {
+    
+}
+
 
 workflow {	
     Channel.fromPath(params.samples_file)
