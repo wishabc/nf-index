@@ -190,7 +190,6 @@ workflow {
         | filter_masterlist
         | annotate_masterlist
 	
-    	
 }
 
 workflow fromMasterlist {

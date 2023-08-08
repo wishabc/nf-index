@@ -8,39 +8,43 @@ params.sample_weights = ""
 process bed2saf {
 	conda params.conda
 
+	input:
+		path masterlist
+
 	output:
-		path name
+		tuple path(name), path(masterlist)
 
 	script:
 	name = "masterlist.saf"
 	"""
-	cat ${params.index_file} | awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' > ${name}
+	cat ${masterlist} \
+		| awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' > ${name}
 	"""
 }
 
 
 process count_tags {
-	tag "${indiv_id}"
+	tag "${id}"
 	conda "${params.conda}"
 	scratch true
 
 	input:
-		tuple val(indiv_id), path(bam_file), path(bam_file_index), path(peaks_file), val(has_paired), path(saf)
+		tuple path(saf), path(masterlist), val(id), path(bam_file), path(bam_file_index), path(peaks_file), val(has_paired)
 
 	output:
-		tuple val(indiv_id), path("${prefix}.counts.txt"), path("${prefix}.bin.txt")
+		tuple val(id), path("${id}.counts.txt"), path("${id}.bin.txt")
 
 	script:
-	prefix = "${indiv_id}"
 	tag = has_paired ? '-p' : ''
 	"""
 	samtools view -bh ${bam_file} > align.bam
 	samtools index align.bam
 
 	featureCounts -a ${saf} -o counts.txt -F SAF ${tag} align.bam
-	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${prefix}.counts.txt
+	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${id}.counts.txt
 	
-	bedmap --indicator --sweep-all ${params.index_file} ${peaks_file} > ${prefix}.bin.txt
+	bedmap --indicator --sweep-all \
+		${masterlist} ${peaks_file} > ${id}.bin.txt
 	"""
 }
 
@@ -68,8 +72,12 @@ process generate_count_matrix {
 	truncate -s -1 order.txt > indivs_order.txt
 	(
 		trap 'kill 0' SIGINT; \
-		paste - ${count_files} | cut -c2- | gzip -c > matrix.all.signal.txt.gz & \
-		paste - ${bin_files} | cut -c2- | gzip -c > matrix.all.peaks.txt.gz & \
+		paste - ${count_files} \
+			| cut -c2- \
+			| gzip -c > matrix.all.signal.txt.gz & \
+		paste - ${bin_files} \
+			| cut -c2- \
+			| gzip -c > matrix.all.peaks.txt.gz & \
 		wait \
 	)
 	"""
@@ -81,6 +89,9 @@ process filter_index {
 	scratch true
 	conda params.conda
 
+	input:
+		path masterlist
+
 	output:
 		path filtered_mask, emit: mask
 		path filtered_index, emit: filtered_index
@@ -91,11 +102,12 @@ process filter_index {
 	filtered_index = "masterlist.filtered.bed"
 	filtered_mask = 'filtered_peaks_mask.txt'
 	"""
-	bedmap --indicator --sweep-all --bp-ovr 1 ${params.index_file} \
+	bedmap --indicator --sweep-all \
+		--bp-ovr 1 ${masterlist} \
         ${params.encode_blacklist_regions} > blacklisted_mask.txt
 	
 	python3 $moduleDir/bin/filter_index.py \
-        ${params.index_file} \
+        ${masterlist} \
         blacklisted_mask.txt \
         ${filtered_mask} \
 		${filtered_index} \
@@ -221,9 +233,11 @@ process deseq2 {
 workflow generateMatrix {
 	take:
 		bams_hotspots
+		index_file
 	main:
-		count_matrices = bams_hotspots 
-			| combine(bed2saf())
+		count_matrices = index_file
+			| bed2saf
+			| combine(bams_hotspots)
 			| count_tags
 			| collect(sort: true, flat: false)
 			| generate_count_matrix
