@@ -55,6 +55,7 @@ workflow {
         | splitCsv(header:true, sep:'\t')
         | map(it -> tuple(it.ag_id, file(it.normalized_density_file)))
         | extract_max_density
-        | collect(sort: true, flat: false)
+        | map(it -> it[1])
+        | collect(sort: true)
         | collect_matrix
 }
