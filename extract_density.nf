@@ -23,13 +23,30 @@ process extract_max_density {
 }
 
 process collect_matrix {
+    conda params.conda
+    publishDir params.outdir
+
+    input:
+        tuple val(ag_ids), path(peaks_files)
     
+    output:
+        path matrix
+    
+    script:
+    matrix = "matrix.density.tsv"
+    """
+    echo ${ag_ids} > samples_order.txt
+
+    paste ${peaks_files} > ${matrix}
+    """
+
 }
 
 
 workflow {	
-    Channel.fromPath(params.samples_file)
+    matrix = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(it -> tuple(it.ag_id, file(it.normalized_density_file)))
         | extract_max_density
+        | collect(sort: true, flat: false)
 }
