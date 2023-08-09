@@ -43,8 +43,8 @@ process collect_matrix {
 	
 	truncate -s -1 order.txt > samples_order.txt
 
-    paste ${columns} > ${matrix}
-
+    paste ${columns} > matrix.txt
+    python3 $moduleDir/bin/convert_to_numpy.py matrix.txt ${matrix}
     """
 
 }
