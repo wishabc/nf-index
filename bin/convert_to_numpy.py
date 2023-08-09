@@ -37,7 +37,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Converts matrix in txt format to csr')
     parser.add_argument('matrix', help='Path to matrix file')
     parser.add_argument('outpath', help='Path to output binary matrix file with .npz extension')
-    parser.add_argument('--dtype', choices=('int', 'float'), help='dtype of the matrix file', default='int')
+    parser.add_argument('--dtype', choices=('int', 'float'), help='dtype of the matrix file', default='float')
     parser.add_argument('--mask', help='Mask file to filter the matrix by columns', default=None)
     args = parser.parse_args()
     input_path = args.matrix

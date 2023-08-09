@@ -135,11 +135,13 @@ process apply_filter_to_matrix {
 	python3 $moduleDir/bin/convert_to_numpy.py \
 		${signal_matrix} \
 		${signal_filt_matrix} \
+		--dtype int \
 		--mask ${filtered_mask} & \
 	
 	python3 $moduleDir/bin/convert_to_numpy.py \
 		${peaks_matrix} \
 		${peaks_filt_matrix} \
+		--dtype int \
 		--mask ${filtered_mask} & \
 	
 	wait \
