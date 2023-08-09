@@ -49,4 +49,5 @@ workflow {
         | map(it -> tuple(it.ag_id, file(it.normalized_density_file)))
         | extract_max_density
         | collect(sort: true, flat: false)
+        | collect_matrix
 }
