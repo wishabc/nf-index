@@ -27,7 +27,7 @@ process collect_matrix {
     publishDir params.outdir
 
     input:
-        tuple val(ag_ids), path(peaks_files)
+        tuple val(ag_ids), path(columns)
     
     output:
         path matrix
@@ -35,9 +35,16 @@ process collect_matrix {
     script:
     matrix = "matrix.density.tsv"
     """
-    echo ${ag_ids} > samples_order.txt
+    echo "${count_files}" | tr " " "\n"  \
+		| xargs -I file basename file \
+		| cut -d. -f1 \
+		| tr "\n" "\t" > order.txt
+	
+	truncate -s -1 order.txt > samples_order.txt
 
-    paste ${peaks_files} > ${matrix}
+    paste ${count_files} \
+        | gzip -c > matrix.all.signal.txt.gz
+
     """
 
 }
