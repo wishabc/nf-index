@@ -31,6 +31,7 @@ process collect_matrix {
     
     output:
         path matrix
+        path "samples_order.txt"
     
     script:
     matrix = "matrix.density.tsv"
@@ -42,8 +43,7 @@ process collect_matrix {
 	
 	truncate -s -1 order.txt > samples_order.txt
 
-    paste ${columns} \
-        | gzip -c > matrix.all.signal.txt.gz
+    paste ${columns} > ${matrix}
 
     """
 
@@ -58,4 +58,5 @@ workflow {
         | map(it -> it[1])
         | collect(sort: true)
         | collect_matrix
+    
 }
