@@ -239,6 +239,8 @@ workflow generateMatrix {
 			| combine(bams_hotspots)
 			| count_tags
 			| collect(sort: true, flat: false)
+			| transpose()
+			| collect(sort: true, flat: false)
 			| generate_count_matrix
 
 		out = count_matrices.matrices
