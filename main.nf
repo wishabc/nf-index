@@ -276,7 +276,7 @@ workflow generateAndNormalize {
 			| collectFile(
 				name: 'samples_order.txt', 
 				newLine: true,
-
+				storeDir: params.outdir
 			)
 		matrices = generateMatrix(data, index_file, samples_order)
 		out = normalizeMatrix(matrices, samples_order, normalization_params)
