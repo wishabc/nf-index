@@ -66,10 +66,10 @@ process generate_count_matrix {
 	"""
 	(
 		trap 'kill 0' SIGINT; \
-		awk '{printf "%s ", \$0".bin.txt"}' ${samples_order} \
+		awk '{printf "%s ", \$0".counts.txt"}' ${samples_order} \
 			| xargs paste \
 			| gzip -c > matrix.all.signal.txt.gz & \
-		awk '{printf "%s ", \$0".counts.txt"}' ${samples_order} \
+		awk '{printf "%s ", \$0".bin.txt"}' ${samples_order} \
 			| xargs paste \
 			| gzip -c > matrix.all.peaks.txt.gz & \
 		wait \
