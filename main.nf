@@ -226,7 +226,7 @@ process deseq2 {
 
 workflow generateMatrix {
 	take:
-		data
+		bams_hotspots
 		index_file
 		samples_order
 	main:
