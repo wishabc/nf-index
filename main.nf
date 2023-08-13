@@ -32,7 +32,7 @@ process count_tags {
 		tuple path(saf), path(masterlist), val(id), path(bam_file), path(bam_file_index), path(peaks_file), val(has_paired)
 
 	output:
-		tuple val(id), path("${id}.counts.txt"), path("${id}.bin.txt")
+		tuple path("${id}.counts.txt"), path("${id}.bin.txt")
 
 	script:
 	tag = has_paired ? '-p' : ''
@@ -50,31 +50,26 @@ process count_tags {
 
 process generate_count_matrix {
 	publishDir "${params.outdir}/raw_matrices", pattern: "matrix.all*"
-	publishDir params.outdir, pattern: "indivs_order.txt"
+	
 	label "medmem"
 	cpus 2
 	scratch true
 
 	input:
-		tuple val(indiv_ids), path(count_files), path(bin_files)
+		tuple path(files), path(samples_order)
 
 	output:
-		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz"), emit: matrices
-		path "indivs_order.txt", emit: indivs
+		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz")
 
 	script:
 	"""
-	echo "${count_files}" | tr " " "\n"  \
-		| xargs -I file basename file \
-		| cut -d. -f1 \
-		| tr "\n" "\t" > order.txt
-	
-	truncate -s -1 order.txt > indivs_order.txt
 	(
 		trap 'kill 0' SIGINT; \
-		paste ${count_files} \
+		awk '{printf "%s ", \$0".bin.txt"}' ${samples_order} \
+			| xargs paste \
 			| gzip -c > matrix.all.signal.txt.gz & \
-		paste ${bin_files} \
+		awk '{printf "%s ", \$0".counts.txt"}' ${samples_order} \
+			| xargs paste \
 			| gzip -c > matrix.all.peaks.txt.gz & \
 		wait \
 	)
@@ -231,32 +226,27 @@ process deseq2 {
 
 workflow generateMatrix {
 	take:
-		bams_hotspots
-		index_file
+		data
+		samples_order
 	main:
-		count_matrices = index_file
+		filtered_index_mask = filter_index(index_file).mask
+		out = index_file
 			| bed2saf
 			| combine(bams_hotspots)
 			| count_tags
-			| collect(sort: true, flat: false)
-			| transpose()
-			| collect(sort: true, flat: false)
+			| collect(sort: true, flat: true)
+			| combine(samples_order)	
 			| generate_count_matrix
-
-		out = count_matrices.matrices
-			| combine(
-				filter_index(index_file).mask
-			)
+			| combine(filtered_index_mask)
 			| apply_filter_to_matrix
 	emit:
 		out
-		count_matrices.indivs
 }
 
 workflow normalizeMatrix {
 	take:
 		matrices
-		indivs_order
+		samples_order
 		normalization_params
 	main:
 		lowess_params = normalization_params
@@ -265,23 +255,29 @@ workflow normalizeMatrix {
 			| collect(sort: true)
 
 		sf = normalize_matrix(matrices, lowess_params).scale_factors
-		new_meta = reorder_meta(indivs_order)
+		new_meta = reorder_meta(samples_order)
 		deseq_params = normalization_params
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(null)
-		out = deseq2(sf, indivs_order, new_meta, deseq_params)
+		out = deseq2(sf, samples_order, new_meta, deseq_params)
 	emit:
 		out
 }
 
 workflow generateAndNormalize {
 	take:
-		bams_hotspots
+		data
 		normalization_params
-		index_file
 	main:
-		matrices = generateMatrix(bams_hotspots, index_file)
-		out = normalizeMatrix(matrices[0], matrices[1], normalization_params)
+		samples_order = bams_hotspots
+			| map(it -> it[0])
+			| collectFile(
+				name: 'samples_order.txt', 
+				newLine: true,
+
+			)
+		matrices = generateMatrix(data, samples_order)
+		out = normalizeMatrix(matrices, samples_order, normalization_params)
 	emit:
 		out
 }
@@ -302,11 +298,13 @@ workflow readSamplesFile {
 		bams_hotspots
 }
 workflow {
-	bams_hotspots = readSamplesFile()
+	data = readSamplesFile()
+		| combine(
+			Channel.fromPath(params.index_file)
+		)
 	out = generateAndNormalize(
-		bams_hotspots,
-		Channel.empty(), 
-		Channel.fromPath(params.index_file)
+		data,
+		Channel.empty()
 	)
 }
 
