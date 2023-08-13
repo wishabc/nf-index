@@ -274,8 +274,9 @@ workflow generateAndNormalize {
 	take:
 		bams_hotspots
 		normalization_params
+		index_file
 	main:
-		matrices = generateMatrix(bams_hotspots)
+		matrices = generateMatrix(bams_hotspots, index_file)
 		out = normalizeMatrix(matrices[0], matrices[1], normalization_params)
 	emit:
 		out
@@ -287,7 +288,7 @@ workflow readSamplesFile {
 		bams_hotspots = Channel.fromPath(params.samples_file)
 			| splitCsv(header:true, sep:'\t')
 			| map(row -> tuple(
-				row.id,
+				row.ag_id,
 				file(row.filtered_alignments_bam),
 				file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"),
 				file(row.hotspot_peaks_point1per),
@@ -298,7 +299,11 @@ workflow readSamplesFile {
 }
 workflow {
 	bams_hotspots = readSamplesFile()
-	out = generateAndNormalize(bams_hotspots, Channel.empty())
+	out = generateAndNormalize(
+		bams_hotspots,
+		Channel.empty(), 
+		Channel.fromPath(params.index_file)
+	)
 }
 
 
