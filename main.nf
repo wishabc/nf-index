@@ -56,7 +56,8 @@ process generate_count_matrix {
 	scratch true
 
 	input:
-		tuple path(files), path(samples_order)
+		path files
+		path samples_order
 
 	output:
 		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz")
@@ -231,13 +232,12 @@ workflow generateMatrix {
 		samples_order
 	main:
 		filtered_index_mask = filter_index(index_file).mask
-		out = index_file
+		columns = index_file
 			| bed2saf
 			| combine(bams_hotspots)
 			| count_tags
-			| collect(sort: true, flat: true)
-			| combine(samples_order)	
-			| generate_count_matrix
+			| collect(sort: true, flat: true)	
+		out = generate_count_matrix(columns, samples_order)
 			| combine(filtered_index_mask)
 			| apply_filter_to_matrix
 	emit:
