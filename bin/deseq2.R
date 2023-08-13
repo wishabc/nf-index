@@ -45,8 +45,10 @@ if (is.null(args[2]) | file.exists(args[2])) {
 } else {
   norm_factors <- NULL
 }
-sample_names <- fread(args[3], header=FALSE)
-sample_names <- data.table(sample_names)
+sample_names <- fread(args[3], sep="\n", header=FALSE)
+
+# Ensure that sample_names is a vector, not a data table
+sample_names <- sample_names$V1
 
 counts <- as.data.frame(counts, stringsAsFactors = F)
 colnames(counts) <- sample_names

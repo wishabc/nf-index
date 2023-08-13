@@ -179,23 +179,6 @@ process normalize_matrix {
 	"""
 }
 
-process reorder_meta {
-	conda params.conda
-
-	input:
-		path indivs_order
-
-	output:
-		path name
-	
-	script:
-	name = "reordered_meta.txt"
-	"""
-	tr '\t' '\n' < ${indivs_order} > indivs_order_col.txt
-	awk -F'\t' 'FNR == NR { lineno[\$1] = NR; next} {print lineno[\$1], \$0;}' indivs_order_col.txt ${params.samples_file} | sort -k 1,1n | cut -d' ' -f2- > ${name}
-	"""
-}
-
 process deseq2 {
 	conda params.conda
 	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
@@ -204,8 +187,7 @@ process deseq2 {
 
 	input:
 		tuple path(signal_matrix), path(scale_factors)
-		path indivs_order
-		path meta_path
+		path samples_order
 		val norm_params
 
 	output:
@@ -218,8 +200,8 @@ process deseq2 {
 	Rscript $moduleDir/bin/deseq2.R \
 	  ${signal_matrix} \
 	  ${scale_factors} \
-	  ${indivs_order} \
-	  ${meta_path} \
+	  ${samples_order} \
+	  ${params.samples_file} \
 	  ${prefix} \
 	  ${normalization_params}
 	"""
@@ -256,11 +238,10 @@ workflow normalizeMatrix {
 			| collect(sort: true)
 
 		sf = normalize_matrix(matrices, lowess_params).scale_factors
-		new_meta = reorder_meta(samples_order)
 		deseq_params = normalization_params
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(null)
-		out = deseq2(sf, samples_order, new_meta, deseq_params)
+		out = deseq2(sf, samples_order, deseq_params)
 	emit:
 		out
 }
@@ -314,8 +295,8 @@ workflow normalizeExistingMatrices {
 		file("$launchDir/${params.outdir}/binary.filtered.matrix.npy")
 		)
 	)
-	indivs_order = Channel.of(file("$launchDir/${params.outdir}/indivs_order.txt"))
-	normalizeMatrix(mats, indivs_order, Channel.empty())
+	samples_order = Channel.of(file("$launchDir/${params.outdir}/samples_order.txt"))
+	normalizeMatrix(mats, samples_order, Channel.empty())
 	// params.normalization_params_dir = "$launchDir/${params.outdir}/params"
 	// file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
 	// existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
