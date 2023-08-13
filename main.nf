@@ -119,8 +119,7 @@ process apply_filter_to_matrix {
 	conda params.conda
 
 	input:
-		tuple path(signal_matrix), path(peaks_matrix)
-		path filtered_mask
+		tuple path(signal_matrix), path(peaks_matrix), path(filtered_mask)
 	
 	output:
 		tuple path(signal_filt_matrix), path(peaks_filt_matrix)
@@ -242,8 +241,11 @@ workflow generateMatrix {
 			| collect(sort: true, flat: false)
 			| generate_count_matrix
 
-		mask = filter_index().mask
-		out = apply_filter_to_matrix(count_matrices.matrices, mask)
+		out = count_matrices.matrices
+			| combine(
+				filter_index(index_file).mask
+			)
+			| apply_filter_to_matrix
 	emit:
 		out
 		count_matrices.indivs
