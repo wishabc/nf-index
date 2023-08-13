@@ -269,7 +269,7 @@ workflow generateAndNormalize {
 		data
 		normalization_params
 	main:
-		samples_order = bams_hotspots
+		samples_order = data
 			| map(it -> it[0])
 			| collectFile(
 				name: 'samples_order.txt', 
