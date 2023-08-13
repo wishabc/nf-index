@@ -227,6 +227,7 @@ process deseq2 {
 workflow generateMatrix {
 	take:
 		data
+		index_file
 		samples_order
 	main:
 		filtered_index_mask = filter_index(index_file).mask
@@ -267,6 +268,7 @@ workflow normalizeMatrix {
 workflow generateAndNormalize {
 	take:
 		data
+		index_file
 		normalization_params
 	main:
 		samples_order = data
@@ -276,7 +278,7 @@ workflow generateAndNormalize {
 				newLine: true,
 
 			)
-		matrices = generateMatrix(data, samples_order)
+		matrices = generateMatrix(data, index_file, samples_order)
 		out = normalizeMatrix(matrices, samples_order, normalization_params)
 	emit:
 		out
@@ -298,12 +300,9 @@ workflow readSamplesFile {
 		bams_hotspots
 }
 workflow {
-	data = readSamplesFile()
-		| combine(
-			Channel.fromPath(params.index_file)
-		)
 	out = generateAndNormalize(
-		data,
+		readSamplesFile(),
+		Channel.fromPath(params.index_file),
 		Channel.empty()
 	)
 }
