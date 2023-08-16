@@ -3,6 +3,8 @@ nextflow.enable.dsl = 2
 
 process split_in_chunks {
 
+    label "bigm"
+
     input:
         path matrix
     
