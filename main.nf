@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 include { non_required_arg } from "./nmf"
+include { buildIndex; filter_masterlist } from "./build_masterlist"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
@@ -77,45 +78,13 @@ process generate_count_matrix {
 	"""
 }
 
-process filter_index {
-	publishDir "${params.outdir}", pattern: "${filtered_index}"
-	publishDir "${params.outdir}/masks", pattern: "*_mask.txt"
-	scratch true
-	conda params.conda
-
-	input:
-		path masterlist
-
-	output:
-		path filtered_mask, emit: mask
-		path filtered_index, emit: filtered_index
-		path 'blacklisted_mask.txt', emit: blacklist_mask
-		
-
-	script:
-	filtered_index = "masterlist.filtered.bed"
-	filtered_mask = 'filtered_peaks_mask.txt'
-	"""
-	bedmap --indicator --sweep-all \
-		--bp-ovr 1 ${masterlist} \
-        ${params.encode_blacklist_regions} > blacklisted_mask.txt
-	
-	python3 $moduleDir/bin/filter_index.py \
-        ${masterlist} \
-        blacklisted_mask.txt \
-        ${filtered_mask} \
-		${filtered_index} \
-		${params.include_lowsig_singletons ? "--include_lowsig_singletons" : ""}
-	"""
-}
-
-process apply_filter_to_matrix {
+process convert_to_numpy {
 	publishDir "${params.outdir}"
 	label "bigmem"
 	conda params.conda
 
 	input:
-		tuple path(signal_matrix), path(peaks_matrix), path(filtered_mask)
+		tuple path(signal_matrix), path(peaks_matrix)
 	
 	output:
 		tuple path(signal_filt_matrix), path(peaks_filt_matrix)
@@ -131,13 +100,11 @@ process apply_filter_to_matrix {
 		${signal_matrix} \
 		${signal_filt_matrix} \
 		--dtype int \
-		--mask ${filtered_mask} & \
 	
 	python3 $moduleDir/bin/convert_to_numpy.py \
 		${peaks_matrix} \
 		${peaks_filt_matrix} \
 		--dtype int \
-		--mask ${filtered_mask} & \
 	
 	wait \
 	)
@@ -213,15 +180,13 @@ workflow generateMatrix {
 		index_file
 		samples_order
 	main:
-		filtered_index_mask = filter_index(index_file).mask
 		columns = index_file
 			| bed2saf
 			| combine(bams_hotspots)
 			| count_tags
 			| collect(sort: true, flat: true)	
 		out = generate_count_matrix(columns, samples_order)
-			| combine(filtered_index_mask)
-			| apply_filter_to_matrix
+			| convert_to_numpy
 	emit:
 		out
 }
@@ -280,14 +245,29 @@ workflow readSamplesFile {
 	emit:
 		bams_hotspots
 }
+
 workflow {
+	masterlist = Channel.fromPath(params.index_file)
+		| filter_masterlist
 	out = generateAndNormalize(
 		readSamplesFile(),
-		Channel.fromPath(params.index_file),
+		masterlist.filtered_masterlist,
 		Channel.empty()
 	)
 }
 
+workflow buildMasterlistAndMatrices {
+	samples = readSamplesFile()
+	masterlist = samples
+		| map(it -> it[3])
+		| buildIndex
+	generateAndNormalize(
+		samples,
+		masterlist,
+		Channel.empty()
+	)
+
+}
 
 workflow normalizeExistingMatrices {
 	mats = Channel.of(tuple(
