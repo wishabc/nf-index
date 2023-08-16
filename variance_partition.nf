@@ -44,7 +44,7 @@ process variance_partition {
     
     cat ${params.filtered_masterlist} \
         | grep -v '#' \
-        | sed -n '${chunk_index},${chunk_index + params.chunksize}' \
+        | sed -n '${chunk_index},${chunk_index + params.chunksize - 1}' \
         | paste - var_partition.tsv > ${name}
     """
 }
