@@ -23,4 +23,6 @@ dependencies:
   - r-catools
   - subread
   - bioconductor-deseq2
+  - bioconductor-variancepartition
+  - tqdm
 prefix: /home/sabramov/miniconda3/envs/super-index
