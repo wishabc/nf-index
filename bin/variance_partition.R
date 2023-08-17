@@ -37,9 +37,11 @@ row.names(data) <- row.names(dhs_meta)
 meta <- meta[match(sample_names, row.names(meta)), ]
 
 
-form <- ~ dedupped_subsampled_spot1 + log(read_depth)
+formula <- ~ dedupped_subsampled_spot1 + log(read_depth)
+
+
 print('Fitting model')
-varPart <- fitExtractVarPartModel(data, form, meta)
+varPart <- fitExtractVarPartModel(data, formula, meta)
 stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
 write.table(varPart , args[6], sep="\t", row.names=FALSE, quote = FALSE)
 
