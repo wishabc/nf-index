@@ -32,7 +32,8 @@ data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
 colnames(data) <- sample_names
-print(dim(data), dim(dhs_meta))
+print(dim(data))
+print(dim(dhs_meta))
 row.names(data) <- row.names(dhs_meta)
 
 meta <- meta[match(sample_names, row.names(meta)), ]
