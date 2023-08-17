@@ -24,5 +24,7 @@ dependencies:
   - subread
   - bioconductor-deseq2
   - bioconductor-variancepartition
+  - bioconductor-rhdf5
   - tqdm
+  - h5py
 prefix: /home/sabramov/miniconda3/envs/super-index

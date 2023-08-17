@@ -1,26 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-process split_in_chunks {
-
-    label "highmem"
-    conda params.conda
-
-    input:
-        path matrix
-    
-    output:
-        path "${prefix}.*"
-    
-    script:
-    prefix = "chunk"
-    """
-    python3 $moduleDir/bin/split_in_chunks.py \
-        ${params.chunksize} \
-        ${matrix} \
-        ${prefix}
-    """
-}
 
 process variance_partition {
 
@@ -28,36 +8,39 @@ process variance_partition {
     tag "${chunk_index}"
 
     input:
-        tuple val(chunk_index), path(chunk), path(sample_names)
+        val start_index
     
     output:
         path name
     
     script:
-    name = "${chunk_index}.variance_partition.tsv"
+    name = "${start_index}.variance_partition.tsv"
+    end_index = start_index + params.chunk_size - 1
     """
     Rscript $moduleDir/bin/variance_partition.R \
         ${params.metadata} \
-        ${chunk} \
-        ${sample_names} \
+        ${start_index} \
+        ${params.chunk_size} \
+        ${params.h5file} \
         var_partition.tsv
     
     cat ${params.filtered_masterlist} \
         | grep -v '#' \
-        | sed -n '${chunk_index},${chunk_index + params.chunksize - 1}' \
+        | sed -n '${start_index},${end_index}' \
         | paste - var_partition.tsv > ${name}
     """
 }
 
 
 workflow {
-    params.chunksize = 500
-    params.samples_order = "$launchDir/${params.outdir}/samples_order.txt"
-    params.filtered_masterlist = "$launchDir/${params.outdir}/ masterlist.filtered.bed"
-    Channel.fromPath("$launchDir/${params.outdir}/deseq.normalized.sf.vst.npy")
-        | split_in_chunks
-        | flatten()
-        | map(it -> tuple(it.extension.toInteger(), it))
+    params.chunk_size = 5000
+    params.h5file = "$launchDir/${params.outdir}/matrices.h5"
+
+    params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
+    total_dhs = file(params.filtered_masterlist).countLines()
+    Channel.of(1..total_dhs)
+        | collate(params.chunk_size)
+        | map(it -> it[0])
         | variance_partition
         | collectFile(
             name: "materlist.vp_annotated.bed",
