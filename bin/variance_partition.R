@@ -21,7 +21,6 @@ dhs_meta <- read.delim(args[5])
 end_index <- min(count, nrow(dhs_meta) - start_index + 1)
 
 dhs_meta <- dhs_meta[start_index:end_index, ]
-
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
@@ -33,13 +32,14 @@ data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
 colnames(data) <- sample_names
+print(dim(data), dim(dhs_meta))
 row.names(data) <- row.names(dhs_meta)
 
 meta <- meta[match(sample_names, row.names(meta)), ]
 
 
 form <- ~ dedupped_subsampled_spot1 + log(read_depth) + (1|donor_sex)
-
+print('Fitting model')
 varPart <- fitExtractVarPartModel(data, form, meta)
 stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
 write.table(varPart , args[6], sep="\t", row.names=FALSE, quote = FALSE)
