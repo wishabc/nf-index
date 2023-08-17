@@ -33,7 +33,7 @@ process variance_partition {
 
 
 workflow {
-    params.chunk_size = 5000
+    params.chunk_size = 10000
     params.h5file = "$launchDir/${params.outdir}/matrices.h5"
     
     params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
