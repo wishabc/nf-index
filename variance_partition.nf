@@ -48,6 +48,7 @@ workflow {
             name: "masterlist.vp_annotated.bed",
             storeDir: params.outdir,
             keepHeader: true,
+            sort: true,
             skip: 1
         )
 }
