@@ -18,7 +18,7 @@ process variance_partition {
     end_index = start_index + params.chunk_size - 1
     """
     Rscript $moduleDir/bin/variance_partition.R \
-        ${params.metadata} \
+        ${params.samples_file} \
         ${start_index} \
         ${params.chunk_size} \
         ${params.h5file} \
@@ -35,7 +35,7 @@ process variance_partition {
 workflow {
     params.chunk_size = 5000
     params.h5file = "$launchDir/${params.outdir}/matrices.h5"
-
+    
     params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
     total_dhs = file(params.filtered_masterlist).countLines()
     Channel.of(1..total_dhs)
