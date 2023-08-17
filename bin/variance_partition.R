@@ -34,6 +34,7 @@ form <- ~ dedupped_subsampled_spot1 + log(read_depth) # + (1|sex) +
 
 varPart <- fitExtractVarPartModel(data, form, meta)
 vp <- sortCols(varPart)
+print(vp)
 write.table(vp, args[4], sep="\t", row.names=FALSE)
 
 
