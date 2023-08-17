@@ -60,7 +60,7 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
       },
       error = function(e) {
         warning(paste("Singular fit error encountered in row", i, ":", e))
-        na_result <- rep(NA, total_NA) # Return NA for each element in the formula + one for residuals
+        na_result <- data.frame(t(rep(NA, total_NA))) # Return NA for each element in the formula + one for residuals
         rownames(na_result) <- rownames(row_data) # Set the row names of the NA result to match row_data
         return(na_result)
       }
