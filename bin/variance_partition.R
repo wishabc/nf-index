@@ -17,12 +17,14 @@ start_index <- as.integer(args[2])
 count <- as.integer(args[3])
 file_path <- args[4]
 
-num_cols <- h5ls(file_path, 'vst', recursive = TRUE)$dim[2]
+info <- h5ls(file_path)
+vst_info <- info[info$name == "vst", ]
+num_dhs <- as.numeric(unlist(strsplit(vst_info$dim, " x ")))[2]
 
 
 data <- h5read(file_path, 'vst', 
     start=c(1, start_index), 
-    count=c(nrow(meta), min(count, num_cols - start_index + 1))
+    count=c(nrow(meta), min(count, num_dhs - start_index + 1))
 )
 data <- t(data)
 
