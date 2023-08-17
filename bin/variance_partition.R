@@ -50,18 +50,21 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
   # Iterate through the rows (genes)
   for (i in 1:nrow(data)) {
     # Extract the row
+    cat("Processing row:", i, "\n")
     row_data <- data[i, , drop=FALSE]
     print(row_data)
     # Try fitting the model to the row, and handle any errors
     result_list[[i]] <- tryCatch(
       {
         varPart <- fitExtractVarPartModel(row_data, formula, meta)
+        cat("Row processed successfully:", i, "\n")
         return(varPart)
       },
       error = function(e) {
         warning(paste("Singular fit error encountered in row", i, ":", e))
         na_result <- data.frame(t(rep(NA, total_NA))) # Return NA for each element in the formula + one for residuals
         rownames(na_result) <- rownames(row_data) # Set the row names of the NA result to match row_data
+        cat("Returning NA result for row:", i, "\n")
         return(na_result)
       }
     )
