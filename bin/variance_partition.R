@@ -16,10 +16,11 @@ meta <- as.data.frame(meta)
 start_index <- as.integer(args[2])
 count <- as.integer(args[3])
 file_path <- args[4]
+dhs_meta <- read.delim(args[5])
+
 end_index <- min(count, nrow(dhs_meta) - start_index + 1)
 
-dhs_meta <- read.delim(args[5])[start_index:end_index, ]
-
+dhs_meta <- dhs_meta[start_index:end_index, ]
 
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
