@@ -17,7 +17,7 @@ start_index <- as.integer(args[2])
 count <- as.integer(args[3])
 file_path <- args[4]
 
-num_cols <- h5ls(file_path, 'vst')$dim[2]
+num_cols <- h5ls(file_path, 'vst', recursive = TRUE)$dim[2]
 
 
 data <- h5read(file_path, 'vst', 
