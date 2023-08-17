@@ -32,7 +32,7 @@ workflow variancePartition {
     take:
         data // masterlist, h5file
     main:
-        total_dhs = masterlist.first().map(it -> it[0]).countLines()
+        total_dhs = data.first().map(it -> it[0]).countLines()
         out = Channel.of(1..total_dhs)
             | collate(params.chunk_size)
             | map(it -> it[0])
