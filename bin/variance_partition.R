@@ -39,7 +39,7 @@ row.names(data) <- row.names(dhs_meta)
 meta <- meta[match(sample_names, row.names(meta)), ]
 
 
-form <- ~ dedupped_subsampled_spot1 + log(read_depth) + (1|donor_sex)
+form <- ~ dedupped_subsampled_spot1 + log(read_depth)
 print('Fitting model')
 varPart <- fitExtractVarPartModel(data, form, meta)
 stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
