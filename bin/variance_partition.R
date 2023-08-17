@@ -40,7 +40,39 @@ meta <- meta[match(sample_names, row.names(meta)), ]
 formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | donor_sex) + (1 | library_kit) + (1 | short_ontology)
 
 print('Fitting model')
-varPart <- fitExtractVarPartModel(data, formula, meta)
+safeFitExtractVarPartModel <- function(data, formula, meta) {
+  # Create an empty list to store the results for each row
+  result_list <- vector("list", nrow(data))
+  num_fixed_effects <- length(all.vars(formula))
+  num_random_effects <- length(attr(terms(formula, random = ~ 1), "specials")$re)
+  total_NA <- num_fixed_effects + num_random_effects + 1
+  
+  # Iterate through the rows (genes)
+  for (i in 1:nrow(data)) {
+    # Extract the row
+    row_data <- data[i, , drop=FALSE]
+    
+    # Try fitting the model to the row, and handle any errors
+    result_list[[i]] <- tryCatch(
+      {
+        varPart <- fitExtractVarPartModel(row_data, formula, meta)
+        return(varPart)
+      },
+      error = function(e) {
+        warning(paste("Singular fit error encountered in row", i, ":", e))
+         return(rep(NA, total_NA))
+      }
+    )
+  }
+  
+  # Combine the results into a final object (you may need to adjust this part based on the desired format)
+  final_result <- do.call(rbind, result_list)
+  return(final_result)
+}
+
+# Then call this function
+varPart <- safeFitExtractVarPartModel(data, formula, meta)
+
 stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
 write.table(cbind(dhs_meta, varPart) , args[6], sep="\t", row.names=FALSE, quote = FALSE)
 
