@@ -51,7 +51,7 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
   for (i in 1:nrow(data)) {
     # Extract the row
     row_data <- data[i, , drop=FALSE]
-    
+    print(row_data)
     # Try fitting the model to the row, and handle any errors
     result_list[[i]] <- tryCatch(
       {
@@ -60,7 +60,9 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
       },
       error = function(e) {
         warning(paste("Singular fit error encountered in row", i, ":", e))
-         return(rep(NA, total_NA))
+        na_result <- rep(NA, total_NA) # Return NA for each element in the formula + one for residuals
+        rownames(na_result) <- rownames(row_data) # Set the row names of the NA result to match row_data
+        return(na_result)
       }
     )
   }
