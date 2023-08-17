@@ -20,7 +20,7 @@ data <- t(
         h5read(args[4], 
         'vst', 
         start=c(1, start_index), 
-        count=c(ncol(meta), count)
+        count=c(nrow(meta), count)
     )
 )
 
