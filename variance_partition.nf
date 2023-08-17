@@ -24,13 +24,7 @@ process variance_partition {
         ${params.chunk_size} \
         ${params.h5file} \
         ${params.filtered_masterlist} \
-        var_partition.tsv
-
-    head -1 ${params.filtered_masterlist} > masterlist_slice.bed
-    tail -n +2 ${params.filtered_masterlist} \
-        | sed -n '${start_index},${end_index} p' >> masterlist_slice.bed
-    
-    paste masterlist_slice.bed var_partition.tsv > ${name} 
+        ${name}
     """
 }
 
