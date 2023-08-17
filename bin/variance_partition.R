@@ -40,7 +40,6 @@ meta <- meta[match(sample_names, rownames(meta)), ]
 form <- ~ dedupped_subsampled_spot1 + log(read_depth) # + (1|sex) + 
 
 varPart <- fitExtractVarPartModel(data, form, meta)
-vp <- sortCols(varPart)
-write.table(vp, args[5], sep="\t", row.names=FALSE, col.names = FALSE, quote = FALSE)
+write.table(varPart , args[5], sep="\t", row.names=FALSE, quote = FALSE)
 
 
