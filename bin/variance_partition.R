@@ -24,9 +24,12 @@ data <- h5read(args[4],
 data <- t(data)
 
 sample_names <- h5read(args[4], 'sample_names')
-
-
 colnames(data) <- sample_names
+
+
+meta <- meta[match(sample_names, rownames(meta)), ]
+
+
 
 
 form <- ~ dedupped_subsampled_spot1 + log(read_depth) # + (1|sex) + 
