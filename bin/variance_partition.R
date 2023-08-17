@@ -37,8 +37,7 @@ row.names(data) <- row.names(dhs_meta)
 meta <- meta[match(sample_names, row.names(meta)), ]
 
 
-formula <- ~ dedupped_subsampled_spot1 + log(read_depth)
-
+formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | donor_sex) + (1 | library_kit) + (1 | short_ontology)
 
 print('Fitting model')
 varPart <- fitExtractVarPartModel(data, formula, meta)
