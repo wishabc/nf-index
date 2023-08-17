@@ -45,7 +45,7 @@ workflow {
         | map(it -> it[0])
         | variance_partition
         | collectFile(
-            name: "materlist.vp_annotated.bed",
+            name: "masterlist.vp_annotated.bed",
             storeDir: params.outdir,
             keepHeader: true,
             skip: 1
