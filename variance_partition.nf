@@ -9,7 +9,7 @@ process variance_partition {
     publishDir "${params.outdir}/variance_partition"
 
     input:
-        val start_index
+        tuple val(start_index), path(masterlist), path(h5file)
     
     output:
         path name
@@ -22,28 +22,41 @@ process variance_partition {
         ${params.samples_file} \
         ${start_index} \
         ${params.chunk_size} \
-        ${params.h5file} \
-        ${params.filtered_masterlist} \
+        ${h5file} \
+        ${masterlist} \
         ${name}
     """
+}
+
+workflow variancePartition {
+    take:
+        data // masterlist, h5file
+    main:
+        total_dhs = masterlist.first().map(it -> it[0]).countLines()
+        out = Channel.of(1..total_dhs)
+            | collate(params.chunk_size)
+            | map(it -> it[0])
+            | combine(data)
+            | variance_partition
+            | collectFile(
+                name: "masterlist.vp_annotated.bed",
+                storeDir: params.outdir,
+                keepHeader: true,
+                sort: true,
+                skip: 1
+            )
+    emit:
+        out  
 }
 
 
 workflow {
     params.chunk_size = 10000
     params.h5file = "$launchDir/${params.outdir}/matrices.h5"
-    
     params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
-    total_dhs = file(params.filtered_masterlist).countLines()
-    Channel.of(1..total_dhs)
-        | collate(params.chunk_size)
-        | map(it -> it[0])
-        | variance_partition
-        | collectFile(
-            name: "masterlist.vp_annotated.bed",
-            storeDir: params.outdir,
-            keepHeader: true,
-            sort: true,
-            skip: 1
+    Channel.fromPath(params.filtered_masterlist)
+        | combine(
+            Channel.fromPath(params.h5file)
         )
+        | variancePartition
 }
