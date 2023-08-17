@@ -18,22 +18,20 @@ count <- as.integer(args[3])
 file_path <- args[4]
 dhs_meta <- read.delim(args[5])
 
-end_index <- min(count, nrow(dhs_meta) - start_index + 1)
+count <- min(count, nrow(dhs_meta) - start_index + 1)
 
-dhs_meta <- dhs_meta[start_index:end_index, ]
+dhs_meta <- dhs_meta[start_index:start_index + count, ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
 data <- h5read(file_path, 'vst', 
     start=c(1, start_index), 
-    count=c(nrow(meta), end_index)
+    count=c(nrow(meta), count)
 )
 data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
 colnames(data) <- sample_names
-print(dim(data))
-print(dim(dhs_meta))
 row.names(data) <- row.names(dhs_meta)
 
 meta <- meta[match(sample_names, row.names(meta)), ]
