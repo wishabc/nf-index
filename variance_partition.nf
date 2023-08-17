@@ -6,6 +6,7 @@ process variance_partition {
 
     conda params.conda
     tag "${start_index}"
+    publishDir "${params.outdir}/variance_partition"
 
     input:
         val start_index
