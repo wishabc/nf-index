@@ -24,15 +24,11 @@ process variance_partition {
         ${params.h5file} \
         var_partition.tsv
 
+    head -1 ${params.filtered_masterlist} > masterlist_slice.bed
     tail -n +2 ${params.filtered_masterlist} \
-        | sed -n '${start_index},${end_index} p' > masterlist_slice.bed
+        | sed -n '${start_index},${end_index} p' >> masterlist_slice.bed
     
-    head -1 ${params.filtered_masterlist} > header_masterlist.bed 
-    head -1 var_partition.tsv | paste header_masterlist.bed  - > ${name}
-    tail -n +2 var_partition.tsv \
-        | paste masterlist_slice.bed - >> ${name}
-    
-    
+    paste masterlist_slice.bed var_partition.tsv > ${name} 
     """
 }
 
@@ -49,6 +45,8 @@ workflow {
         | variance_partition
         | collectFile(
             name: "materlist.vp_annotated.bed",
-            storeDir: params.outdir
+            storeDir: params.outdir,
+            keepHeader: true,
+            skip: 1
         )
 }
