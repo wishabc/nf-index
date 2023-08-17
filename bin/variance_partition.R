@@ -18,12 +18,12 @@ count <- as.integer(args[3])
 
 hdf5_file <- H5Fopen(args[4])
 data <- h5read(hdf5_file, 
-    '/vst', 
+    'vst', 
     start=c(start_index, 1), 
     count=c(count, -1)
 )
 
-sample_names <- h5read(hdf5_file, '/sample_names')
+sample_names <- h5read(hdf5_file, 'sample_names')
 
 H5Fclose(hdf5_file)
 
