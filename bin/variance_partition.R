@@ -17,13 +17,15 @@ start_index <- as.integer(args[2])
 count <- as.integer(args[3])
 file_path <- args[4]
 
-dhs_meta <- read.delim(args[5])
+dhs_meta <- read.delim(args[5])[start_index:end_index, ]
+end_index <- min(count, nrow(dhs_meta) - start_index + 1)
+
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
 data <- h5read(file_path, 'vst', 
     start=c(1, start_index), 
-    count=c(nrow(meta), min(count, nrow(dhs_meta) - start_index + 1))
+    count=c(nrow(meta), end_index)
 )
 data <- t(data)
 
