@@ -30,13 +30,17 @@ process variance_partition {
 
 workflow variancePartition {
     take:
-        data // masterlist, h5file
+        masterlist
+        h5file
     main:
-        total_dhs = data.first().map(it -> it[0]).countLines()
+        total_dhs = masterlist.countLines()
         out = Channel.of(1..total_dhs)
             | collate(params.chunk_size)
             | map(it -> it[0])
-            | combine(data)
+            | combine(
+                Channel.fromPath(masterlist)
+            )
+            | combine(h5file)
             | variance_partition
             | collectFile(
                 name: "masterlist.vp_annotated.bed",
@@ -54,9 +58,9 @@ workflow {
     params.chunk_size = 10000
     params.h5file = "$launchDir/${params.outdir}/matrices.h5"
     params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
-    Channel.fromPath(params.filtered_masterlist)
-        | combine(
-            Channel.fromPath(params.h5file)
+
+    variancePartition(
+        file(params.filtered_masterlist),
+        Channel.fromPath(params.h5file)
         )
-        | variancePartition
 }
