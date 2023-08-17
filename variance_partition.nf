@@ -23,6 +23,7 @@ process variance_partition {
         ${start_index} \
         ${params.chunk_size} \
         ${params.h5file} \
+        ${params.filtered_masterlist} \
         var_partition.tsv
 
     head -1 ${params.filtered_masterlist} > masterlist_slice.bed

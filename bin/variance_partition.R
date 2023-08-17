@@ -4,8 +4,8 @@ library(rhdf5)
 
 
 args = commandArgs(trailingOnly=TRUE)
-if (length(args) < 3) {
-  stop("At least three input arguments should be supplied", call.=FALSE)
+if (length(args) < 6) {
+  stop("At least six input arguments should be supplied", call.=FALSE)
 }
 
 meta = read.delim(args[1])
@@ -17,29 +17,27 @@ start_index <- as.integer(args[2])
 count <- as.integer(args[3])
 file_path <- args[4]
 
-info <- h5ls(file_path)
-vst_info <- info[info$name == "vst", ]
-num_dhs <- as.numeric(unlist(strsplit(vst_info$dim, " x ")))[2]
+dhs_meta <- read.delim(args[5])
+row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
 data <- h5read(file_path, 'vst', 
     start=c(1, start_index), 
-    count=c(nrow(meta), min(count, num_dhs - start_index + 1))
+    count=c(nrow(meta), min(count, nrow(dhs_meta) - start_index + 1))
 )
 data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
 colnames(data) <- sample_names
+row.names(data) <- row.names(dhs_meta)
+
+meta <- meta[match(sample_names, row.names(meta)), ]
 
 
-meta <- meta[match(sample_names, rownames(meta)), ]
-
-
-
-
-form <- ~ dedupped_subsampled_spot1 + log(read_depth) # + (1|sex) + 
+form <- ~ dedupped_subsampled_spot1 + log(read_depth) + (1|donor_sex)
 
 varPart <- fitExtractVarPartModel(data, form, meta)
-write.table(varPart , args[5], sep="\t", row.names=FALSE, quote = FALSE)
+stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
+write.table(varPart , args[6], sep="\t", row.names=FALSE, quote = FALSE)
 
 
