@@ -26,7 +26,7 @@ process variance_partition {
     
     cat ${params.filtered_masterlist} \
         | grep -v '#' \
-        | sed -n '${start_index},${end_index}' \
+        | sed -n '${start_index},${end_index} p' \
         | paste - var_partition.tsv > ${name}
     """
 }
