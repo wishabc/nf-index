@@ -37,29 +37,11 @@ row.names(data) <- row.names(dhs_meta)
 meta <- meta[match(sample_names, row.names(meta)), ]
 
 
-formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1|donor_sex) + (1|library_kit) + (1|short_ontology)
-num_terms <- length(attr(terms(formula), "term.labels"))
+formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | donor_sex) + (1 | library_kit) + (1 | short_ontology)
 
 print('Fitting model')
-processRow <- function(i) {
-  row_data <- data[i, , drop=FALSE]
-  varPart <- try(fitExtractVarPartModel(row_data, formula, meta), silent=TRUE)
 
-  if (inherits(varPart, "try-error")) {
-    warning(paste("Singular fit error encountered in row", i))
-    na_row <- data.table(t(rep(NA, num_terms + 1)))
-    rownames(na_row) <- rownames(row_data)
-    return(na_row)
-  }
-  return(varPart)
-}
-
-# Example usage:
-varPart <- lapply(1:nrow(data), processRow)
-print(varPart)
-
-#varPart <- safeFitExtractVarPartModel(data, formula, meta)
-
+varPart <- fitExtractVarPartModel(data, formula, meta)
 stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
 write.table(cbind(dhs_meta, varPart) , args[6], sep="\t", row.names=FALSE, quote = FALSE)
 
