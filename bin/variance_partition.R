@@ -56,10 +56,15 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
     result_list[[i]] <- tryCatch(
       {
         varPart <- fitExtractVarPartModel(row_data, formula, meta)
+        if (isSingular(varPart)) {
+            cat(paste("Singular fit encountered in row", i))
+            varPart <- NA # or another appropriate value
+        }
         cat("Row processed successfully:", i, "\n")
         return(varPart)
       },
       error = function(e) {
+
         cat(paste("Singular fit error encountered in row", i, ":", e))
         na_result <- data.frame(t(rep(NA, total_NA))) # Return NA for each element in the formula + one for residuals
         rownames(na_result) <- rownames(row_data) # Set the row names of the NA result to match row_data
