@@ -54,7 +54,7 @@ processRow <- function(i) {
 
 # Example usage:
 varPart <- lapply(1:nrow(data), processRow)
-print(head(varPart))
+print(varPart)
 
 #varPart <- safeFitExtractVarPartModel(data, formula, meta)
 
