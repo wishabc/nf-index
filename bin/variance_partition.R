@@ -37,7 +37,7 @@ row.names(data) <- row.names(dhs_meta)
 meta <- meta[match(sample_names, row.names(meta)), ]
 
 
-formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | donor_sex) + (1 | library_kit) + (1 | short_ontology)
+formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1|donor_sex) + (1|library_kit) + (1|short_ontology)
 
 print('Fitting model')
 safeFitExtractVarPartModel <- function(data, formula, meta) {
@@ -56,16 +56,11 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
     result_list[[i]] <- tryCatch(
       {
         varPart <- fitExtractVarPartModel(row_data, formula, meta)
-        if (isSingular(varPart)) {
-            warning(paste("Singular fit encountered in row", i))
-            varPart <- NA # or another appropriate value
-        }
         cat("Row processed successfully:", i, "\n")
         return(varPart)
       },
       error = function(e) {
-
-        warning(paste("Singular fit error encountered in row", i, ":", e))
+        cat(paste("Singular fit error encountered in row", i, ":", e))
         na_result <- data.frame(t(rep(NA, total_NA))) # Return NA for each element in the formula + one for residuals
         rownames(na_result) <- rownames(row_data) # Set the row names of the NA result to match row_data
         cat("Returning NA result for row:", i, "\n")
