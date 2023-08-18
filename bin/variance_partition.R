@@ -38,6 +38,7 @@ meta <- meta[match(sample_names, row.names(meta)), ]
 
 
 formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1|donor_sex) + (1|library_kit) + (1|short_ontology)
+num_terms <- length(attr(terms(formula), "term.labels"))
 
 print('Fitting model')
 processRow <- function(i) {
@@ -46,7 +47,7 @@ processRow <- function(i) {
 
   if (inherits(varPart, "try-error")) {
     warning(paste("Singular fit error encountered in row", i))
-    na_row <- data.table(t(rep(NA, length(formula) + 1)))
+    na_row <- data.table(t(rep(NA, num_terms + 1)))
     rownames(na_row) <- rownames(row_data)
     return(na_row)
   }
