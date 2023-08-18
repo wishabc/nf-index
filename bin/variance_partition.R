@@ -41,13 +41,9 @@ formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | don
 
 print('Fitting model')
 
-varPart <- data.table(fitExtractVarPartModel(data, formula, meta))
+varPart <- fitExtractVarPartModel(data, formula, meta)
+
+write.table(varPart , "tmp.txt", sep="\t", row.names=FALSE, quote = FALSE)
+vp <- fread("tmp.txt")
 stopifnot(all(identical(row.names(varPart), row.names(dhs_meta))))
-print('Writing data')
-print(str(dhs_meta))
-print(head(dhs_meta))
-print(str(varPart))
-print(head(varPart))
-write.table(cbind(dhs_meta, varPart) , args[6], sep="\t", row.names=FALSE, quote = FALSE)
-
-
+write.table(cbind(dhs_meta, vp) , args[6], sep="\t", row.names=FALSE, quote = FALSE)
