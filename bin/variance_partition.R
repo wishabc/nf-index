@@ -46,11 +46,7 @@ processRow <- function(i) {
 
   if (inherits(varPart, "try-error")) {
     warning(paste("Singular fit error encountered in row", i))
-    return(rep(NA, length(formula) + 1)) # Return NA for the problematic row
-  }
-
-  if (!identical(row.names(varPart), row.names(dhs_meta))) {
-    stop(paste("Row names not identical in row", i))
+    return(rep(NA, length(formula) + 1))
   }
 
   print(paste("Row processed successfully:", i))
