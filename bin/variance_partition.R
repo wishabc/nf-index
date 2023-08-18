@@ -52,7 +52,6 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
     # Extract the row
     cat("Processing row:", i, "\n")
     row_data <- data[i, , drop=FALSE]
-    print(row_data)
     # Try fitting the model to the row, and handle any errors
     result_list[[i]] <- tryCatch(
       {
