@@ -41,7 +41,7 @@ formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | don
 
 print('Fitting model')
 
-varPart <- fitExtractVarPartModel(data, formula, meta)
+varPart <- data.table(fitExtractVarPartModel(data, formula, meta))
 stopifnot(all(identical(row.names(varPart), row.names(dhs_meta))))
 print('Writing data')
 print(str(dhs_meta))
