@@ -43,6 +43,7 @@ print('Fitting model')
 
 varPart <- fitExtractVarPartModel(data, formula, meta)
 stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
+print('Writing data')
 write.table(cbind(dhs_meta, varPart) , args[6], sep="\t", row.names=FALSE, quote = FALSE)
 
 
