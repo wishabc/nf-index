@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 
 process variance_partition {
 
-    conda params.conda
+    conda "/home/sabramov/miniconda3/envs/condR-clone"
     tag "${start_index}"
     publishDir "${params.outdir}/variance_partition"
 
