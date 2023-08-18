@@ -61,7 +61,7 @@ processRow <- function(i) {
 result <- lapply(1:nrow(data), processRow)
 
 
-varPart <- safeFitExtractVarPartModel(data, formula, meta)
+#varPart <- safeFitExtractVarPartModel(data, formula, meta)
 
 stopifnot(identical(row.names(varPart), row.names(dhs_meta)))
 write.table(cbind(dhs_meta, varPart) , args[6], sep="\t", row.names=FALSE, quote = FALSE)
