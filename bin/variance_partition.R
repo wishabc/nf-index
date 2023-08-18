@@ -46,9 +46,7 @@ processRow <- function(i) {
 
   if (inherits(varPart, "try-error")) {
     warning(paste("Singular fit error encountered in row", i))
-    na_row <- data.table(rep(NA, length(formula) + 1))
-    print(na_row)
-    print(row_data)
+    na_row <- data.table(t(rep(NA, length(formula) + 1)))
     rownames(na_row) <- rownames(row_data)
   }
   return(varPart)
