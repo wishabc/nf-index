@@ -69,7 +69,8 @@ safeFitExtractVarPartModel <- function(data, formula, meta) {
       }
     )
   }
-  
+  cat("Number of error rows:", length(error_rows), "\n") # Print the number of error rows
+
   # Combine the results into a final object (you may need to adjust this part based on the desired format)
   final_result <- do.call(rbind, result_list)
   return(final_result)
