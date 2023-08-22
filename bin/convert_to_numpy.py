@@ -37,13 +37,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Converts matrix in txt format to csr')
     parser.add_argument('matrix', help='Path to matrix file')
     parser.add_argument('outpath', help='Path to output binary matrix file with .npz extension')
-    parser.add_argument('--dtype', choices=('int', 'float'), help='dtype of the matrix file', default='float')
+    parser.add_argument('--dtype', choices=('int', 'float', 'bool'), help='dtype of the matrix file', default='float')
     parser.add_argument('--mask', help='Mask file to filter the matrix by columns', default=None)
     args = parser.parse_args()
     input_path = args.matrix
     out_path = args.outpath
     logger.info('Starting processing')
-    dtype = int if args.dtype == 'int' else float
+    dtype = dict(zip(('int', 'float', 'bool'), (int, float, bool)))[args.dtype]
     matrix_dense = read_matrix(input_path, dtype=dtype)
     logger.info(f'Matrix size: {matrix_dense.shape}. '
                 f'Density: {(matrix_dense != 0).size / matrix_dense.size}'
