@@ -104,7 +104,7 @@ process convert_to_numpy {
 	python3 $moduleDir/bin/convert_to_numpy.py \
 		${peaks_matrix} \
 		${peaks_filt_matrix} \
-		--dtype int \
+		--dtype bool \
 	
 	wait \
 	)
