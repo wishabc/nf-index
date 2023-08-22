@@ -10,7 +10,7 @@ autosomes = [f'chr{x}' for x in range(1, 23)]
 
 
 def main(index, mask, include_lowsig_singletons=False):
-    autosomes_mask = index['chr'].isin(autosomes)
+    autosomes_mask = index['#chr'].isin(autosomes)
     total_mask = autosomes_mask & mask
     if not include_lowsig_singletons:
         index['avg_score'] = index.eval('score / n_samples')

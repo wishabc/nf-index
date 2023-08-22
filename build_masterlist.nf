@@ -105,8 +105,7 @@ process filter_masterlist {
         path masterlist
     
     output:
-	    path name
-	    path mask
+	    path name, emit: filtered_masterlist
 
     script:
     prefix = "masterlist"
@@ -175,26 +174,34 @@ process annotate_masterlist {
 }
 
 
+workflow buildIndex {
+    take:
+        peaks
+    main:
+        peaks
+            | collect(sort: true)
+            | collate_and_chunk
+            | flatten()
+            | process_chunk
+            | resolve_overlaps
+        
+        masterlist = merge_chunks(
+            chunks[0].collect(sort: true), 
+            chunks[1].collect(sort: true), 
+            chunks[2].collect(sort: true)
+        ).non_merged
+            | filter_masterlist
+            | annotate_masterlist
+    emit:
+        masterlist
+	
+}
+
 workflow {
-    chunks = Channel.fromPath(params.peaks_file)
+    Channel.fromPath(params.peaks_file)
         | splitCsv(header:true, sep:'\t')
         | map(it -> it.peaks)
-        | collect(sort: true)
-        | collate_and_chunk
-        | flatten()
-        | process_chunk
-        | resolve_overlaps
-    
-    masterlists = merge_chunks(
-        chunks[0].collect(sort: true), 
-        chunks[1].collect(sort: true), 
-        chunks[2].collect(sort: true)
-    ).non_merged
-        | filter_masterlist
-    
-    annotate_masterlist(masterlists[0])
-	
-    	
+        | buildIndex
 }
 
 workflow fromMasterlist {
