@@ -158,7 +158,8 @@ process deseq2 {
 		val norm_params
 
 	output:
-		path "${prefix}*"
+		path "${prefix}*.npy", emit: matrix
+		path "${prefix}*.RDS", emit: params
 
 	script:
 	prefix = "deseq.normalized"
@@ -206,7 +207,7 @@ workflow normalizeMatrix {
 		deseq_params = normalization_params
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(null)
-		out = deseq2(sf, samples_order, deseq_params)
+		out = deseq2(sf, samples_order, deseq_params).matrix
 	emit:
 		out
 }
