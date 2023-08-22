@@ -105,12 +105,12 @@ process filter_masterlist {
         path masterlist
     
     output:
-	    path name, emit: filtered_masterlist
+	    tuple path(name), path(mask)
 
     script:
     prefix = "masterlist"
-    name = "masterlist_DHSs.blacklistfiltered.bed"
-    mask = "masked_elements.txt"
+    name = "${prefix}_DHSs.blacklistfiltered.bed"
+    mask = "${prefix}.mask.txt"
     """
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
@@ -190,8 +190,9 @@ workflow buildIndex {
             chunks[1].collect(sort: true), 
             chunks[2].collect(sort: true)
         ).non_merged
-            | filter_masterlist
-            | annotate_masterlist
+            | filter_masterlist // returns tuple(masterlist, mask)
+            | map(it -> it[0]) // masterlist
+            | annotate_masterlist // annotated masterlist
     emit:
         masterlist
 	
