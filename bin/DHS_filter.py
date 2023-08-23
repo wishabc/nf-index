@@ -38,6 +38,7 @@ print(cutoff)
 #How many DHS's are greater than the threshold
 j= (blacklist_filtered['num_samples'] >= 2) | ((blacklist_filtered['num_samples']== 1) & (blacklist_filtered['mean_signal']>=cutoff))
 print(np.sum(j))
+print(j)
 
 #Print Filtered Masterlist
 index_subset = blacklist_filtered[j]
