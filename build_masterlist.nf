@@ -184,6 +184,8 @@ workflow buildIndex {
             | flatten()
             | process_chunk
             | resolve_overlaps
+	into: 
+	    chunks
         
         masterlist = merge_chunks(
             chunks[0].collect(sort: true), 
