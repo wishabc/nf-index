@@ -178,16 +178,13 @@ workflow buildIndex {
     take:
         peaks
     main:
-        peaks
+        chunks =
+	    peaks
             | collect(sort: true)
             | collate_and_chunk
             | flatten()
             | process_chunk
             | resolve_overlaps
-    script:
-    """
-    chunks = it
-    """
  
         masterlist = merge_chunks(
             chunks[0].collect(sort: true), 
