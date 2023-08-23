@@ -98,92 +98,12 @@ process merge_chunks {
     """
 }
 
-process filter_masterlist {
-    conda params.conda
-    publishDir "${params.outdir}", pattern: "${name}"
-    publishDir "${params.outdir}/unfiltered_masterlists", pattern: "${mask}"
-
-    input:
-        path masterlist
-    
-    output:
-	    tuple path(name), path(mask)
-
-    script:
-    prefix = "masterlist"
-    name = "${prefix}_DHSs_${params.masterlist_id}.filtered.bed"
-    mask = "${prefix}_DHSs_${params.masterlist_id}.mask.txt"
-    """
-    bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
-        |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
-        > blacklist_rows.txt
-
-    python3 $moduleDir/bin/DHS_filter.py \
-        ${prefix} \
-        .5 \
-        blacklist_rows.txt \
-        ${masterlist} \
-        ${name} \
-        ${mask}
-    """
-
-}
-
-process annotate_masterlist {
-    conda params.conda
-    publishDir params.outdir
-    scratch true
-
-    input: 
-        path filtered_masterlist
-
-    output:
-        path name
-
-    script:
-    name = "masterlist_DHSs_${params.masterlist_id}.filtered.annotated.bed"
-    """
-    bash $moduleDir/bin/simpleAnnotations.sh \
-        ${filtered_masterlist} \
-        ${params.encode3} \
-        ${params.gencode} \
-        ${params.gwas_catalog}
-    
-    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
-    echo -e "is_encode3\tencode3_ovr-fraction\tdist_tss\tgene_name\tnum_gwasCatalog_variants" > simpleAnnotations_header.txt
-
-    echo -e 'n_gc\tpercent_gc\tn_mappable' > gc_header.txt
-
-	
-    faidx -i nucleotide -b ${filtered_masterlist} ${params.genome_fasta} \
-		| awk -v OFS="\t" \
-            'NR>1 { 
-                total=\$4+\$5+\$6+\$7+\$8;
-                cg=\$6+\$7;
-                print \$1, \$2-1, \$3, cg, cg/total; }' \
-		| bedmap --delim "\t" --echo \
-			--bases-uniq - ${params.mappable_file} \
-        | cut -f4- \
-        > gc_content.txt
-
-    paste masterlist_header.txt simpleAnnotations_header.txt gc_header.txt > header.txt
-    paste ${filtered_masterlist} \
-        is_encode3.txt \
-        dist_gene.txt \
-        gwas_catalog_count.txt \
-        gc_content.txt \
-        | cat header.txt - > ${name}
- 
-    """
-}
-
 
 workflow buildIndex {
     take:
         peaks
     main:
-        chunks =
-	    peaks
+        chunks = peaks
             | collect(sort: true)
             | collate_and_chunk
             | flatten()
@@ -197,7 +117,6 @@ workflow buildIndex {
         ).non_merged
             | filter_masterlist // returns tuple(masterlist, mask)
             | map(it -> it[0]) // masterlist
-            | annotate_masterlist // annotated masterlist
     emit:
         masterlist
 	
@@ -208,12 +127,4 @@ workflow {
         | splitCsv(header:true, sep:'\t')
         | map(it -> it.peaks)
         | buildIndex
-}
-
-workflow fromMasterlist {
-    params.masterlist_path = "$launchDir/${params.outdir}/unfiltered_masterlists/masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed"
-   masterlists =  Channel.fromPath(params.unfiltered_masterlists_path)
-        | filter_masterlist
-        
-   annotate_masterlist(masterlists[0])
 }

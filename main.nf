@@ -78,35 +78,45 @@ process generate_count_matrix {
 	"""
 }
 
-process convert_to_numpy {
+process filter_and_convert_to_np {
 	publishDir "${params.outdir}"
 	label "bigmem"
 	conda params.conda
 
 	input:
-		tuple path(signal_matrix), path(peaks_matrix)
+		tuple path(signal_matrix), path(peaks_matrix), path(masterlist_file)
 	
 	output:
-		tuple path(signal_filt_matrix), path(peaks_filt_matrix)
+		tuple path(signal_filt_matrix), path(peaks_filt_matrix), emit: matrices
+		path "masterlist.filtered.bed", emit: filtered_masterlist
 	
 	script:
 	signal_filt_matrix = "signal.filtered.matrix.npy"
 	peaks_filt_matrix = "binary.filtered.matrix.npy"
 	"""
+	# create a mask
+	cat ${masterlist_file} \
+		| awk '{print (\$1 ~ /^chr[0-9]+$/) ? 1 : 0}' \
+		> mask.txt
+	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
+		mask.txt ${masterlist_file} > masterlist.filtered.bed
+
 	(
-	trap 'kill 0' SIGINT; \
-	
-	python3 $moduleDir/bin/convert_to_numpy.py \
-		${signal_matrix} \
-		${signal_filt_matrix} \
-		--dtype int \
-	
-	python3 $moduleDir/bin/convert_to_numpy.py \
-		${peaks_matrix} \
-		${peaks_filt_matrix} \
-		--dtype bool \
-	
-	wait \
+		trap 'kill 0' SIGINT; \
+		
+		python3 $moduleDir/bin/convert_to_numpy.py \
+			${signal_matrix} \
+			${signal_filt_matrix} \
+			--dtype int \
+			--mask mask.txt \
+		
+		python3 $moduleDir/bin/convert_to_numpy.py \
+			${peaks_matrix} \
+			${peaks_filt_matrix} \
+			--dtype bool \
+			--mask mask.txt \
+		
+		wait \
 	)
 	"""
 }
@@ -166,14 +176,64 @@ process deseq2 {
 	normalization_params = norm_params ?: ""
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
-	  ${signal_matrix} \
-	  ${scale_factors} \
-	  ${samples_order} \
-	  ${params.samples_file} \
-	  ${prefix} \
-	  ${normalization_params}
+		${signal_matrix} \
+		${scale_factors} \
+		${samples_order} \
+		${params.samples_file} \
+		${prefix} \
+		${normalization_params}
 	"""
 }
+
+
+process annotate_masterlist {
+    conda params.conda
+    publishDir params.outdir
+    scratch true
+
+    input: 
+        tuple path(binary_matrix), path(filtered_masterlist)
+
+    output:
+        path name
+
+    script:
+    name = "masterlist_DHSs_${params.masterlist_id}.filtered.annotated.bed"
+    """
+    bash $moduleDir/bin/simpleAnnotations.sh \
+        ${filtered_masterlist} \
+        ${params.encode3} \
+        ${params.gencode} \
+        ${params.gwas_catalog}
+    
+    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
+    echo -e "is_encode3\tencode3_ovr-fraction\tdist_tss\tgene_name\tnum_gwasCatalog_variants" > simpleAnnotations_header.txt
+
+    echo -e 'n_gc\tpercent_gc\tn_mappable' > gc_header.txt
+
+	
+    faidx -i nucleotide -b ${filtered_masterlist} ${params.genome_fasta} \
+		| awk -v OFS="\t" \
+            'NR>1 { 
+                total=\$4+\$5+\$6+\$7+\$8;
+                cg=\$6+\$7;
+                print \$1, \$2-1, \$3, cg, cg/total; }' \
+		| bedmap --delim "\t" --echo \
+			--bases-uniq - ${params.mappable_file} \
+        | cut -f4- \
+        > gc_content.txt
+
+    paste masterlist_header.txt simpleAnnotations_header.txt gc_header.txt > header.txt
+    paste ${filtered_masterlist} \
+        is_encode3.txt \
+        dist_gene.txt \
+        gwas_catalog_count.txt \
+        gc_content.txt \
+        | cat header.txt - > ${name}
+ 
+    """
+}
+
 
 workflow generateMatrix {
 	take:
@@ -187,9 +247,11 @@ workflow generateMatrix {
 			| count_tags
 			| collect(sort: true, flat: true)	
 		out = generate_count_matrix(columns, samples_order)
-			| convert_to_numpy
+			| combine(index_file)
+			| filter_and_convert_to_np
 	emit:
-		out
+		out.matrices
+		generate_count_matrix.out
 }
 
 workflow normalizeMatrix {
@@ -226,8 +288,9 @@ workflow generateAndNormalize {
 				storeDir: params.outdir
 			)
 		matrices = generateMatrix(data, index_file, samples_order)
-		out = normalizeMatrix(matrices, samples_order, normalization_params)
+		out = normalizeMatrix(matrices[0], samples_order, index_file, normalization_params)
 	emit:
+		matrices[1]
 		out
 }
 
@@ -248,26 +311,29 @@ workflow readSamplesFile {
 }
 
 workflow {
-	masterlist = Channel.fromPath(params.index_file)
-		| filter_masterlist
-	out = generateAndNormalize(
-		readSamplesFile(),
-		masterlist.filtered_masterlist,
-		Channel.empty()
-	)
-}
-
-workflow buildMasterlistAndMatrices {
 	samples = readSamplesFile()
 	masterlist = samples
 		| map(it -> it[3])
 		| buildIndex
-	generateAndNormalize(
+	result = generateAndNormalize(
 		samples,
 		masterlist,
 		Channel.empty()
 	)
+	result[0]
+		| map(it -> it[1])
+		| combine(masterlist)
+		| view()
+		| annotate_masterlist
+}
 
+workflow existingMasterlist {
+	masterlist = Channel.fromPath(params.index_file)
+	out = generateAndNormalize(
+		readSamplesFile(),
+		masterlist,
+		Channel.empty()
+	)
 }
 
 workflow normalizeExistingMatrices {

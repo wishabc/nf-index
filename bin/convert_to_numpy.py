@@ -38,7 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('matrix', help='Path to matrix file')
     parser.add_argument('outpath', help='Path to output binary matrix file with .npz extension')
     parser.add_argument('--dtype', choices=('int', 'float', 'bool'), help='dtype of the matrix file', default='float')
-    parser.add_argument('--mask', help='Mask file to filter the matrix by columns', default=None)
+    parser.add_argument('--mask', help='Mask file to filter the matrix by rows', default=None)
     args = parser.parse_args()
     input_path = args.matrix
     out_path = args.outpath
