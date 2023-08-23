@@ -109,8 +109,8 @@ process filter_masterlist {
 	    tuple path(name), path(mask)
 
     script:
-    prefix = "masterlist"
-    name = "${prefix}_DHSs.blacklistfiltered.bed"
+    prefix = "${params.masterlist_id}"
+    name = "${prefix}_DHSs.filtered.bed"
     mask = "${prefix}.mask.txt"
     """
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
