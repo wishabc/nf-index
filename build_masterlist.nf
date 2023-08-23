@@ -100,6 +100,7 @@ process merge_chunks {
 
 process filter_masterlist {
     conda params.conda
+    publishDir "${params.outdir}"
 
     input:
         path masterlist
@@ -151,7 +152,7 @@ process annotate_masterlist {
     echo -e 'n_gc\tpercent_gc\tn_mappable' > gc_header.txt
 
 	
-	faidx -i nucleotide -b ${filtered_masterlist} ${params.genome_fasta} \
+    faidx -i nucleotide -b ${filtered_masterlist} ${params.genome_fasta} \
 		| awk -v OFS="\t" \
             'NR>1 { 
                 total=\$4+\$5+\$6+\$7+\$8;

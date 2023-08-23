@@ -11,9 +11,6 @@ bedmap --echo --echo-map --bp-ovr 1 --indicator --bases-uniq-f ${masterlist} ${e
 | awk -F'|' '{print $(NF-1)"\t"$NF}'> is_encode3.txt
 
 
-#Cleanup
-rm tmp.is_encode3.txt
-
 #Double check number of rows are the same
 #Can do later
 
@@ -53,12 +50,8 @@ closest-features --closest --no-ref --dist ${masterlist} tss.bed \
 | awk -F'|' '{print $2"\t"$1}' \
 > dist_gene.txt
 
-#Cleanup
-rm tmp.*
-rm tss.bed
 
 echo "Finished Distance to TSS"
-
 
 
 ####################
@@ -92,10 +85,6 @@ cat tmp2.catalog_parsed.tsv \
 bedmap --count ${masterlist} catalog_parsed.tsv > gwas_catalog_count.txt
 bedmap --echo --echo-map ${masterlist} catalog_parsed.tsv > gwas_catalog_mapped.bed
 
-
-#Cleanup
-rm tmp*
-rm catalog_parsed.tsv
 
 #Double check number of rows are the same
 #Can do later
