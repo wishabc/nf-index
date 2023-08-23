@@ -109,9 +109,9 @@ process filter_masterlist {
 	    tuple path(name), path(mask)
 
     script:
-    prefix = "${params.masterlist_id}"
-    name = "${prefix}_DHSs.filtered.bed"
-    mask = "${prefix}.mask.txt"
+    prefix = "masterlist"
+    name = "${prefix}_DHSs_${params.masterlist_id}.filtered.bed"
+    mask = "${prefix}_${params.masterlist_id}.mask.txt"
     """
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
