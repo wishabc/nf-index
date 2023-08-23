@@ -25,9 +25,10 @@ row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
 data <- h5read(file_path, 'vst', 
-    start=c(start_index, 1), 
-    count=c(count, nrow(meta))
+    start=c(1, start_index), 
+    count=c(nrow(meta), count)
 )
+data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
 colnames(data) <- sample_names
