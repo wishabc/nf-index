@@ -15,6 +15,7 @@ blacklist_rows = pd.read_table(sys.argv[3], header=None)
 print("Reading Masterlist")
 masterlist = pd.read_table(sys.argv[4], header=None)
 print(masterlist.shape[0])
+m_size = masterlist.shape[0]
 
 #Assign headers to dataframes
 blacklist_rows.columns= ["row_id"]
@@ -46,10 +47,14 @@ k = index_subset.index
 masterlist_filtered = masterlist.loc[k]
 masterlist_filtered['mean_signal'] = masterlist_filtered['total_signal'] / masterlist_filtered['num_samples']
 new_masterlist = masterlist_filtered[['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end', 'mean_signal']]
+new_masterlist.to_csv(sys.argv[5], index=False, header=False, sep="\t")
 
-#Print Filtered Binary Matrix
 #filtered_binary = binary.loc[binary['index_column'].isin(new_masterlist.index)]
 #filtered_binary = filtered_binary.reset_index(drop=True)
 #filtered_binary = filtered_binary.drop(columns=['index_column'])
 
-new_masterlist.to_csv(sys.argv[5], index=False, header=False, sep="\t")
+s = pd.DataFrame(k, columns=['row'])
+d = pd.DataFrame(np.zeros((m_size, 1)), columns=['all'])
+d.loc[s['row'], 'all'] = 1
+d['all'] = d['all'].astype(int)
+d.to_csv(sys.argv[6], index=False, header=False, sep="\t")
