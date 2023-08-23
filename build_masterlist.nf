@@ -128,6 +128,7 @@ process filter_masterlist {
 }
 
 process annotate_masterlist {
+    conda params.conda
     publishDir params.outdir
     scratch true
 
