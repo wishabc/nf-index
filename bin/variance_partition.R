@@ -36,6 +36,10 @@ row.names(data) <- row.names(dhs_meta)
 
 meta <- meta[match(sample_names, row.names(meta)), ]
 
+non_numeric_indices <- is.na(as.numeric(meta$preseq_est_max))
+
+# Replace them with NA
+meta$preseq_est_max[non_numeric_indices] <- NA
 meta$log_preseq_est_max <- log(meta$preseq_est_max)
 mean_log_value <- mean(meta$log_preseq_est_max[is.finite(meta$log_preseq_est_max) & !is.na(meta$log_preseq_est_max)], na.rm = TRUE)
 
