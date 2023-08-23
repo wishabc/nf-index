@@ -100,7 +100,8 @@ process merge_chunks {
 
 process filter_masterlist {
     conda params.conda
-    publishDir "${params.outdir}"
+    publishDir "${params.outdir}", pattern: "${name}"
+    publishDir "${params.outdir}/unfiltered_masterlists", pattern: "${mask}"
 
     input:
         path masterlist
@@ -111,7 +112,7 @@ process filter_masterlist {
     script:
     prefix = "masterlist"
     name = "${prefix}_DHSs_${params.masterlist_id}.filtered.bed"
-    mask = "${prefix}_${params.masterlist_id}.mask.txt"
+    mask = "${prefix}_DHSs_${params.masterlist_id}.mask.txt"
     """
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
@@ -125,6 +126,7 @@ process filter_masterlist {
         ${name} \
         ${mask}
     """
+
 }
 
 process annotate_masterlist {
