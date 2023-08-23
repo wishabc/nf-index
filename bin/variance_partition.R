@@ -36,8 +36,12 @@ row.names(data) <- row.names(dhs_meta)
 
 meta <- meta[match(sample_names, row.names(meta)), ]
 
+meta$log_preseq_est_max <- log(meta$preseq_est_max)
+mean_log_value <- mean(meta$log_preseq_est_max[is.finite(meta$log_preseq_est_max) & !is.na(meta$log_preseq_est_max)], na.rm = TRUE)
 
-formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | donor_sex) + (1 | library_kit) + (1 | short_ontology)
+# Replace NA, -Inf, and Inf with the computed mean
+meta$log_preseq_est_max[is.na(meta$log_preseq_est_max) | is.infinite(meta$log_preseq_est_max)] <- mean_log_value
+formula <- ~ dedupped_subsampled_spot1 + alignment_quality + log(num_peaks_downsampled) + log(read_depth) + dupRate_5M + log_preseq_est_max + (1 | donor_sex) + (1 | library_kit) + (1 | frac_method)
 
 print('Fitting model')
 
