@@ -36,8 +36,6 @@ row.names(data) <- row.names(dhs_meta)
 
 meta <- meta[match(sample_names, row.names(meta)), ]
 
-non_numeric_indices <- is.na()
-
 # Replace them with NA
 meta$preseq_est_max <- as.numeric(meta$preseq_est_max)
 meta$log_preseq_est_max <- log(meta$preseq_est_max)
