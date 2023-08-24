@@ -96,7 +96,7 @@ process filter_and_convert_to_np {
 	"""
 	# create a mask
 	cat ${masterlist_file} \
-		| awk '{print (\$1 ~ \/^chr[0-9]+\/) ? 1 : 0}' \
+		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
 		> mask.txt
 	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
 		mask.txt ${masterlist_file} > ${name}
