@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 include { non_required_arg } from "./nmf"
-include { buildIndex; filter_masterlist } from "./build_masterlist"
+include { buildIndex } from "./build_masterlist"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
@@ -87,19 +87,19 @@ process filter_and_convert_to_np {
 		tuple path(signal_matrix), path(peaks_matrix), path(masterlist_file)
 	
 	output:
-		tuple path(signal_filt_matrix), path(peaks_filt_matrix), emit: matrices
-		path "masterlist.filtered.bed", emit: filtered_masterlist
+		tuple path(signal_filt_matrix), path(peaks_filt_matrix), path(name)
 	
 	script:
 	signal_filt_matrix = "signal.filtered.matrix.npy"
 	peaks_filt_matrix = "binary.filtered.matrix.npy"
+	name = "masterlist.filtered.bed"
 	"""
 	# create a mask
 	cat ${masterlist_file} \
-		| awk '{print (\$1 ~ /^chr[0-9]+$/) ? 1 : 0}' \
+		| awk '{print (\$1 ~ \/^chr[0-9]+\/) ? 1 : 0}' \
 		> mask.txt
 	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
-		mask.txt ${masterlist_file} > masterlist.filtered.bed
+		mask.txt ${masterlist_file} > ${name}
 
 	(
 		trap 'kill 0' SIGINT; \
@@ -249,8 +249,9 @@ workflow generateMatrix {
 		out = generate_count_matrix(columns, samples_order)
 			| combine(index_file)
 			| filter_and_convert_to_np
+			| map(it -> tuple(it[0], it[1]))
 	emit:
-		out.matrices
+		out
 		generate_count_matrix.out
 }
 
@@ -288,7 +289,7 @@ workflow generateAndNormalize {
 				storeDir: params.outdir
 			)
 		matrices = generateMatrix(data, index_file, samples_order)
-		out = normalizeMatrix(matrices[0], samples_order, index_file, normalization_params)
+		out = normalizeMatrix(matrices[0], samples_order, normalization_params)
 	emit:
 		matrices[1]
 		out
