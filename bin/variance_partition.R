@@ -43,7 +43,7 @@ mean_log_value <- mean(meta$log_preseq_est_max[is.finite(meta$log_preseq_est_max
 
 # Replace NA, -Inf, and Inf with the computed mean
 meta$log_preseq_est_max[is.na(meta$log_preseq_est_max) | is.infinite(meta$log_preseq_est_max)] <- mean_log_value
-formula <- ~ dedupped_subsampled_spot1 + alignment_quality + log(num_peaks_downsampled) + log(read_depth) + dupRate_5M + log_preseq_est_max + (1 | donor_sex) + (1 | library_kit) + (1 | frac_method)
+formula <- ~ dedupped_subsampled_spot1 + alignment_quality + log(num_peaks_downsampled) + log(read_depth) + dupRate_5M + log_preseq_est_max + (1 | donor_sex) + (1 | library_kit) + (1 | frac_method) + (1 | system) + (1 | state)
 
 print('Fitting model')
 
