@@ -99,6 +99,35 @@ process merge_chunks {
 }
 
 
+process filter_masterlist {
+    conda params.conda
+
+    input:
+        path masterlist
+    
+    output:
+	    tuple path(name), path(mask)
+
+    script:
+    prefix = "masterlist"
+    name = "${prefix}_DHSs.blacklistfiltered.bed"
+    mask = "${prefix}.mask.txt"
+    """
+    bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
+        |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
+        > blacklist_rows.txt
+
+    python3 $moduleDir/bin/DHS_filter.py \
+        ${prefix} \
+        .5 \
+        blacklist_rows.txt \
+        ${masterlist} \
+        ${name} \
+        ${mask}
+    """
+}
+
+
 workflow buildIndex {
     take:
         peaks
