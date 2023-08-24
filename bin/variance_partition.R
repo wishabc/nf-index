@@ -3,12 +3,12 @@ library(data.table)
 library(rhdf5)
 
 
-args = commandArgs(trailingOnly=TRUE)
+args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 6) {
   stop("At least six input arguments should be supplied", call.=FALSE)
 }
 
-meta = read.delim(args[1])
+meta <- read.delim(args[1])
 rownames(meta) <- meta$ag_id
 meta$sample_id <- meta$ag_id
 meta <- as.data.frame(meta)
