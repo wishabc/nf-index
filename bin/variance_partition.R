@@ -31,11 +31,11 @@ data <- h5read(file_path, 'vst',
 data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
-print(samples_names)
+print(sample_names)
 colnames(data) <- sample_names
 row.names(data) <- row.names(dhs_meta)
 
-meta <- meta[match(sample_names, row.names(meta)), ]
+#meta <- meta[match(sample_names, row.names(meta)), ]
 
 # Replace them with NA
 meta$preseq_est_max <- as.numeric(meta$preseq_est_max)
