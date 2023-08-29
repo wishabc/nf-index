@@ -200,15 +200,24 @@ process annotate_masterlist {
     script:
     name = "masterlist_DHSs_${params.masterlist_id}.filtered.annotated.bed"
     """
+    num=`cat ${filtered_masterlist} | wc -l`
+    echo \${num}
+ 
     bash $moduleDir/bin/simpleAnnotations.sh \
         ${filtered_masterlist} \
         ${params.encode3} \
         ${params.gencode} \
-        ${params.gwas_catalog}
+        ${params.gwas_catalog} \
+	${params.repeats} 
     
-    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
-    echo -e "is_encode3\tencode3_ovr-fraction\tdist_tss\tgene_name\tnum_gwasCatalog_variants" > simpleAnnotations_header.txt
+    bash $moduleDir/bin/gencodeAnnotations.sh \
+	${filtered_masterlist} \
+	${params.gencode} \
+	${params.chromInfo} 
 
+    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
+    echo -e "is_encode3\tencode3_ovr-fraction\tdist_tss\tgene_name\tnum_gwasCatalog_variants\trepeat_class\trepeat_family\trepeat_name" > simpleAnnotations_header.txt
+    echo -e "gene_body\texon_subgroup\tis_coding" > gencodeAnnotations_header.txt
     echo -e 'n_gc\tpercent_gc\tn_mappable' > gc_header.txt
 
 	
@@ -223,11 +232,13 @@ process annotate_masterlist {
         | cut -f4- \
         > gc_content.txt
 
-    paste masterlist_header.txt simpleAnnotations_header.txt gc_header.txt > header.txt
+    paste masterlist_header.txt simpleAnnotations_header.txt gencodeAnnotations_header.txt gc_header.txt > header.txt
     paste ${filtered_masterlist} \
         is_encode3.txt \
         dist_gene.txt \
         gwas_catalog_count.txt \
+	repeats.txt \
+	gencode_annotations.txt \
         gc_content.txt \
         | cat header.txt - > ${name}
  
