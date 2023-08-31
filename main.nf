@@ -79,7 +79,8 @@ process generate_count_matrix {
 }
 
 process filter_and_convert_to_np {
-	publishDir "${params.outdir}"
+	publishDir "${params.outdir}", pattern: "*.filtered.*"
+	publishDir "${params.outdir}/masks", pattern: "${mask}"
 	label "bigmem"
 	conda params.conda
 
@@ -87,19 +88,20 @@ process filter_and_convert_to_np {
 		tuple path(signal_matrix), path(peaks_matrix), path(masterlist_file)
 	
 	output:
-		tuple path(signal_filt_matrix), path(peaks_filt_matrix), path(name)
+		tuple path(signal_filt_matrix), path(peaks_filt_matrix), path(filtered_masterlist), path(mask)
 	
 	script:
 	signal_filt_matrix = "signal.filtered.matrix.npy"
 	peaks_filt_matrix = "binary.filtered.matrix.npy"
-	name = "masterlist.filtered.bed"
+	filtered_masterlist = "masterlist.filtered.bed"
+	mask = "autosomes.mask.txt"
 	"""
 	# create a mask
 	cat ${masterlist_file} \
 		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
-		> mask.txt
+		> ${mask}
 	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
-		mask.txt ${masterlist_file} > ${name}
+		${mask} ${masterlist_file} > ${filtered_masterlist}
 
 	(
 		trap 'kill 0' SIGINT; \
@@ -108,13 +110,13 @@ process filter_and_convert_to_np {
 			${signal_matrix} \
 			${signal_filt_matrix} \
 			--dtype int \
-			--mask mask.txt \
+			--mask ${mask} \
 		
 		python3 $moduleDir/bin/convert_to_numpy.py \
 			${peaks_matrix} \
 			${peaks_filt_matrix} \
 			--dtype bool \
-			--mask mask.txt \
+			--mask ${mask} \
 		
 		wait \
 	)
