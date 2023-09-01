@@ -77,9 +77,9 @@ process merge_chunks {
     scratch true
 
     input:
-        path "DHSs_all/*"
-        path "DHSs_nonovl_core/*"
-        path "DHSs_nonovl_any/*"
+        path filepaths_all 
+        path filepaths_nonovl_core
+        path filepaths_nonovl_any
     
     output:
         path "masterlist*${params.masterlist_id}*", emit: all
@@ -87,6 +87,22 @@ process merge_chunks {
     
     script:
     """
+    # workaround for too big .command.run
+    mkdir "DHSs_all/"
+    while read line; do
+        ln -s \$line \$PWD/DHSs_all/
+    done < ${filepaths_all}
+
+    mkdir "DHSs_nonovl_core/"
+    while read line; do
+        ln -s \$line \$PWD/DHSs_nonovl_core/
+    done < ${filepaths_nonovl_core}
+
+    mkdir "DHSs_nonovl_any/"
+    while read line; do
+        ln -s \$line \$PWD/DHSs_nonovl_any/
+    done < ${filepaths_nonovl_any}
+
     cat ${params.chrom_sizes} \
         | awk -v OFS='\t' '{ print \$1,0,\$2 }' \
         > chrom_sizes.bed
@@ -140,9 +156,10 @@ workflow buildIndex {
             | resolve_overlaps
  
         masterlist = merge_chunks(
-            chunks[0].collect(sort: true), 
-            chunks[1].collect(sort: true), 
-            chunks[2].collect(sort: true)
+            // workaround
+            chunks[0].map(it -> it.toString()).collectFile(name: 'all.paths.txt', newLine: true), 
+            chunks[1].map(it -> it.toString()).collectFile(name: 'no_core.paths.txt', newLine: true), 
+            chunks[2].map(it -> it.toString()).collectFile(name: 'no_any.paths.txt', newLine: true)
         ).non_merged
             | filter_masterlist // returns tuple(masterlist, mask)
             | map(it -> it[0]) // masterlist
