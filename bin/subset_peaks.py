@@ -12,7 +12,7 @@ def get_interpolation_for_gini(x, lowess_est, sampled):
     return interpolated
 
 
-def average_matrices(normalized_matrix, binary_matrix, meta_labels):
+def average_matrices(normalized_matrix, binary_matrix, meta_labels, reprod=1):
     unique_labels = np.unique(meta_labels)
     new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
                                 dtype=normalized_matrix.dtype)
@@ -20,7 +20,7 @@ def average_matrices(normalized_matrix, binary_matrix, meta_labels):
                                 dtype=bool)
     for label in unique_labels:
         new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
-        new_binary_matrix[:, label] = binary_matrix[:, meta_labels == label].any(axis=1)
+        new_binary_matrix[:, label] = binary_matrix[:, meta_labels == label].sum(axis=1) >= reprod
 
     return new_norm_matrix, new_binary_matrix
 
