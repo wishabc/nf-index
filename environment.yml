@@ -10,15 +10,21 @@ dependencies:
   - umap-learn
   - seaborn
   - tmux
-  - datatables
   - python=3.9
   - datatable
   - scipy
   - bedops
-  - pysam
+  - pysam=0.19.1
   - r-essentials
+  - samtools=1.15.1
+  - ucsc-bedtobigbed
   - r
   - r-reticulate
+  - r-catools
   - subread
   - bioconductor-deseq2
+  - bioconductor-variancepartition
+  - bioconductor-rhdf5
+  - tqdm
+  - h5py
 prefix: /home/sabramov/miniconda3/envs/super-index
