@@ -174,3 +174,86 @@ workflow {
         | map(it -> it.peaks)
         | buildIndex
 }
+
+
+// DEFUNC
+process get_chunks_order {
+    input:
+        path masterlist
+    
+    output:
+        path name
+
+    script:
+    name = "chunks_order.txt"
+    """
+    cut -f4 ${masterlist} > ${name}
+    """
+}
+process write_rows {
+
+    input:
+        tuple path(chunk_file), path(chunks_order), path(samples_order)
+
+    output:
+        path signal, emit: signal
+        path binary, emit: binary
+
+    script:
+    signal = "${chunk_file.baseName}.signal.txt"
+    binary = "${chunk_file.baseName}.binary.txt"
+    """
+    /net/seq/data/projects/SuperIndex/erynes/masterLists/writeRowsPerChunkForMatrices \
+        ${samples_order} \
+        ${chunks_order} \
+        ${chunk_file} \
+        ${signal} \
+        ${binary}
+    """
+}
+
+process collect_chunks {
+
+    publishDir params.outdir
+
+    input:
+        val prefix
+        path "chunks/*"
+    
+    output:
+        path matrix
+
+    script:
+    matrix = "matrix.${prefix}.mtx.gz"
+    """
+    ls chunks/ | wc -l \
+        | awk -v dir="chunks/" \
+         '{for(i=1;i<=\$1;i++){printf("%s/chunk%04d.signal.txt ",dir,i)}printf("\n");}' \
+        | xargs cat | gzip > ${matrix}
+    """
+}
+
+workflow createMatrices {
+    chunks_order = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/output/unfiltered_masterlists/masterlist_DHSs_0802_all_chunkIDs.bed")
+        | get_chunks_order
+
+    samples_order = Channel.of(file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/${params.outdir}/samples_order.txt"))
+    rows = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/work/tmp/8f/85e52371616c0a3adcf75a064fc64c/all.paths.txt")
+        | splitCsv(header: false)
+        | map(it -> it[0])
+        | combine(chunks_order)
+        | combine(samples_order)
+        | write_rows
+    
+    binary_data = rows.binary
+        | collect(sort: true)
+        | map(it -> tuple("binary", it))
+    
+    rows.signal
+        | collect(sort: true)
+        | map(it -> tuple("signal", it))
+        | mix(binary_data)
+        | collect_chunks
+    // file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/work/tmp/2a/10c57903166faeb052d56a4ace1a68/no_core.paths.txt")
+    // file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/work/tmp/93/23361e11b94264bc72ccbac2af1af4/no_any.paths.txt")
+}
