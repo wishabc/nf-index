@@ -237,7 +237,7 @@ workflow createMatrices {
         | get_chunks_order
 
     samples_order = Channel.of(file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/${params.outdir}/samples_order.txt"))
-    rows = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/work/tmp/8f/85e52371616c0a3adcf75a064fc64c/all.paths.txt")
+    rows = Channel.fromPath("/net/seq/data2/projects/sabramov/SuperIndex/dnase-wouter-style-matrices/peaks_list.txt")
         | splitCsv(header: false)
         | map(it -> it[0])
         | combine(chunks_order)
