@@ -217,8 +217,7 @@ process collect_chunks {
     publishDir params.outdir
 
     input:
-        val prefix
-        path "chunks/*"
+        tuple val(prefix), path("chunks/*")
     
     output:
         path matrix
