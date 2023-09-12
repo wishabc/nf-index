@@ -188,7 +188,7 @@ workflow generateMatrices {
         } else {
             all_cols = unfiltered_masterlist
                 | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, paired_aligned
-                | map(it -> tuple(it[0], it[4]))
+                | map(it -> tuple(it[0], it[1], it[4]))
                 | generate_binary_counts
                 | map(it -> tuple("counts", it))
                 | mix(cols)
