@@ -283,7 +283,7 @@ workflow {
 
 
 workflow existingMatrices {
-    params.matrices_dir = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-wouter-style-matrices/output/raw_matrices/"
+    params.matrices_dir = "$launchDir/${params.outdir}/raw_matrices"
 
     autosomes_mask = Channel.fromPath(params.index_file)
         | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
