@@ -217,12 +217,18 @@ workflow {
             file(row.hotspot_peaks_point1per),
             row.paired_aligned && (row.paired_aligned != 0)
         ))
-    peaks_files = bams_hotspots
-        | map(it -> it[3])
-        | collect(sort: true)
-        | collate_and_chunk
-        | flatten()
-        | process_chunk
+    
+    if (params.method == 'chunks') {
+        peaks_files = bams_hotspots
+            | map(it -> it[3])
+            | collect(sort: true)
+            | collate_and_chunk
+            | flatten()
+            | process_chunk
+    } else {
+        peaks_files = Channel.empty()
+    }
+
     
     generateMatrices(unfiltered_masterlist, samples_order, peaks_files[1], bams_hotspots)
 }
