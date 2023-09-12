@@ -292,7 +292,7 @@ workflow {
         | map(it -> it[1])
         | first()
     count_matrix = matrices
-        | filter(it -> it[0] == "count")
+        | filter(it -> it[0] == "counts")
         | map(it -> it[1])
     // Normalization code
     out = normalizeMatrix(binary_matrix, count_matrix, samples_order, Channel.empty())

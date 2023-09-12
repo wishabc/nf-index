@@ -105,13 +105,14 @@ process generate_count_matrix {
 	scratch true
 
 	input:
-		tuple path(files), path(samples_order)
+		path files
+        path samples_order
 
 	output:
 		tuple val(prefix), path(name)
 
 	script:
-    prefix = "count"
+    prefix = "counts"
     name = "matrix.${prefix}.txt.gz"
 	"""
     awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order} \
