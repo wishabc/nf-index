@@ -297,7 +297,6 @@ workflow existingMatrices {
     samples_order = get_samples_order()
 
     out = normalizeMatrix(matrices, samples_order, Channel.empty())
-
 }
 
 
