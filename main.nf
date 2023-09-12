@@ -2,7 +2,7 @@
 nextflow.enable.dsl = 2
 include { non_required_arg } from "./nmf"
 include { buildIndex } from "./build_masterlist"
-include { generateMatrices } from "./generate_matrices"
+include { generateMatrices; get_samples_order } from "./generate_matrices"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
@@ -95,23 +95,6 @@ process deseq2 {
 		${prefix} \
 		${normalization_params}
 	"""
-}
-
-process get_samples_order {
-
-    publishDir params.outdir
-    
-    output:
-        path name
-    
-
-    script:
-    name = "samples_order.txt"
-    """
-    awk -F"\t" -v col="ag_id" \
-        'NR==1{for(i=1;i<=NF;i++)if(\$i==col)c=i}NR>1{if(c)print \$c}' \
-            ${params.samples_file} > ${name}
-    """
 }
 
 
@@ -226,11 +209,17 @@ process annotate_masterlist {
 
 workflow normalizeMatrix {
 	take:
-		binary_matrix
-        count_matrix
+		matrices
 		samples_order
 		normalization_params
 	main:
+        binary_matrix = matrices
+            | filter(it -> it[0] == "binary")
+            | map(it -> it[1])
+            | first()
+        count_matrix = matrices
+            | filter(it -> it[0] == "counts")
+            | map(it -> it[1])
 		lowess_params = normalization_params
 			| filter { it.name =~ /lowess_params/ }
 			| ifEmpty(null)
@@ -263,6 +252,7 @@ workflow readSamplesFile {
 
 workflow {
 	bams_hotspots = readSamplesFile()
+    // Build index
 	index_data = bams_hotspots
 		| map(it -> it[3])
 		| buildIndex
@@ -270,15 +260,18 @@ workflow {
     unfiltered_masterlist = index_data[0]
 
     samples_order = get_samples_order()
-    
     autosomes_mask = unfiltered_masterlist
         | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
         | map(it -> it[3]) // mask
-
+    // Generate matrices
     matrices = generateMatrices(unfiltered_masterlist, samples_order, index_data[1], bams_hotspots)
         | combine(autosomes_mask)
         | apply_filter_and_convert_to_np
-    
+
+    // Normalize matrices
+    out = normalizeMatrix(matrices, samples_order, Channel.empty())
+
+    // Annotate index
     generateMatrices.out
         | filter(it -> it[0] == "binary")
 		| map(it -> it[1])
@@ -286,28 +279,29 @@ workflow {
             filter_masterlist.out.map(it -> it[0])
         )
 		| annotate_masterlist
-
-    binary_matrix = matrices
-        | filter(it -> it[0] == "binary")
-        | map(it -> it[1])
-        | first()
-    count_matrix = matrices
-        | filter(it -> it[0] == "counts")
-        | map(it -> it[1])
-    // Normalization code
-    out = normalizeMatrix(binary_matrix, count_matrix, samples_order, Channel.empty())
 }
+
+
+workflow existingMatrices {
+    params.matrices_dir = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-wouter-style-matrices/output/raw_matrices/"
+
+    autosomes_mask = Channel.fromPath(params.index_file)
+        | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
+        | map(it -> it[3]) // mask
+
+    matrices = Channel.of('binary', 'counts')
+        | map(it -> tuple(it, file("${params.matrices_dir}/matrix.${it}.mtx.gz")))
+        | combine(autosomes_mask)
+        | apply_filter_and_convert_to_np
+    
+    samples_order = get_samples_order()
+
+    out = normalizeMatrix(matrices, samples_order, Channel.empty())
+
+}
+
 
 // Debug code below, defunc
-workflow existingMasterlist {
-	masterlist = Channel.fromPath(params.index_file)
-	out = generateAndNormalize(
-		readSamplesFile(),
-		masterlist,
-		Channel.empty()
-	)
-}
-
 workflow normalizeExistingMatrices {
 	mats = Channel.of(tuple(
 		file("$launchDir/${params.outdir}/signal.filtered.matrix.npy"),

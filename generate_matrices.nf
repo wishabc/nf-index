@@ -1,6 +1,24 @@
 include { collate_and_chunk; process_chunk } from "./build_masterlist"
 // Create binary matrix workflows
 
+process get_samples_order {
+
+    publishDir params.outdir
+    
+    output:
+        path name
+    
+
+    script:
+    name = "samples_order.txt"
+    """
+    awk -F"\t" -v col="ag_id" \
+        'NR==1{for(i=1;i<=NF;i++)if(\$i==col)c=i}NR>1{if(c)print \$c}' \
+            ${params.samples_file} > ${name}
+    """
+}
+
+
 process get_chunks_order {
     input:
         path masterlist
@@ -114,7 +132,7 @@ process generate_count_matrix {
 
 	script:
     prefix = "counts"
-    name = "matrix.${prefix}.txt.gz"
+    name = "matrix.${prefix}.mtx.gz"
 	"""
     awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order} \
         | xargs paste \
@@ -160,8 +178,8 @@ workflow generateMatrices {
 }
 
 workflow {
-    unfiltered_masterlist = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/output/unfiltered_masterlists/masterlist_DHSs_0802_all_chunkIDs.bed")
-    samples_order = Channel.of(file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/${params.outdir}/samples_order.txt"))
+    unfiltered_masterlist = Channel.fromPath(params.index_file)
+    samples_order = get_samples_order()
     
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
