@@ -163,6 +163,7 @@ process annotate_masterlist {
     conda params.conda
     publishDir params.outdir
     scratch true
+    errorStrategy "ignore"
 
     input: 
         tuple path(binary_matrix), path(filtered_masterlist)
