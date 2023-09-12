@@ -229,7 +229,7 @@ process collect_chunks {
     """
     ls chunks/ | wc -l \
         | awk -v dir="chunks/" \
-         '{for(i=1;i<=\$1;i++){printf("%s/chunk%04d.signal.txt ",dir,i)}printf("\n");}' \
+         '{for(i=1;i<=\$1;i++){printf("%s/chunk%04d.${prefix}.txt ",dir,i)}printf("\\n");}' \
         | xargs cat | gzip > ${matrix}
     """
 }
