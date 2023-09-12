@@ -135,7 +135,7 @@ process count_tags {
 	"""
 }
 
-process generate_count_matrix {
+process generate_matrix {
 	publishDir "${params.outdir}/raw_matrices", pattern: "${name}"
 	
 	label "medmem"
@@ -194,7 +194,7 @@ workflow generateMatrices {
                 | map(it -> tuple("binary", it))
                 | mix(cols)
 
-            out = generate_count_matrix(
+            out = generate_matrix(
                 all_cols,
                 samples_order
             )
