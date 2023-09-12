@@ -151,7 +151,7 @@ process filter_masterlist {
 		> autosomes.mask.txt
     
     awk 'NR==FNR {mask1[NR]=\$0; next} \
-        {print mask1[FNR] * \$0}' ${mask1} autosomes.mask.txt > ${autosomes_mask}
+        {print mask1[FNR] * \$0}' ${mask} autosomes.mask.txt > ${autosomes_mask}
 
 	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
 		${autosomes_mask} ${masterlist} > ${filtered_masterlist}
