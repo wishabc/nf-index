@@ -235,7 +235,7 @@ process collect_chunks {
 }
 
 workflow createMatrices {
-    chunks_order = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/output/unfiltered_masterlists/masterlist_DHSs_0802_all_chunkIDs.bed")
+    chunks_order = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/output/masterlist_DHSs_0802.filtered.annotated.bed")
         | get_chunks_order
 
     samples_order = Channel.of(file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/${params.outdir}/samples_order.txt"))
