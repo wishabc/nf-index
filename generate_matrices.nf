@@ -219,16 +219,17 @@ workflow {
         ))
     
     if (params.method == 'chunks') {
-        peaks_files = bams_hotspots
+        bams_hotspots
             | map(it -> it[3])
             | collect(sort: true)
             | collate_and_chunk
             | flatten()
             | process_chunk
+        peaks_files = process_chunk.out[1]
     } else {
         peaks_files = Channel.empty()
     }
 
     
-    generateMatrices(unfiltered_masterlist, samples_order, peaks_files[1], bams_hotspots)
+    generateMatrices(unfiltered_masterlist, samples_order, peaks_files, bams_hotspots)
 }
