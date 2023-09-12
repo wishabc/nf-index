@@ -301,20 +301,6 @@ workflow existingMatrices {
 
 
 // Debug code below, defunc
-workflow normalizeExistingMatrices {
-	mats = Channel.of(tuple(
-		file("$launchDir/${params.outdir}/signal.filtered.matrix.npy"),
-		file("$launchDir/${params.outdir}/binary.filtered.matrix.npy")
-		)
-	)
-	samples_order = Channel.of(file("$launchDir/${params.outdir}/samples_order.txt"))
-	normalizeMatrix(mats, samples_order, Channel.empty())
-	// params.normalization_params_dir = "$launchDir/${params.outdir}/params"
-	// file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
-	// existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
-	// 	| map(it -> file(it))
-}
-
 workflow existingModel {
 	params.normalization_params_dir = "$launchDir/${params.outdir}/params"
 	file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
@@ -325,8 +311,6 @@ workflow existingModel {
 }
 
 
-
-// Debug code below, defunc
 workflow test3 {
 	mats = Channel.of(tuple(
 		file('/net/seq/data2/projects/sabramov/SuperIndex/dnase-0108/low_qual_samples/output/signal.filtered.matrix.npy'),
