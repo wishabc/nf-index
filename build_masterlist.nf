@@ -192,6 +192,7 @@ process get_chunks_order {
 }
 process write_rows {
 
+    tag "${chunk_file.simpleName}"
     input:
         tuple path(chunk_file), path(chunks_order), path(samples_order)
 
@@ -215,6 +216,7 @@ process write_rows {
 process collect_chunks {
 
     publishDir params.outdir
+    tag "${prefix}"
 
     input:
         tuple val(prefix), path("chunks/*")
