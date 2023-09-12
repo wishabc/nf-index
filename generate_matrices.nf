@@ -192,6 +192,7 @@ workflow {
         ))
     peaks_files = bams_hotspots
         | map(it -> it[3])
+        | collect(sort: true)
         | collate_and_chunk
         | process_chunk
     
