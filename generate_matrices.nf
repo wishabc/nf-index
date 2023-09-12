@@ -68,7 +68,7 @@ process generate_binary_counts {
     script:
     name = "${id}.binary.txt"
     """
-    bedops --fraction-map 0.8 --indicator ${masterlist} \
+    bedmap --fraction-map 0.8 --indicator ${masterlist} \
         ${peaks_file} > ${name}
     """
 
