@@ -33,26 +33,45 @@ process get_chunks_order {
     """
 }
 process write_rows {
-
     tag "${chunk_file.simpleName}"
+    scratch true
+
     input:
         tuple path(chunk_file), path(chunks_order), path(samples_order)
 
     output:
-        path density, emit: density
-        path binary, emit: binary
+        path binary
 
     script:
-    density = "${chunk_file.baseName}.density.txt"
     binary = "${chunk_file.baseName}.binary.txt"
     """
     $moduleDir/bin/writeRowsPerChunkForMatrices \
         ${samples_order} \
         ${chunks_order} \
         ${chunk_file} \
-        ${density} \
+        tmp.txt \
         ${binary}
     """
+}
+
+process generate_binary_counts {
+
+    conda params.conda
+    tag "${id}"
+
+    input:
+		tuple path(masterlist), val(id), path(peaks_file)
+    
+    output:
+        path name
+    
+    script:
+    name = "${id}.binary.txt"
+    """
+    bedops --fraction-map 0.8 --indicator ${masterlist} \
+        ${peaks_file} > ${name}
+    """
+
 }
 
 process collect_chunks {
@@ -124,14 +143,13 @@ process generate_count_matrix {
 	scratch true
 
 	input:
-		path files
+		tuple path(files), val(prefix)
         path samples_order
 
 	output:
 		tuple val(prefix), path(name)
 
 	script:
-    prefix = "counts"
     name = "matrix.${prefix}.mtx.gz"
 	"""
     awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order} \
@@ -147,37 +165,46 @@ workflow generateMatrices {
         peaks_files
         bams_hotspots
     main:
-        chunks_order = unfiltered_masterlist
-            | get_chunks_order
-        
-        rows = peaks_files
-            | combine(chunks_order)
-            | combine(samples_order)
-            | write_rows
-        
-        binary_data = rows.binary
-            | collect(sort: true)
-            | map(it -> tuple("binary", it))
-        
-        binary_and_density = rows.density
-            | collect(sort: true)
-            | map(it -> tuple("density", it))
-            | mix(binary_data)
-            | collect_chunks
-        
-        chunks = unfiltered_masterlist
+        cols = unfiltered_masterlist
 			| bed2saf
 			| combine(bams_hotspots)
 			| count_tags
 			| collect(sort: true, flat: true)
+            | combine("counts")
 
-        out = generate_count_matrix(chunks, samples_order)
-            | mix(binary_and_density)
+        if (params.method == 'chunks') {
+            chunks_order = unfiltered_masterlist
+                | get_chunks_order
+            
+            out = peaks_files
+                | combine(chunks_order)
+                | combine(samples_order)
+                | write_rows
+                | collect(sort: true)
+                | map(it -> tuple("binary", it))
+                | collect_chunks
+                | mix(generate_count_matrix(cols, samples_order))
+
+        } else {
+            all_cols = unfiltered_masterlist
+                | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, paired_aligned
+                | map(it -> tuple(it[0], it[4]))
+                | generate_binary_counts
+                | map(it -> tuple("counts", it))
+                | mix(cols)
+
+            out = generate_count_matrix(
+                all_cols,
+                samples_order
+            )
+        }
+
     emit:
         out
 }
 
 workflow {
+    params.method = "indicator"
     unfiltered_masterlist = Channel.fromPath(params.index_file)
     samples_order = get_samples_order()
     
