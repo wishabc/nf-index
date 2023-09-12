@@ -145,7 +145,7 @@ workflow generateMatrices {
             | mix(binary_data)
             | collect_chunks
         
-        count_matrix = unfiltered_masterlist
+        out = unfiltered_masterlist
 			| bed2saf
 			| combine(bams_hotspots)
 			| count_tags
@@ -153,7 +153,6 @@ workflow generateMatrices {
             | combine(samples_order)
             | generate_count_matrix	
             | mix(binary_and_density)
-
     emit:
         out
 }
