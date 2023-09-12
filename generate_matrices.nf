@@ -1,3 +1,4 @@
+include { collate_and_chunk; process_chunk } from "./build_masterlist"
 // Create binary matrix workflows
 
 process get_chunks_order {
@@ -159,12 +160,8 @@ workflow generateMatrices {
 }
 
 workflow {
-    unfiltered_masterlist = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/output/masterlist_DHSs_0802.filtered.annotated.bed")
-
+    unfiltered_masterlist = Channel.fromPath("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/output/unfiltered_masterlists/masterlist_DHSs_0802_all_chunkIDs.bed")
     samples_order = Channel.of(file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/${params.outdir}/samples_order.txt"))
-    peaks_files = Channel.fromPath("/net/seq/data2/projects/sabramov/SuperIndex/dnase-wouter-style-matrices/peaks_list.txt")
-        | splitCsv(header: false)
-        | map(it -> it[0])
     
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
@@ -175,8 +172,10 @@ workflow {
             file(row.hotspot_peaks_point1per),
             row.paired_aligned && (row.paired_aligned != 0)
         ))
+    peaks_files = bams_hotspots
+        | map(it -> it[3])
+        | collate_and_chunk
+        | process_chunk
     
-    generateMatrices(unfiltered_masterlist, samples_order, peaks_files, bams_hotspots)
-    // file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/work/tmp/2a/10c57903166faeb052d56a4ace1a68/no_core.paths.txt")
-    // file("/net/seq/data2/projects/ENCODE4Plus/indexes/index_altius_23-09-05/work/tmp/93/23361e11b94264bc72ccbac2af1af4/no_any.paths.txt")
+    generateMatrices(unfiltered_masterlist, samples_order, peaks_files[1], bams_hotspots)
 }
