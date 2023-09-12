@@ -346,6 +346,16 @@ workflow {
 		| annotate_masterlist
 }
 
+workflow generateMatrices {
+    samples = readSamplesFile()
+    masterlist = Channel.fromPath(params.index_file)
+    result = generateAndNormalize(
+		samples,
+		masterlist,
+		Channel.empty()
+	)
+}
+
 workflow existingMasterlist {
 	masterlist = Channel.fromPath(params.index_file)
 	out = generateAndNormalize(

@@ -62,5 +62,5 @@ workflow {
     variancePartition(
         file(params.filtered_masterlist),
         Channel.fromPath(params.h5file)
-        )
+    )
 }
