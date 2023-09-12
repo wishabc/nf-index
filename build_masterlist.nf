@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 
 process collate_and_chunk {
     conda params.conda
+    label "medmem"
     
     input:
         path "peaks/peaks*.ext"
@@ -30,6 +31,7 @@ process collate_and_chunk {
 process process_chunk {
     conda params.conda
     tag "${prefix}"
+    label "medmem"
 
     input:
         path chunk_file
@@ -52,6 +54,7 @@ process process_chunk {
 process resolve_overlaps {
     conda params.conda
     tag "${prefix}"
+    label "medmem"
 
     input:
         path chunk_file, name: "DHSs_all/*"
@@ -74,6 +77,7 @@ process resolve_overlaps {
 process merge_chunks {
     conda params.conda
     publishDir "${params.outdir}/unfiltered_masterlists"
+    label "highmem"
     scratch true
 
     input:
