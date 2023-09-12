@@ -2,124 +2,33 @@
 nextflow.enable.dsl = 2
 include { non_required_arg } from "./nmf"
 include { buildIndex } from "./build_masterlist"
+include { generateMatrices } from "./generate_matrices"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
 
-process bed2saf {
-	conda params.conda
 
-	input:
-		path masterlist
-
-	output:
-		tuple path(name), path(masterlist)
-
-	script:
-	name = "masterlist.saf"
-	"""
-	cat ${masterlist} \
-		| awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' > ${name}
-	"""
-}
-
-
-process count_tags {
-	tag "${id}"
-	conda "${params.conda}"
-	scratch true
-
-	input:
-		tuple path(saf), path(masterlist), val(id), path(bam_file), path(bam_file_index), path(peaks_file), val(has_paired)
-
-	output:
-		tuple path("${id}.counts.txt"), path("${id}.bin.txt")
-
-	script:
-	tag = has_paired ? '-p' : ''
-	"""
-	samtools view -bh ${bam_file} > align.bam
-	samtools index align.bam
-
-	featureCounts -a ${saf} -o counts.txt -F SAF ${tag} align.bam
-	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${id}.counts.txt
-	
-	bedmap --indicator --sweep-all \
-		${masterlist} ${peaks_file} > ${id}.bin.txt
-	"""
-}
-
-process generate_count_matrix {
-	publishDir "${params.outdir}/raw_matrices", pattern: "matrix.all*"
-	
-	label "medmem"
-	cpus 2
-	scratch true
-
-	input:
-		path files
-		path samples_order
-
-	output:
-		tuple path("matrix.all.signal.txt.gz"), path("matrix.all.peaks.txt.gz")
-
-	script:
-	"""
-	(
-		trap 'kill 0' SIGINT; \
-		awk '{printf "%s ", \$0".counts.txt"}' ${samples_order} \
-			| xargs paste \
-			| gzip -c > matrix.all.signal.txt.gz & \
-		awk '{printf "%s ", \$0".bin.txt"}' ${samples_order} \
-			| xargs paste \
-			| gzip -c > matrix.all.peaks.txt.gz & \
-		wait \
-	)
-	"""
-}
-
-process filter_and_convert_to_np {
-	publishDir "${params.outdir}", pattern: "*.filtered.*"
-	publishDir "${params.outdir}/masks", pattern: "${mask}"
+process apply_filter_and_convert_to_np {
+	publishDir "${params.outdir}", pattern: "${name}"
 	label "bigmem"
+    tag "${prefix}"
 	conda params.conda
 
 	input:
-		tuple path(signal_matrix), path(peaks_matrix), path(masterlist_file)
+		tuple val(prefix), path(matrix), path(mask)
 	
 	output:
-		tuple path(signal_filt_matrix), path(peaks_filt_matrix), path(filtered_masterlist), path(mask)
+		tuple val(prefix), path(name)
 	
 	script:
-	signal_filt_matrix = "signal.filtered.matrix.npy"
-	peaks_filt_matrix = "binary.filtered.matrix.npy"
-	filtered_masterlist = "masterlist.filtered.bed"
-	mask = "autosomes.mask.txt"
+	name = "${prefix}.filtered.matrix.npy"
+    dtype = prefix == 'binary' ? 'bool' : (prefix == 'signal' ? 'int' : 'float')
 	"""
-	# create a mask
-	cat ${masterlist_file} \
-		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
-		> ${mask}
-	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
-		${mask} ${masterlist_file} > ${filtered_masterlist}
-
-	(
-		trap 'kill 0' SIGINT; \
-		
-		python3 $moduleDir/bin/convert_to_numpy.py \
-			${signal_matrix} \
-			${signal_filt_matrix} \
-			--dtype int \
-			--mask ${mask} \
-		
-		python3 $moduleDir/bin/convert_to_numpy.py \
-			${peaks_matrix} \
-			${peaks_filt_matrix} \
-			--dtype bool \
-			--mask ${mask} \
-		
-		wait \
-	)
+    python3 $moduleDir/bin/convert_to_numpy.py \
+        ${matrix} \
+        ${name} \
+        --dtype ${dtype} \
+        --mask ${mask}
 	"""
 }
 
@@ -133,7 +42,8 @@ process normalize_matrix {
 
 
 	input:
-		tuple path(signal_matrix), path(peaks_matrix)
+        path peaks_matrix
+		path signal_matrix
 		val norm_params
 
 	output:
@@ -185,6 +95,67 @@ process deseq2 {
 		${prefix} \
 		${normalization_params}
 	"""
+}
+
+process get_samples_order {
+
+    publishDir params.outdir
+    
+    output:
+        path name
+    
+
+    script:
+    name = "samples_order.txt"
+    """
+    awk -F"\t" -v col="ag_id" \
+        'NR==1{for(i=1;i<=NF;i++)if(\$i==col)c=i}NR>1{if(c)print \$c}' \
+            ${params.samples_file} > ${name}
+    """
+}
+
+
+process filter_masterlist {
+    conda params.conda
+
+    publishDir "${params.outdir}", pattern: "${filtered_masterlist}"
+    publishDir "${params.outdir}/masks", pattern: "*.mask.txt"
+
+    input:
+        path masterlist
+    
+    output:
+	    tuple path(name), path(mask), path(filtered_masterlist), path(autosomes_mask)
+
+    script:
+    prefix = "masterlist"
+    name = "${prefix}_DHSs.blacklistfiltered.bed"
+    mask = "${prefix}.bad_dhs.mask.txt"
+    autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
+    filtered_masterlist = "${prefix}.no_autosomes.filtered.bed"
+    """
+    bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
+        |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
+        > blacklist_rows.txt
+
+    python3 $moduleDir/bin/DHS_filter.py \
+        ${prefix} \
+        .5 \
+        blacklist_rows.txt \
+        ${masterlist} \
+        ${name} \
+        ${mask}
+    
+    cat ${masterlist} \
+		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
+		> autosomes.mask.txt
+    
+    awk 'NR==FNR {mask1[NR]=\$0; next} \
+        {print mask1[FNR] * \$0}' ${mask1} autosomes.mask.txt > ${autosomes_mask}
+
+	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
+		${autosomes_mask} ${masterlist} > ${filtered_masterlist}
+    """
 }
 
 
@@ -252,30 +223,10 @@ process annotate_masterlist {
     """
 }
 
-
-workflow generateMatrix {
-	take:
-		bams_hotspots
-		index_file
-		samples_order
-	main:
-		columns = index_file
-			| bed2saf
-			| combine(bams_hotspots)
-			| count_tags
-			| collect(sort: true, flat: true)	
-		out = generate_count_matrix(columns, samples_order)
-			| combine(index_file)
-			| filter_and_convert_to_np
-			| map(it -> tuple(it[0], it[1]))
-	emit:
-		out
-		generate_count_matrix.out
-}
-
 workflow normalizeMatrix {
 	take:
-		matrices
+		binary_matrix
+        count_matrix
 		samples_order
 		normalization_params
 	main:
@@ -284,32 +235,12 @@ workflow normalizeMatrix {
 			| ifEmpty(null)
 			| collect(sort: true)
 
-		sf = normalize_matrix(matrices, lowess_params).scale_factors
+		sf = normalize_matrix(binary_matrix, count_matrix, lowess_params).scale_factors
 		deseq_params = normalization_params
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(null)
 		out = deseq2(sf, samples_order, deseq_params).matrix
 	emit:
-		out
-}
-
-workflow generateAndNormalize {
-	take:
-		data
-		index_file
-		normalization_params
-	main:
-		samples_order = data
-			| map(it -> it[0])
-			| collectFile(
-				name: 'samples_order.txt', 
-				newLine: true,
-				storeDir: params.outdir
-			)
-		matrices = generateMatrix(data, index_file, samples_order)
-		out = normalizeMatrix(matrices[0], samples_order, normalization_params)
-	emit:
-		matrices[1]
 		out
 }
 
@@ -330,32 +261,43 @@ workflow readSamplesFile {
 }
 
 workflow {
-	samples = readSamplesFile()
-	masterlist = samples
+	bams_hotspots = readSamplesFile()
+	index_data = samples
 		| map(it -> it[3])
 		| buildIndex
-	result = generateAndNormalize(
-		samples,
-		masterlist,
-		Channel.empty()
-	)
-	result[0]
+    
+    unfiltered_masterlist = index_data[0]
+
+    samples_order = get_samples_order()
+    
+    autosomes_mask = unfiltered_masterlist
+        | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
+        | map(it -> it[3]) // mask
+
+    matrices = generateMatrices(unfiltered_masterlist, samples_order, index_data[1], bams_hotspots)
+        | combine(autosomes_mask)
+        | apply_filter_and_convert_to_np
+    
+    generateMatrices.out
+        | filter(it -> it[0] == "binary")
 		| map(it -> it[1])
-		| combine(masterlist)
-		| view()
+		| combine(
+            filter_masterlist.out.map(it -> it[0])
+        )
 		| annotate_masterlist
+
+    binary_matrix = matrices
+        | filter(it -> it[0] == "binary")
+        | map(it -> it[1])
+        | first()
+    count_matrix = matrices
+        | filter(it -> it[0] == "count")
+        | map(it -> it[1])
+    // Normalization code
+    out = normalizeMatrix(binary_matrix, count_matrix, samples_order, Channel.empty())
 }
 
-workflow generateMatrices {
-    samples = readSamplesFile()
-    masterlist = Channel.fromPath(params.index_file)
-    result = generateAndNormalize(
-		samples,
-		masterlist,
-		Channel.empty()
-	)
-}
-
+// Debug code below, defunc
 workflow existingMasterlist {
 	masterlist = Channel.fromPath(params.index_file)
 	out = generateAndNormalize(
