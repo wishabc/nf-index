@@ -194,6 +194,7 @@ workflow {
         | map(it -> it[3])
         | collect(sort: true)
         | collate_and_chunk
+        | flatten()
         | process_chunk
     
     generateMatrices(unfiltered_masterlist, samples_order, peaks_files[1], bams_hotspots)
