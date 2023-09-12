@@ -190,7 +190,8 @@ workflow generateMatrices {
                 | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, paired_aligned
                 | map(it -> tuple(it[0], it[1], it[4]))
                 | generate_binary_counts
-                | map(it -> tuple("counts", it))
+                | collect(sort: true)
+                | map(it -> tuple("binary", it))
                 | mix(cols)
 
             out = generate_count_matrix(
