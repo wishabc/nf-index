@@ -262,7 +262,7 @@ workflow readSamplesFile {
 
 workflow {
 	bams_hotspots = readSamplesFile()
-	index_data = samples
+	index_data = bams_hotspots
 		| map(it -> it[3])
 		| buildIndex
     
