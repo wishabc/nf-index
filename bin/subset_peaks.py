@@ -20,6 +20,7 @@ def average_matrices(normalized_matrix, binary_matrix, meta_labels, reprod=1):
                                 dtype=bool)
     for label in unique_labels:
         new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
+        print(reprod, (meta_labels == label).sum())
         new_binary_matrix[:, label] = binary_matrix[:, meta_labels == label].sum(axis=1) >= np.min(reprod, (meta_labels == label).sum())
 
     return new_norm_matrix, new_binary_matrix
