@@ -105,8 +105,7 @@ process generate_count_matrix {
 	scratch true
 
 	input:
-		path files
-		path samples_order
+		tuple path(files), path(samples_order)
 
 	output:
 		tuple val(prefix), path(name)
