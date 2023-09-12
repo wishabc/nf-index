@@ -170,7 +170,7 @@ workflow generateMatrices {
 			| combine(bams_hotspots)
 			| count_tags
 			| collect(sort: true, flat: true)
-            | combine("counts")
+            | map(it -> tuple("counts", it))
 
         if (params.method == 'chunks') {
             chunks_order = unfiltered_masterlist
