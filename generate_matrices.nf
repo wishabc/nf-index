@@ -46,7 +46,7 @@ process write_rows {
     density = "${chunk_file.baseName}.density.txt"
     binary = "${chunk_file.baseName}.binary.txt"
     """
-    /net/seq/data/projects/SuperIndex/erynes/masterLists/writeRowsPerChunkForMatrices \
+    $moduleDir/bin/writeRowsPerChunkForMatrices \
         ${samples_order} \
         ${chunks_order} \
         ${chunk_file} \
