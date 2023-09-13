@@ -36,9 +36,7 @@ workflow variancePartition {
             | flatMap(it -> (1..it.countLines()))
             | collate(params.chunk_size)
             | map(it -> it[0])
-            | combine(
-                Channel.fromPath(masterlist)
-            )
+            | combine(masterlist)
             | combine(h5file)
             | variance_partition
             | collectFile(
