@@ -6,7 +6,6 @@ process variance_partition {
 
     conda "/home/sabramov/miniconda3/envs/condR-clone"
     tag "${start_index}"
-    publishDir "${params.outdir}/variance_partition"
 
     input:
         tuple val(start_index), path(masterlist), path(h5file)
