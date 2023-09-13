@@ -4,7 +4,7 @@ library(rhdf5)
 
 
 args = commandArgs(trailingOnly=TRUE)
-if (length(args) < 6) {
+if (length(args) < 7) {
   stop("At least six input arguments should be supplied", call.=FALSE)
 }
 
@@ -36,11 +36,8 @@ row.names(data) <- row.names(dhs_meta)
 
 # Sort the DataFrame according to the sample_names
 sorted_metadata <- meta[sample_names, ]
-if (length(args) == 7) {
-    formula <- args[7]
-} else {
-    formula <- ~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | donor_sex) + (1 | library_kit) + (1 | short_ontology)
-}
+formula <- args[6]
+
 
 print('Fitting model')
 
@@ -49,4 +46,4 @@ varPart <- fitExtractVarPartModel(data, formula, sorted_metadata)
 write.table(varPart , "tmp.txt", sep="\t", row.names=FALSE, quote = FALSE)
 vp <- fread("tmp.txt")
 stopifnot(all(identical(row.names(varPart), row.names(dhs_meta))))
-write.table(cbind(dhs_meta, vp) , args[6], sep="\t", row.names=FALSE, quote = FALSE)
+write.table(cbind(dhs_meta, vp) , args[7], sep="\t", row.names=FALSE, quote = FALSE)
