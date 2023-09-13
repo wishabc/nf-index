@@ -33,8 +33,8 @@ workflow variancePartition {
         masterlist
         h5file
     main:
-        total_dhs = masterlist.countLines()
-        out = Channel.of(1..total_dhs)
+        out = masterlist
+            | flatMap(it -> (1..it.countLines()))
             | collate(params.chunk_size)
             | map(it -> it[0])
             | combine(
@@ -60,7 +60,7 @@ workflow {
     params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
 
     variancePartition(
-        file(params.filtered_masterlist),
+        Channel.fromPath(params.filtered_masterlist),
         Channel.fromPath(params.h5file)
     )
 }
