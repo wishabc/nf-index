@@ -23,7 +23,7 @@ process variance_partition {
         ${params.chunk_size} \
         ${h5file} \
         ${masterlist} \
-        ${params.formula} \
+        '${params.formula}' \
         ${name} 
     """
 }
