@@ -34,10 +34,12 @@ sample_names <- h5read(file_path, 'sample_names')
 colnames(data) <- sample_names
 print(sample_names[1:20])
 print(colnames(data)[1:20])
+print(length(colnames))
 row.names(data) <- row.names(dhs_meta)
 
 # Sort the DataFrame according to the sample_names
 sorted_metadata <- meta[sample_names, ]
+print(sorted_metadata)
 formula <- args[6]
 
 
