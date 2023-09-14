@@ -38,8 +38,8 @@ print(length(colnames))
 row.names(data) <- row.names(dhs_meta)
 
 # Sort the DataFrame according to the sample_names
-sorted_metadata <- meta[sample_names, ]
-print(sorted_metadata)
+sorted_metadata <- meta #[sample_names, ]
+
 formula <- args[6]
 
 
