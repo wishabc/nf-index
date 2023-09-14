@@ -79,7 +79,7 @@ workflow {
     params.chunk_size = 5000
     params.h5file = "$launchDir/${params.outdir}/matrices.h5"
     params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
-    params.formula = "~ dedupped_subsampled_spot1 + log(read_depth) + dupRate_5M + (1 | donor_sex) + (1 | library_kit) + (1 | short_ontology)"
+    params.formula = "~ (1 | extended_annotation) + (1 | ln_finished_date) + (1 | frac_method) + (1 | is_primary_tissues_all)"
     variancePartition(
         Channel.fromPath(params.filtered_masterlist),
         Channel.fromPath(params.h5file)
