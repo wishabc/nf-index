@@ -31,6 +31,7 @@ data <- h5read(file_path, 'vst',
 data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
+print(length(sample_names), length(colnames(data)))
 colnames(data) <- sample_names
 row.names(data) <- row.names(dhs_meta)
 
