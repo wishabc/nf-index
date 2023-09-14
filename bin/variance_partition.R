@@ -8,7 +8,7 @@ if (length(args) < 7) {
   stop("At least six input arguments should be supplied", call.=FALSE)
 }
 
-meta = read.delim(args[1])
+meta <- read.delim(args[1])
 rownames(meta) <- meta$ag_id
 meta$sample_id <- meta$ag_id
 meta <- as.data.frame(meta)
@@ -38,7 +38,7 @@ print(length(colnames))
 row.names(data) <- row.names(dhs_meta)
 
 # Sort the DataFrame according to the sample_names
-sorted_metadata <- meta #[sample_names, ]
+sorted_metadata <- meta[sample_names, ]
 
 formula <- args[6]
 
