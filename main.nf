@@ -1,12 +1,16 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-include { non_required_arg } from "./nmf"
 include { buildIndex } from "./build_masterlist"
 include { generateMatrices; get_samples_order } from "./generate_matrices"
+include { convert_to_h5 } from "./variance_partition"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
 
+
+def non_required_arg(value, key) {
+    return value ? "${key} ${value}": ""
+}
 
 process apply_filter_and_convert_to_np {
 	publishDir "${params.outdir}", pattern: "${name}"
@@ -216,7 +220,6 @@ workflow normalizeMatrix {
         binary_matrix = matrices
             | filter(it -> it[0] == "binary")
             | map(it -> it[1])
-            | first()
         count_matrix = matrices
             | filter(it -> it[0] == "counts")
             | map(it -> it[1])
@@ -230,6 +233,9 @@ workflow normalizeMatrix {
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(null)
 		out = deseq2(sf, samples_order, deseq_params).matrix
+
+        //h5_file = convert_to_h5(binary_matrix, out, samples_order)
+
 	emit:
 		out
 }

@@ -28,6 +28,29 @@ process variance_partition {
     """
 }
 
+process convert_to_h5 {
+    conda params.conda
+    publishDir params.oudir
+    label "highmem"
+    
+    input:
+        path binary_matrix
+        path vst_matrix
+        path samples_file
+
+    output:
+        path name
+    script:
+    name = "matrices.h5"
+    """
+    python3 $moduleDir/bin/convert_to_h5.py \
+        ${vst_matrix} \
+        ${samples_names} \
+        ${name} \
+        --binary ${binary_matrix}
+    """
+}
+
 workflow variancePartition {
     take:
         masterlist
