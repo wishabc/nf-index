@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--binary', help='Path to binary matrix. Rows and columns are expected to be in the same order as in vst matrix', default=None)
     args = parser.parse_args()
 
-    binary = args['binary'] if args['binary'] is None else np.load(args['binary'])
-    vst = np.load(args['vst'])
-    sample_names = np.loadtxt(args['sample_names'], dtype=str)
-    main(binary, vst, sample_names, args['outpath'])
+    binary = args.binary if args.binary is None else np.load(args.binary)
+    vst = np.load(args.vst)
+    sample_names = np.loadtxt(args.sample_names, dtype=str)
+    main(binary, vst, sample_names, args.outpath)
