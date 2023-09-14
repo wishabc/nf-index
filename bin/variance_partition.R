@@ -31,9 +31,9 @@ data <- h5read(file_path, 'vst',
 data <- t(data)
 
 sample_names <- h5read(file_path, 'sample_names')
-print(length(sample_names))
-print(length(colnames(data)))
 colnames(data) <- sample_names
+print(sample_names)
+print(colnames(data))
 row.names(data) <- row.names(dhs_meta)
 
 # Sort the DataFrame according to the sample_names
