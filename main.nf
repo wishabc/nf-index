@@ -14,7 +14,7 @@ def non_required_arg(value, key) {
 
 process apply_filter_and_convert_to_np {
 	publishDir "${params.outdir}", pattern: "${name}"
-	label "bigmem"
+	label "highmem"
     tag "${prefix}"
 	conda params.conda
 
