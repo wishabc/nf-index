@@ -128,9 +128,16 @@ process count_tags {
 	script:
 	tag = has_paired ? '-p' : ''
     name = "${id}.counts.txt"
+    ext = bam_file.extension
 	"""
-	samtools view -bh ${bam_file} > align.bam
-	samtools index align.bam
+    if [ ${ext} != 'bam' ]; then {
+        samtools view -bh ${bam_file} > align.bam
+        samtools index align.bam
+    } else {
+        ln -s ${bam_file} align.bam
+        ln -s ${bam_file_index} align.bam.bai
+    }
+
 
 	featureCounts -a ${saf} -O -o counts.txt -F SAF ${tag} align.bam
 	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${name}
