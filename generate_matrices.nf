@@ -130,13 +130,14 @@ process count_tags {
     name = "${id}.counts.txt"
     ext = bam_file.extension
 	"""
-    if [ ${ext} != 'bam' ]; then {
+    if [ ${ext} != 'bam' ]; then 
         samtools view -bh ${bam_file} > align.bam
         samtools index align.bam
-    } else {
+    else
         ln -s ${bam_file} align.bam
         ln -s ${bam_file_index} align.bam.bai
-    }
+    fi
+
 
 
 	featureCounts -a ${saf} -O -o counts.txt -F SAF ${tag} align.bam
