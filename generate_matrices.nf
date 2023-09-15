@@ -32,6 +32,8 @@ process get_chunks_order {
     cut -f4 ${masterlist} > ${name}
     """
 }
+
+
 process write_rows {
     tag "${chunk_file.simpleName}"
     scratch true
@@ -130,7 +132,7 @@ process count_tags {
 	samtools view -bh ${bam_file} > align.bam
 	samtools index align.bam
 
-	featureCounts -a ${saf} -o counts.txt -F SAF ${tag} align.bam
+	featureCounts -a ${saf} -O -o counts.txt -F SAF ${tag} align.bam
 	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${name}
 	"""
 }
