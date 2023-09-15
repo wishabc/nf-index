@@ -151,9 +151,10 @@ process annotate_masterlist {
     publishDir params.outdir
     scratch true
     errorStrategy "ignore"
+    label "bigmem"
 
     input: 
-        tuple path(binary_matrix), path(filtered_masterlist)
+        tuple path(binary_matrix), path(filtered_masterlist), path(mask)
 
     output:
         path name
@@ -162,8 +163,13 @@ process annotate_masterlist {
     name = "masterlist_DHSs_${params.masterlist_id}.filtered.annotated.bed"
     """
 
+     echo "${binary_matrix}"
+     echo "${filtered_masterlist}"
+     head -10 ${filtered_masterlist}
+
      python $moduleDir/bin/spot1Annotations.py \
         ${binary_matrix} \
+	${mask} \
         ${params.samples_file}
  
     bash $moduleDir/bin/simpleAnnotations.sh \
@@ -282,7 +288,7 @@ workflow {
         | filter(it -> it[0] == "binary")
 		| map(it -> it[1])
 		| combine(
-            filter_masterlist.out.map(it -> it[0])
+	    filter_masterlist.out.map(it -> tuple(it[0], it[1]))
         )
 		| annotate_masterlist
 }
