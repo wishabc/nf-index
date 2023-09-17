@@ -1,4 +1,8 @@
 import numpy as np
+import pandas as pd
+import os
+import sys
+import json
 from numba import jit
 from scipy.spatial.distance import pdist, squareform
 import subset_peaks
@@ -9,7 +13,7 @@ class FeatureSelection:
         self.sample_labels = sample_labels
         self.initial_signal_matrix = signal_matrix
         self.initial_binary_matrix = binary_matrix
-        # Add asserts about analysis_df, signal_matrix, binary_matrix
+
         self.peaks_meta = peaks_meta
         self.signal_tr = signal_tr
 
@@ -195,6 +199,30 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     data = minmax_norm(signal_matrix[mask, :])
     euclid_dist = pairwise_euclidean(data)
     entropy = calc_entropy(euclid_dist, samples_meta, entropy_same_num=get_entropy_same_num(samples_meta))
-    euclid_dist ## saveme
-    entropy ## saveme
-    mask ## saveme
+
+    return euclid_dist, entropy, mask
+
+
+if __name__ == '__main__':
+    with open(sys.argv[1], 'r') as f:
+        params = json.load(f)
+    samples_meta = pd.read_table(sys.argv[2])
+    peaks_meta = pd.read_table(sys.argv[3])
+
+    assert 'frac_method' in peaks_meta.columns
+    assert 'core_annotation2' in samples_meta.columns
+
+    signal_matrix = np.load(sys.argv[4])
+    binary_matrix = np.load(sys.argv[5])
+
+    assert len(peaks_meta) == signal_matrix.shape[0] == binary_matrix.shape[0]
+    assert len(samples_meta) == signal_matrix.shape[1] == binary_matrix.shape[1]
+
+    euclid_dist, entropy, mask = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
+
+    outdir = sys.argv[6]
+
+    np.save(outdir + '_distances.txt', euclid_dist)
+    np.save(outdir + '_entropy.txt', entropy)
+    np.save(outdir + '_mask.txt', mask)
+
