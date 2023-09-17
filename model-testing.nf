@@ -192,7 +192,6 @@ workflow peaksSelection {
             file(row.binary_matrix),
             file(row.peaks_meta),
             file(row.samples_meta)))
-        | view()
         | select_peaks
 }
 
