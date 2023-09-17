@@ -8,13 +8,12 @@ import subset_peaks
 
 class FeatureSelection:
     def __init__(self, params, signal_matrix, binary_matrix, sample_labels,
-                 peaks_meta, signal_tr=1.5):
+                 peaks_meta):
         self.sample_labels = sample_labels
         self.initial_signal_matrix = signal_matrix
         self.initial_binary_matrix = binary_matrix
 
         self.peaks_meta = peaks_meta
-        self.signal_tr = signal_tr
 
         self.params = params
 
@@ -40,8 +39,7 @@ class FeatureSelection:
             self.params['Filtering_by_confounders']
         ) & (self.filtered_mean_binary.sum(axis=1) >= 1)
         mean_signal_filtered = self.initial_signal_matrix[self.confounders_mask, :].mean(axis=1)
-        self.confounders_mask[self.confounders_mask] = mean_signal_filtered >= self.signal_tr
-
+        self.confounders_mask[self.confounders_mask] = mean_signal_filtered >= self.params["Filtering_by_mean_signal"]
 
     def set_matrix_data(self):
         if self.params['Calculate_gini_by'] == 'sample':
@@ -75,6 +73,7 @@ class FeatureSelection:
 
     def add_peaks(self):
         sorted_peaks = self.get_peaks_order()
+        print('CF mask', sorted_peaks.shape)
         new_mask_sub = subset_peaks.add_peaks(self.binary, sorted_peaks, self.params['Add_peaks_mv'],
                                               self.params['Add_peaks_per_group'])
         mask = np.zeros(self.initial_signal_matrix.shape[0], dtype=bool)
