@@ -94,18 +94,16 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     )
     mask = fs.select_peaks_for_clustering()
     data = minmax_norm(signal_matrix[mask, :])
-    euclid_dist, entropy = calc_distances(data, samples_meta, validation_idx, entropy_same_num=)
+    euclid_dist = pairwise_euclidean(data)
+    entropy = calc_entropy(euclid_dist, samples_meta, entropy_same_num=)
     euclid_dist ## saveme
     entropy ## saveme
-    samples_meta['delta_entropy'] = entropy - samples_meta['base_entropy']
-    plot_model(samples_meta, colors_order=, label_counts=, n_peaks=mask.sum())
+    mask ## saveme
 
-def calc_distances(used_data, samples_meta, validation_idx, entropy_same_num):
-    #  used_binary_data = self.initial_binary_matrix[mask, :][:, samples_mask].astype(int)
-    euclid = pairwise_euclidean(used_data[:, validation_idx])
+def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
 
-    return euclid, get_entropy_scores(
-        euclid, 
+    return get_entropy_scores(
+        euclid_dist, 
         np.unique(samples_meta['core_annotation2'], return_inverse=True)[1],
         entropy_same_num
     )
