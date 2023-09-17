@@ -188,10 +188,10 @@ workflow selectPeaks {
 		| map(row -> tuple(
             row.prefix,
             row.params,
-            row.signal_matrix,
-            row.binary_matrix,
-            row.peaks_meta,
-            row.samples_meta))
+            file(row.signal_matrix),
+            file(row.binary_matrix),
+            file(row.peaks_meta),
+            file(row.samples_meta)))
         | select_peaks
 }
 
