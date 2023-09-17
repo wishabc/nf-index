@@ -161,6 +161,7 @@ process select_peaks {
     publishDir "${params.outdir}/${prefix}"
     conda params.conda
     tag "${prefix}"
+    label "medmem"
 
     input:
         tuple val(prefix), val(peaks_params), path(signal_matrix), path(binary_matrix), path(peaks_meta), path(samples_meta)
