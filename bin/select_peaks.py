@@ -1,4 +1,6 @@
 import numpy as np
+from numba import jit
+from scipy.spatial.distance import pdist, squareform
 import subset_peaks
 
 class FeatureSelection:
@@ -77,6 +79,103 @@ class FeatureSelection:
         return mask
 
 
+def minmax_norm(subset):
+    return (subset - subset.min()) / (subset.max() - subset.min())
+
+
+def pairwise_euclidean(X):
+    return squareform(pdist(X.T, 'euclidean'))
+
+
+def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
+    validation_idx = samples_meta['core_annotation2'].notna()
+
+    entropy = np.full(validation_idx.shape, np.nan)
+    entropy[validation_idx] = get_entropy_scores(
+        euclid_dist[validation_idx, :][:, validation_idx], 
+        np.unique(samples_meta.loc[validation_idx, 'core_annotation2'], return_inverse=True)[1],
+        entropy_same_num
+    )
+
+    return entropy
+
+
+def get_entropy_scores(euclid, labels_array, same_num_dict=None):
+    annotation_entropy_scores = []
+    for i in range(len(labels_array)):
+        annotation_entropy_scores.append(get_metric(euclid[i, :], labels_array, same_num_dict=same_num_dict))
+    
+    annotation_entropy_scores = np.array(annotation_entropy_scores)
+    
+    return annotation_entropy_scores
+
+
+def get_metric(distances, labels, same_num_dict=None):
+    n = len(distances)
+    assert len(labels) == n
+    
+    sorted_indices = np.argsort(distances)
+    sorted_labels = labels[sorted_indices]
+
+    n_nearest = (sorted_labels == sorted_labels[0]).sum() * 0.5
+    p = np.power(0.1, 1/n_nearest)
+    
+    p_values = np.power(p, np.arange(n))
+    p_values /= p_values.sum()
+
+    # Ignore similar annotations in entropy score, consider them same as original
+    if same_num_dict is not None and sorted_labels[0] in same_num_dict.keys():
+        for v in same_num_dict[sorted_labels[0]]:
+            sorted_labels[sorted_labels == v] = sorted_labels[0]
+    
+    
+    label_count = accumulate_counts(sorted_labels, p_values, n)
+    
+    values = np.array(list(label_count.values()))
+    values = values[values != 0]
+    entropy = -np.sum(values * np.log2(values))
+    
+    return entropy
+
+
+@jit(nopython=True)
+def accumulate_counts(sorted_labels, p_values, n):
+    label_count = {}
+    for i in range(n):
+        label = sorted_labels[i]
+        if label not in label_count:
+            label_count[label] = 0.0
+        label_count[label] += p_values[i]
+    return label_count
+
+
+def get_entropy_same_num(samples_meta):
+    same = [{'Epithelial (Eye)', 'Epithelial'},
+        {'Epithelial', 'Kidney'},
+        {'Fetal brain', 'Neurovascular', 'Neuroblastoma/Retinoblastoma'},
+        {'Heart', 'Fetal muscle'},
+        {'Lung', 'Lung cancer cell line'},
+        {'Fetal brain', 'Brain (Cerebellar)', 'Brain'},
+        {'Pluripotent/Pluripotent-derived', 'Neuroblastoma/Retinoblastoma', 'Lung cancer cell line'},
+        {'Myeloid progenitor', 'Myeloid leukemia', 'Myeloid leukemia (K562)'},
+       {'T47D', 'MCF-7'},
+       {'Kidney', 'Fetal kidney'},
+       {'Lymphoblastoid cell line', 'T-cell', 'B-cell', 'NK cell'},
+       {'M1 macrophage', 'M2 macrophage'}]
+    entropy_same = dict()
+    for s in same:
+        for x in s:
+            if x in entropy_same:
+                entropy_same[x] += list(s - {x})
+            else:
+                entropy_same[x] = list(s - {x})
+
+    validation_idx = samples_meta['core_annotation2'].notna()
+
+    labels_alphabetical = list(np.unique(samples_meta.loc[validation_idx, 'core_annotation2'].to_numpy()))
+    return {labels_alphabetical.index(k): [labels_alphabetical.index(x) for x in v] for k, v in entropy_same.items()}
+
+
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     sample_labels = np.unique(
         np.where(
@@ -95,29 +194,7 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     mask = fs.select_peaks_for_clustering()
     data = minmax_norm(signal_matrix[mask, :])
     euclid_dist = pairwise_euclidean(data)
-    entropy = calc_entropy(euclid_dist, samples_meta, entropy_same_num=)
+    entropy = calc_entropy(euclid_dist, samples_meta, entropy_same_num=get_entropy_same_num(samples_meta))
     euclid_dist ## saveme
     entropy ## saveme
     mask ## saveme
-
-def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
-
-    return get_entropy_scores(
-        euclid_dist, 
-        np.unique(samples_meta['core_annotation2'], return_inverse=True)[1],
-        entropy_same_num
-    )
-
-
-def plot_model(analysis_df, colors_order, label_counts, n_peaks):
-    mean = np.mean(analysis_df.groupby('core_annotation2')['delta_entropy'].apply(np.mean))
-    median = np.median(analysis_df.groupby('core_annotation2')['delta_entropy'].apply(np.median))
-    fig, ax = plt.subplots(figsize=(12, 4))
-    hp = sns.boxplot(data=analysis_df, y='delta_entropy', x='core_annotation2',
-                     order=label_counts.index, palette=colors_order)
-    ax.axhline(0, ls='--', color='grey', lw=2)
-    ax.set_xticklabels(
-        [f'{row["core_annotation2"]} [{row["count"]}]' for _, row in label_counts.reset_index().iterrows()],
-        rotation=90)
-    plt.title(f'{n_peaks} peaks, net_effect {median:.3f}, {mean:.3f}')
-    plt.show()
