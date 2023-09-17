@@ -173,8 +173,8 @@ process select_peaks {
     echo -e '${peaks_params}' > params.json
     python3 $moduleDir/bin/select_peaks.py \
         params.json \
-        ${peaks_meta} \
         ${samples_meta} \
+        ${peaks_meta} \
         ${signal_matrix} \
         ${binary_matrix} \
         ${prefix}
