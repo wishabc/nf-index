@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import os
 import sys
 import json
 from numba import jit
@@ -222,7 +221,7 @@ if __name__ == '__main__':
 
     outdir = sys.argv[6]
 
-    np.save(outdir + '_distances.txt', euclid_dist)
-    np.save(outdir + '_entropy.txt', entropy)
-    np.save(outdir + '_mask.txt', mask)
+    np.save(f'{outdir}.distances.npy', euclid_dist)
+    np.save(f'{outdir}.entropy.npy', entropy)
+    np.save(f'{outdir}.mask.npy', mask)
 

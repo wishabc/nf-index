@@ -155,3 +155,43 @@ workflow {
             keepHeader: true)
 }
 
+
+process select_peaks {
+
+    publishDir "${params.outdir}/${prefix}"
+    conda params.conda
+    tag "${prefix}"
+
+    input:
+        tuple val(prefix), val(peaks_params), path(signal_matrix), path(binary_matrix), path(peaks_meta), path(samples_meta)
+    
+    output:
+        path("${prefix}*")
+
+    script:
+    """
+    echo -e '${peaks_params}' > params.json
+    python3 $moduleDir/bin/select_peaks.py \
+        params.json \
+        ${peaks_meta} \
+        ${samples_meta} \
+        ${signal_matrix} \
+        ${binary_matrix} \
+        ${prefix}
+    """
+
+}
+
+workflow selectPeaks {
+    Channel.fromPath(params.hyper_params_list)
+        | splitCsv(header:true, sep:'\t')
+		| map(row -> tuple(
+            row.prefix,
+            row.params,
+            row.signal_matrix,
+            row.binary_matrix,
+            row.peaks_meta,
+            row.samples_meta))
+        | select_peaks
+}
+
