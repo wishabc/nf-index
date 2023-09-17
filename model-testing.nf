@@ -182,7 +182,7 @@ process select_peaks {
 
 }
 
-workflow selectPeaks {
+workflow peaksSelection {
     Channel.fromPath(params.hyper_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
