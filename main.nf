@@ -25,7 +25,7 @@ process apply_filter_and_convert_to_np {
 		tuple val(prefix), path(name)
 	
 	script:
-	name = "${prefix}.filtered.matrix.npy"
+	name = "${prefix}.only_autosomes.filtered.matrix.npy"
     dtype = prefix == 'binary' ? 'bool' : (prefix == 'signal' ? 'int' : 'float')
 	"""
     python3 $moduleDir/bin/convert_to_numpy.py \
@@ -88,7 +88,7 @@ process deseq2 {
 		path "${prefix}*.RDS", emit: params
 
 	script:
-	prefix = "deseq.normalized"
+	prefix = "deseq_normalized.only_autosomes.filtered"
 	normalization_params = norm_params ?: ""
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
