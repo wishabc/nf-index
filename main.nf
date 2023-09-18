@@ -119,7 +119,7 @@ process filter_masterlist {
     name = "${prefix}_DHSs.blacklistfiltered.bed"
     mask = "${prefix}.bad_dhs.mask.txt"
     autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
-    filtered_masterlist = "${prefix}.no_autosomes.filtered.bed"
+    filtered_masterlist = "${prefix}.only_autosomes.filtered.bed"
     """
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
@@ -148,9 +148,8 @@ process filter_masterlist {
 
 process annotate_masterlist {
     conda params.conda
-    publishDir params.outdir
+    publishDir "${params.outdir}/annotations"
     scratch true
-    errorStrategy "ignore"
 
     input: 
         tuple path(binary_matrix), path(filtered_masterlist)
