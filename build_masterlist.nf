@@ -3,7 +3,7 @@ nextflow.enable.dsl = 2
 
 process collate_and_chunk {
     conda params.conda
-    label "medmem"
+    label "highmem"
     
     input:
         path "peaks/peaks*.ext"

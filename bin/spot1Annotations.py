@@ -11,13 +11,18 @@ binary_file = sys.argv[1]
 with gzip.open(binary_file, 'rb') as f:
     b = np.genfromtxt(f, delimiter='\t', dtype=np.uint8)
 
+mask_file = sys.argv[2]
+mask_df = pd.read_table(mask_file, header=None)
+mask_df.columns = ['mask']
+b_filtered = b[mask_df['mask'] == 1]
+print(b_filtered.shape)
 
-samples_file = sys.argv[2]
+samples_file = sys.argv[3]
 metadata = pd.read_table(samples_file)
 
 #Make sure the spot1 scores and matrix are matrix compatible
 spot1 = metadata['subsampled_hotspot1'].values.reshape(1, -1)
-values = b * spot1
+values = b_filtered * spot1
 
 #Replace 0's with nan's for computation
 values_nonzero = np.where(values != 0, values, np.nan)
