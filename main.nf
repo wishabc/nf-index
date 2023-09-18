@@ -13,7 +13,7 @@ def non_required_arg(value, key) {
 }
 
 process apply_filter_and_convert_to_np {
-	publishDir "${params.outdir}", pattern: "${name}"
+	publishDir publishDirectory, pattern: "${name}"
 	label "highmem"
     tag "${prefix}"
 	conda params.conda
@@ -25,8 +25,9 @@ process apply_filter_and_convert_to_np {
 		tuple val(prefix), path(name)
 	
 	script:
-	name = "${prefix}.only_autosomes.filtered.matrix.npy"
-    dtype = prefix == 'binary' ? 'bool' : (prefix == 'signal' ? 'int' : 'float')
+	name = "${prefix}.filtered.matrix.npy"
+    publishDirectory = prefix.contains("only_autosomes") ?  "${params.outdir}" : "${params.outdir}/annotations"
+    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('signal') ? 'int' : 'float')
 	"""
     python3 $moduleDir/bin/convert_to_numpy.py \
         ${matrix} \
@@ -57,7 +58,7 @@ process normalize_matrix {
 		
 
 	script:
-	prefix = 'normalized'
+	prefix = 'normalized.only_autosomes.filtered'
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
 	normalization_params = n ? "--model_params ${n.parent}/${n.baseName}" : ""
 	"""
@@ -223,10 +224,10 @@ workflow normalizeMatrix {
 		normalization_params
 	main:
         binary_matrix = matrices
-            | filter(it -> it[0] == "binary")
+            | filter(it -> it[0] == "binary.only_autosomes")
             | map(it -> it[1])
         count_matrix = matrices
-            | filter(it -> it[0] == "counts")
+            | filter(it -> it[0] == "counts.only_autosomes")
             | map(it -> it[1])
 		lowess_params = normalization_params
 			| filter { it.name =~ /lowess_params/ }
@@ -275,19 +276,26 @@ workflow {
         | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
         | map(it -> it[3]) // mask
     // Generate matrices
-    matrices = generateMatrices(unfiltered_masterlist, samples_order, index_data[1], bams_hotspots)
-        | combine(autosomes_mask)
+    raw_matrices = generateMatrices(unfiltered_masterlist, samples_order, index_data[1], bams_hotspots)
+
+    autosomes_filtered_matrices = raw_matrices
+                | map(it -> tuple("${it[0]}.only_autosomes", it[1]))
+                | combine(autosomes_mask)
+
+    matrices = raw_matrices 
+        | combine(filter_masterlist.out.map(it -> it[1]))
+        | mix(autosomes_filtered_matrices)
         | apply_filter_and_convert_to_np
 
     // Normalize matrices
     out = normalizeMatrix(matrices, samples_order, Channel.empty())
 
     // Annotate index
-    generateMatrices.out
+    matrices
         | filter(it -> it[0] == "binary")
 		| map(it -> it[1])
 		| combine(
-	    filter_masterlist.out.map(it -> tuple(it[0], it[1]))
+	        filter_masterlist.out.map(it -> tuple(it[0], it[1]))
         )
 		| annotate_masterlist
 }
@@ -312,6 +320,17 @@ workflow existingMatrices {
 
 
 // Debug code below, defunc
+workflow annotateMasterlist {
+    index_and_mask = Channel.fromPath(params.index_file)
+        | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
+        | map(it -> tuple(it[0], it[1])) // index, mask
+
+    Channel.fromPath("$launchDir/${params.outdir}/annotations/binary.filtered.matrix.npy")
+        | combine(index_and_mask)
+        | annotate_masterlist
+}
+
+
 workflow existingModel {
 	params.normalization_params_dir = "$launchDir/${params.outdir}/params"
 	file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
