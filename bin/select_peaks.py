@@ -21,7 +21,7 @@ class FeatureSelection:
         self.params = params
 
         self.signal = self.binary = None
-        self.filtered_mean_signal = self.filtered_mean_binary = None
+        self.mean_signal = self.mean_binary = None
 
     def select_peaks_for_clustering(self):
         self.calc_mean_matrices()
@@ -30,7 +30,7 @@ class FeatureSelection:
         return self.add_peaks()
 
     def calc_mean_matrices(self):
-        self.filtered_mean_signal, self.filtered_mean_binary = subset_peaks.average_matrices(
+        self.mean_signal, self.mean_binary = subset_peaks.average_matrices(
             self.initial_signal_matrix,
             self.initial_binary_matrix,
             self.sample_labels,
@@ -40,23 +40,22 @@ class FeatureSelection:
     def set_confounders_mask(self):
         self.confounders_mask = self.peaks_meta.eval(
             self.params['Filtering_by_confounders']
-        ) & (self.filtered_mean_binary.sum(axis=1) >= 1)
+        ) & (self.mean_binary.sum(axis=1) >= 1)
         mean_signal_filtered = self.initial_signal_matrix[self.confounders_mask, :].mean(axis=1)
         self.confounders_mask[self.confounders_mask] = mean_signal_filtered >= self.params["Filtering_by_mean_signal"]
-        print(self.confounders_mask.shape)
 
     def set_matrix_data(self):
         if self.params['Calculate_gini_by'] == 'sample':
             self.signal = self.initial_signal_matrix[self.confounders_mask, :]
         elif self.params['Calculate_gini_by'] == 'group':
-            self.signal = self.filtered_mean_signal
+            self.signal = self.mean_signal[self.confounders_mask, :]
         else:
             raise ValueError
 
         if self.params['Add_peaks_by'] == 'sample':
             self.binary = self.initial_binary_matrix[self.confounders_mask, :]
         elif self.params['Add_peaks_by'] == 'group':
-            self.binary = self.filtered_mean_binary
+            self.binary = self.mean_binary[self.confounders_mask, :]
         else:
             raise ValueError
 
@@ -77,10 +76,11 @@ class FeatureSelection:
 
     def add_peaks(self):
         sorted_peaks = self.get_peaks_order()
-        new_mask_sub = subset_peaks.add_peaks(self.binary, sorted_peaks, self.params['Add_peaks_mv'],
-                                              self.params['Add_peaks_per_group'])
+        new_mask_sub = subset_peaks.add_peaks(self.binary, sorted_peaks, 
+                                            self.params['Add_peaks_mv'],
+                                            self.params['Add_peaks_per_group'])
         mask = np.zeros(self.initial_signal_matrix.shape[0], dtype=bool)
-        print(mask.shape, self.confounders_mask.sum(), self.confounders_mask.shape)
+
         mask[self.confounders_mask] = new_mask_sub
         return mask
 
