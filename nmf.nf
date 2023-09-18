@@ -1,15 +1,13 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-
+include { non_required_arg } from "./main"
 params.params_list = "/home/sboytsov/NMF/nmf_hyperparams.tsv"
 
 
 params.samples_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
 params.clustering_meta = "/home/sboytsov/poster_clustering/2902_cluster_meta_0303.tsv"
 
-def non_required_arg(value, key) {
-    return value ? "${key} ${value}": ""
-}
+
 
 process fit_nmf {
 	tag "${prefix}"
