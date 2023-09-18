@@ -85,8 +85,13 @@ class FeatureSelection:
         return mask
 
 
-def minmax_norm(subset):
-    return (subset - subset.min()) / (subset.max() - subset.min())
+
+def minmax_norm(subset, minv=None, maxv=None):
+    if minv is None:
+        minv = subset.min()
+    if maxv is None:
+        maxv = subset.max()
+    return (subset - minv) / (maxv - minv), minv, maxv
 
 
 def pairwise_euclidean(X):
