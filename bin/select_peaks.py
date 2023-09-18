@@ -3,8 +3,11 @@ import pandas as pd
 import sys
 import json
 from numba import jit
+import perform_NMF as NMF
+import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist, squareform
 import subset_peaks
+from sklearn.decomposition import PCA
 
 class FeatureSelection:
     def __init__(self, params, signal_matrix, binary_matrix, sample_labels,
@@ -139,6 +142,45 @@ def get_metric(distances, labels, same_num_dict=None):
     
     return entropy
 
+class Embedding():
+    def __init__(self, data, method='raw', method_params={}, random_state=234234):
+        if method not in ['raw', 'pca', 'nmf']:
+            raise NotImplementedError
+        self.method = method
+        self.data = data
+        self.method_params = method_params
+        self.random_state = random_state
+
+        self.embedding = None
+        self.model_object = None
+
+    def set_default_params(self):
+        if self.method == 'pca':
+            self.method_params.setdefault('n_components', 80)
+
+    def calculate_embedding(self):
+        if self.method == 'raw':
+            self.embedding = self.data
+        elif self.method == 'pca':
+            self.model_object = PCA(
+                n_components=self.method_params['n_components'],
+                random_state=self.random_state
+            )
+            self.embedding = self.model_object.fit_transform(self.data.T, ).T
+        elif self.method == 'nmf':
+            W, H, model = NMF.perform_NMF(self.data, n_components=self.method_params['n_components'])
+            self.model_object = model
+            self.embedding = W.T
+            self.basis = H.T
+
+    def plot_model(self):
+        if self.method == 'pca':
+            plt.plot(self.model_object.explained_variance_ratio_.cumsum()[:self.method_params['n_components']])
+            plt.show()
+            
+            plt.plot(self.model_object.explained_variance_ratio_[:self.method_params['n_components']])
+            plt.show()
+
 
 @jit(nopython=True)
 def accumulate_counts(sorted_labels, p_values, n):
@@ -178,6 +220,10 @@ def get_entropy_same_num(samples_meta):
     return {labels_alphabetical.index(k): [labels_alphabetical.index(x) for x in v] for k, v in entropy_same.items()}
 
 
+def pairwise_distances(X, metric='euclidean'):
+    return squareform(pdist(X.T, metric))
+
+
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     sample_labels = np.unique(
         np.where(
@@ -194,11 +240,20 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
         peaks_meta=peaks_meta
     )
     mask = fs.select_peaks_for_clustering()
-    data = minmax_norm(signal_matrix[mask, :])
-    euclid_dist = pairwise_euclidean(data)
+    data, minv, maxv = minmax_norm(signal_matrix[mask, :])
+
+    emb = Embedding(data, method='nmf', method_params={'n_components': params['N_components']})
+    emb.set_default_params()
+    emb.calculate_embedding()
+
+    embedded_data = emb.embedding # / embedding.embedding.max(axis=1)[:, None]
+    embedded_data = embedded_data / embedded_data.sum(axis=0)
+
+    euclid_dist = pairwise_distances(embedded_data, metric='jensenshannon')
+
     entropy = calc_entropy(euclid_dist, samples_meta, entropy_same_num=get_entropy_same_num(samples_meta))
 
-    return euclid_dist, entropy, mask
+    return euclid_dist, entropy, mask, emb.embedding, emb.basis
 
 
 if __name__ == '__main__':
@@ -216,11 +271,12 @@ if __name__ == '__main__':
     assert len(peaks_meta) == signal_matrix.shape[0] == binary_matrix.shape[0]
     assert len(samples_meta) == signal_matrix.shape[1] == binary_matrix.shape[1]
 
-    euclid_dist, entropy, mask = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
+    euclid_dist, entropy, mask, W, H = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
 
     outdir = sys.argv[6]
 
     np.save(f'{outdir}.distances.npy', euclid_dist)
     np.save(f'{outdir}.entropy.npy', entropy)
     np.save(f'{outdir}.mask.npy', mask)
-
+    np.save(f'{outdir}.H.npy', H)
+    np.save(f'{outdir}.W.npy', W)
