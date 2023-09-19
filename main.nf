@@ -13,7 +13,7 @@ def non_required_arg(value, key) {
 }
 
 process apply_filter_and_convert_to_np {
-	publishDir publishDirectory, pattern: "${name}"
+	publishDir "${publishDirectory}", pattern: "${name}"
 	label "highmem"
     tag "${prefix}"
 	conda params.conda
