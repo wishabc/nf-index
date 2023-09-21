@@ -3,88 +3,165 @@ import pandas as pd
 import sys
 import json
 from numba import jit
-import perform_NMF as NMF
+import perform_NMF as pNMF
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist, squareform
 import subset_peaks
 from sklearn.decomposition import PCA
+import anndata as ad
+
+
+def add_sample_labels(adata, by='extended_annotation2', fallback='core_ontology_term'):
+    adata.obs['group'] = np.unique(
+        np.where(
+            adata.obs[by].notna(),
+            adata.obs[by],
+            'NA' if fallback == 'NA' else adata.obs[fallback]
+        ), return_inverse=True
+    )[1]
+
+def calc_mean_matrices(adata, rep):
+    adata.varm['averaged_signal_matrix'], adata.varm['averaged_binary_matrix'] = subset_peaks.average_matrices(
+        adata.X.T,
+        adata.layers['binary'].T,
+        adata.obs['group'],
+        reprod=rep
+    )
+    adata.uns['Reproduced'] = rep
+
+
+class Embedding():
+    def __init__(self, data, method='raw', method_params={}, random_state=234234):
+        if method not in ['raw', 'pca', 'nmf']:
+            raise NotImplementedError
+        self.method = method
+        self.data = data
+        self.method_params = method_params
+        self.random_state = random_state
+
+        self.embedding = None
+        self.model_object = None
+
+    def set_default_params(self):
+        if self.method == 'pca':
+            self.method_params.setdefault('n_components', 80)
+
+    def calculate_embedding(self):
+        if self.method == 'raw':
+            self.embedding = self.data
+        elif self.method == 'pca':
+            self.model_object = PCA(
+                n_components=self.method_params['n_components'],
+                random_state=self.random_state
+            )
+            self.embedding = self.model_object.fit_transform(self.data.T, ).T
+        elif self.method == 'nmf':
+            W, H, model = pNMF.perform_NMF(self.data, n_components=self.method_params['n_components'])
+            self.model_object = model
+            self.embedding = W.T
+
+    def plot_model(self):
+        if self.method == 'pca':
+            plt.plot(self.model_object.explained_variance_ratio_.cumsum()[:self.method_params['n_components']])
+            plt.show()
+            
+            plt.plot(self.model_object.explained_variance_ratio_[:self.method_params['n_components']])
+            plt.show()
+
 
 class FeatureSelection:
-    def __init__(self, params, signal_matrix, binary_matrix, sample_labels,
-                 peaks_meta):
-        self.sample_labels = sample_labels
-        self.initial_signal_matrix = signal_matrix
-        self.initial_binary_matrix = binary_matrix
-
-        self.peaks_meta = peaks_meta
-
+    def __init__(self, params, adata):
+        self.adata = adata
         self.params = params
 
         self.signal = self.binary = None
-        self.mean_signal = self.mean_binary = None
+
+        self.adata.var['variance'] = None
+
+        self.variance = None
 
     def select_peaks_for_clustering(self):
-        self.calc_mean_matrices()
+        # if (self.adata.uns['Reproduced'] != self.params['Reproduced'] or
+        #     'averaged_signal_matrix' not in self.adata.varm or
+        #     'averaged_binary_matrix' not in self.adata.varm):
+        calc_mean_matrices(self.adata, self.params['Reproduced'])
         self.set_confounders_mask()
         self.set_matrix_data()
+        self.calculate_variance()
+        self.set_peak_ranks()
         return self.add_peaks()
 
-    def calc_mean_matrices(self):
-        self.mean_signal, self.mean_binary = subset_peaks.average_matrices(
-            self.initial_signal_matrix,
-            self.initial_binary_matrix,
-            self.sample_labels,
-            reprod=self.params['Reproduced']
-        )
-
     def set_confounders_mask(self):
-        self.confounders_mask = self.peaks_meta.eval(
+        confounders_mask = self.adata.var.eval(
             self.params['Filtering_by_confounders']
-        ) & (self.mean_binary.sum(axis=1) >= 1)
-        mean_signal_filtered = self.initial_signal_matrix[self.confounders_mask, :].mean(axis=1)
-        self.confounders_mask[self.confounders_mask] = mean_signal_filtered >= self.params["Filtering_by_mean_signal"]
+        ) & (self.adata.varm['averaged_binary_matrix'].sum(axis=1) >= 1)
+        mean_density = self.adata.X.T.mean(axis=1)
+        mean_signal_filtered = mean_density[confounders_mask]
+        confounders_mask[confounders_mask] = mean_signal_filtered >= self.params["Filtering_by_mean_signal"]
+        
+        self.adata.var['confounders_mask'] = confounders_mask
+        self.adata.var['mean_density'] = mean_density
+
+        self.filtered_adata = self.adata[:, self.adata.var['confounders_mask']]
 
     def set_matrix_data(self):
         if self.params['Calculate_gini_by'] == 'sample':
-            self.signal = self.initial_signal_matrix[self.confounders_mask, :]
+            self.signal = self.filtered_adata.X.T
         elif self.params['Calculate_gini_by'] == 'group':
-            self.signal = self.mean_signal[self.confounders_mask, :]
+            self.signal = self.filtered_adata.varm['averaged_signal_matrix']
         else:
             raise ValueError
 
         if self.params['Add_peaks_by'] == 'sample':
-            self.binary = self.initial_binary_matrix[self.confounders_mask, :]
+            self.binary = self.filtered_adata.layers['binary'].T
         elif self.params['Add_peaks_by'] == 'group':
-            self.binary = self.mean_binary[self.confounders_mask, :]
+            self.binary = self.filtered_adata.varm['averaged_binary_matrix']
         else:
             raise ValueError
 
-    def get_peaks_order(self):
+    def calculate_variance(self):
+        print('Calculating variance')
         if self.params['Variance_metric'] == 'gini_index':
             means, gini, smoothed_gini_final, \
                 gini_argsort, top_gini_mask = subset_peaks.get_gini_index_for_peaks(
                     self.signal, 1000)
-            return gini_argsort
-        elif self.params['Variance_metric'] == 'var':
-            var = np.var(self.signal, axis=1)
-            return np.argsort(var)[::-1]
+            variance = gini - smoothed_gini_final
+        elif self.params['Variance_metric'] in ['var', 'binned_var']:
+            variance = np.var(self.signal, axis=1)
         elif self.params['Variance_metric'] == 'explained_var':
-            var = np.var(self.signal, axis=1)
-            return np.argsort(var * self.peaks_meta['extended_annotation'][self.confounders_mask])[::-1]
+            variance = np.var(self.signal, axis=1) * self.filtered_adata.var['extended_annotation']
         else:
             raise ValueError
 
+        with pd.option_context('mode.chained_assignment', None):
+            self.variance = self.adata.var['variance'][self.adata.var['confounders_mask']] = variance
+
+    def set_peak_ranks(self):
+        if self.params['Variance_metric'] == 'binned_var':
+            self.peak_ranks = self.get_peak_ranks_binned()
+        else:
+            self.peak_ranks =  np.argsort(self.variance)[::-1]
+
+    def get_peak_ranks_binned(self):
+        ranks = np.zeros(self.variance.shape, dtype=bool)
+
+        bins = np.quantile(self.filtered_adata.var['mean_density'], np.linspace(0, 1, 11))
+        df = pd.DataFrame({'mean_signal_bin': pd.cut(self.filtered_adata.var['mean_density'], bins),
+                     'variance': self.variance})
+        for bin_label in df['mean_signal_bin'].cat.categories:
+            bin_idx = df['mean_signal_bin'] == bin_label
+            ranks[bin_idx] = np.argsort(df[bin_idx]['variance']) / len(bin_idx)
+        
+        return np.argsort(ranks)[::-1]
+
     def add_peaks(self):
-        sorted_peaks = self.get_peaks_order()
-        new_mask_sub = subset_peaks.add_peaks(self.binary, sorted_peaks, 
-                                            self.params['Add_peaks_mv'],
-                                            self.params['Add_peaks_per_group'])
-        mask = np.zeros(self.initial_signal_matrix.shape[0], dtype=bool)
-
-        mask[self.confounders_mask] = new_mask_sub
+        print('Adding peaks')
+        new_mask_sub = subset_peaks.add_peaks(self.binary, self.peak_ranks, self.params['Add_peaks_mv'],
+                                              self.params['Add_peaks_per_group'])
+        mask = np.zeros(self.adata.shape[1], dtype=bool)
+        mask[self.adata.var['confounders_mask']] = new_mask_sub
+        self.adata.var['most_variable_peaks'] = mask
         return mask
-
-
 
 def minmax_norm(subset, minv=None, maxv=None):
     if minv is None:
@@ -94,8 +171,8 @@ def minmax_norm(subset, minv=None, maxv=None):
     return (subset - minv) / (maxv - minv), minv, maxv
 
 
-def pairwise_euclidean(X):
-    return squareform(pdist(X.T, 'euclidean'))
+def pairwise_distances(X, metric='euclidean'):
+    return squareform(pdist(X.T, metric))
 
 
 def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
@@ -148,44 +225,39 @@ def get_metric(distances, labels, same_num_dict=None):
     
     return entropy
 
-class Embedding():
-    def __init__(self, data, method='raw', method_params={}, random_state=234234):
-        if method not in ['raw', 'pca', 'nmf']:
-            raise NotImplementedError
-        self.method = method
-        self.data = data
-        self.method_params = method_params
-        self.random_state = random_state
 
-        self.embedding = None
-        self.model_object = None
+def read_matrices(signal_matrix_path, binary_matrix_path, samples_meta, peaks_meta, subset_to_nonzero=True):
+    print('Reading binary')
+    binary_matrix = np.load(binary_matrix_path)
+    print(binary_matrix.shape, peaks_meta.shape, samples_meta.shape)
 
-    def set_default_params(self):
-        if self.method == 'pca':
-            self.method_params.setdefault('n_components', 80)
+    print('Reading signal')
+    signal_matrix = np.load(signal_matrix_path)
+    print(signal_matrix.shape, peaks_meta.shape, samples_meta.shape)
 
-    def calculate_embedding(self):
-        if self.method == 'raw':
-            self.embedding = self.data
-        elif self.method == 'pca':
-            self.model_object = PCA(
-                n_components=self.method_params['n_components'],
-                random_state=self.random_state
-            )
-            self.embedding = self.model_object.fit_transform(self.data.T, ).T
-        elif self.method == 'nmf':
-            W, H, model = NMF.perform_NMF(self.data, n_components=self.method_params['n_components'])
-            self.model_object = model
-            self.embedding = W.T
-            self.basis = H.T
+    if subset_to_nonzero:
+        binary_nonzero = binary_matrix.sum(axis=1) > 0
+        print('Subsetting binary')
+        binary_matrix = binary_matrix[binary_nonzero, :]
+        print('Subsetting signal')
+        signal_matrix = signal_matrix[binary_nonzero, :]
+        # peaks_meta = peaks_meta[binary_nonzero]
 
-    def plot_model(self):
-        if self.method == 'pca':
-            plt.plot(self.model_object.explained_variance_ratio_.cumsum()[:self.method_params['n_components']])
-            plt.show()
-            
-            plt.plot(self.model_object.explained_variance_ratio_[:self.method_params['n_components']])
-            plt.show()
+    assert binary_matrix.shape[0] == peaks_meta.shape[0]
+    assert binary_matrix.shape[1] == samples_meta.shape[0]
+
+    assert signal_matrix.shape[0] == peaks_meta.shape[0]
+    assert signal_matrix.shape[1] == samples_meta.shape[0]
+    
+    adata = ad.AnnData(signal_matrix.T)
+    adata.obs_names = samples_meta.index
+    adata.var_names = peaks_meta.index
+    adata.layers['binary'] = binary_matrix.T
+
+    adata.obs = samples_meta
+    adata.var = peaks_meta
+
+    return adata
 
 
 @jit(nopython=True)
@@ -226,40 +298,35 @@ def get_entropy_same_num(samples_meta):
     return {labels_alphabetical.index(k): [labels_alphabetical.index(x) for x in v] for k, v in entropy_same.items()}
 
 
-def pairwise_distances(X, metric='euclidean'):
-    return squareform(pdist(X.T, metric))
-
-
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
-    sample_labels = np.unique(
-        np.where(
-            samples_meta['core_annotation2'].notna(),
-            samples_meta['core_annotation2'],
-            samples_meta['core_ontology_term']
-        ), return_inverse=True
-    )[1]
+    adata = read_matrices(signal_matrix, binary_matrix, samples_meta, peaks_meta, subset_to_nonzero=False)
     fs = FeatureSelection(
         params=params,
-        signal_matrix=signal_matrix,
-        binary_matrix=binary_matrix,
-        sample_labels=sample_labels,
-        peaks_meta=peaks_meta
+        adata=adata
     )
     mask = fs.select_peaks_for_clustering()
-    data, minv, maxv = minmax_norm(signal_matrix[mask, :])
 
-    emb = Embedding(data, method='nmf', method_params={'n_components': params['N_components']})
-    emb.set_default_params()
-    emb.calculate_embedding()
+    filtered_adata = adata[:, mask]
+    filtered_adata.layers['minmax'], minv, maxv = minmax_norm(filtered_adata.X)
+    filtered_adata.uns['minv'] = minv
+    filtered_adata.uns['maxv'] = maxv
 
-    embedded_data = emb.embedding # / embedding.embedding.max(axis=1)[:, None]
-    embedded_data = embedded_data / embedded_data.sum(axis=0)
+    emb_handler = Embedding(filtered_adata.layers['minmax'].T, method='nmf', method_params={'n_components': params['N_components']})
+    emb_handler.set_default_params()
+    emb_handler.calculate_embedding()
 
-    euclid_dist = pairwise_distances(embedded_data, metric='jensenshannon')
+    embedding = emb_handler.embedding
 
-    entropy = calc_entropy(euclid_dist, samples_meta, entropy_same_num=get_entropy_same_num(samples_meta))
+    filtered_adata.obsm['embedding'] = (embedding / embedding.sum(axis=0)).T
 
-    return euclid_dist, entropy, mask, emb.embedding, emb.basis
+    filtered_adata.obsp['distance_matrix'] = pairwise_distances(filtered_adata.obsm['embedding'].T, metric='jensenshannon')
+    filtered_adata.obs['entropy'] = calc_entropy(filtered_adata.obsp['distance_matrix'], 
+        filtered_adata.obs, 
+        entropy_same_num=get_entropy_same_num(filtered_adata.obs)
+    )
+    
+    filtered_adata.varm['basis'] = emb_handler.basis
+    return filtered_adata
 
 
 if __name__ == '__main__':
@@ -277,12 +344,6 @@ if __name__ == '__main__':
     assert len(peaks_meta) == signal_matrix.shape[0] == binary_matrix.shape[0]
     assert len(samples_meta) == signal_matrix.shape[1] == binary_matrix.shape[1]
 
-    euclid_dist, entropy, mask, W, H = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
+    adata = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
 
-    outdir = sys.argv[6]
-
-    np.save(f'{outdir}.distances.npy', euclid_dist)
-    np.save(f'{outdir}.entropy.npy', entropy)
-    np.save(f'{outdir}.mask.npy', mask)
-    np.save(f'{outdir}.H.npy', H)
-    np.save(f'{outdir}.W.npy', W)
+    adata.write(sys.argv[6])
