@@ -120,7 +120,7 @@ process count_tags {
 	scratch true
 
 	input:
-		tuple path(saf), path(masterlist), val(id), path(bam_file), path(bam_file_index), path(peaks_file), val(has_paired)
+		tuple path(saf), path(masterlist), val(id), path(bam_file), path(bam_file_index), path(peaks_file)
 
 	output:
 		path name
@@ -138,9 +138,12 @@ process count_tags {
         ln -s ${bam_file_index} align.bam.bai
     fi
 
+    count=`samtools stats ${bam_file} \
+        | grep "^SN" \
+        | grep "mapped and paired" \
+        | cut -f3` && [[ \$count -gt 0 ]] && tag="-p" || tag=""
 
-
-	featureCounts -a ${saf} -O -o counts.txt -F SAF ${tag} align.bam
+	featureCounts -a ${saf} -O -o counts.txt -F SAF \$tag align.bam
 	cat counts.txt | awk 'NR > 2 {print \$(NF)}' > ${name}
 	"""
 }
@@ -225,8 +228,7 @@ workflow {
             row.ag_id,
             file(row.filtered_alignments_bam),
             file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"),
-            file(row.hotspot_peaks_point1per),
-            row.paired_aligned && (row.paired_aligned != 0)
+            file(row.hotspot_peaks_point1per)
         ))
     
     if (params.method == 'chunks') {
