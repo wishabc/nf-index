@@ -352,9 +352,6 @@ if __name__ == '__main__':
     samples_meta = pd.read_table(sys.argv[2])
     peaks_meta = pd.read_table(sys.argv[3])
 
-    assert 'frac_method' in peaks_meta.columns
-    assert 'core_annotation2' in samples_meta.columns
-
     signal_matrix = np.load(sys.argv[4])
     binary_matrix = np.load(sys.argv[5])
 
