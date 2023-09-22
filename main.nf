@@ -309,7 +309,7 @@ workflow existingMatrices {
         | map(it -> it[3]) // mask
 
     matrices = Channel.of('binary', 'counts')
-        | map(it -> tuple(it, file("${params.matrices_dir}/matrix.${it}.mtx.gz")))
+        | map(it -> tuple("${it}.only_autosomes", file("${params.matrices_dir}/matrix.${it}.mtx.gz")))
         | combine(autosomes_mask)
         | apply_filter_and_convert_to_np
     
