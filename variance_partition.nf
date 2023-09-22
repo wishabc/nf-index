@@ -50,7 +50,24 @@ process convert_to_h5 {
         --binary ${binary_matrix}
     """
 }
+process sort_bed {
 
+    conda params.conda
+    publishDir params.outdir
+
+    input:
+        path unsorted_bed
+    
+    output:
+        path name
+    
+    script:
+    name = "masterlist.vp_annotated.sorted.bed"
+    """
+    sort-bed ${unsorted_bed} > ${name}
+    """
+
+}
 workflow variancePartition {
     take:
         masterlist
@@ -65,7 +82,6 @@ workflow variancePartition {
             | variance_partition
             | collectFile(
                 name: "masterlist.vp_annotated.bed",
-                storeDir: params.outdir,
                 keepHeader: true,
                 sort: true,
                 skip: 1
