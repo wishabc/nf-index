@@ -320,7 +320,7 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
 
     filtered_adata.obsp['distance_matrix'] = pairwise_distances(filtered_adata.obsm['embedding'].T, metric='jensenshannon')
     
-    filtered_adata.varm['basis'] = emb_handler.basis
+    filtered_adata.varm['basis'] = emb_handler.model_object.components_.T
     return filtered_adata, mask
 
 
