@@ -158,7 +158,7 @@ workflow {
 
 process select_peaks {
 
-    publishDir "${params.outdir}/${prefix}"
+    publishDir "${params.outdir}/params/${prefix}"
     conda params.conda
     tag "${prefix}"
     label "model_testing"
