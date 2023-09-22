@@ -30,7 +30,7 @@ process variance_partition {
 
 process convert_to_h5 {
     conda params.conda
-    publishDir params.oudir
+    publishDir params.outdir
     label "highmem"
     
     input:
