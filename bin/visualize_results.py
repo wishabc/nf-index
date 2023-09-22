@@ -9,10 +9,43 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, leaves_list
 from scipy.spatial.distance import pdist, squareform
 from numba import jit
+import matplotlib.colors as mcolors
+
 
 
 def pairwise_distances(X, metric='euclidean'):
     return squareform(pdist(X.T, metric))
+
+
+def get_colors_order(n_components):
+    # code from Wouter's library, to have the similar colors as in barplot
+    colors_order = ['#FFE500', '#FE8102', '#FF0000', '#07AF00', '#4C7D14', '#414613', '#05C1D9', '#0467FD', '#009588', '#BB2DD4', '#7A00FF', '#4A6876', '#08245B', '#B9461D', '#692108', '#C3C3C3']
+    neworder = np.array([16,10,7,11,2,12,1,8,4,15,14,5,9,6,3,13]).astype(int) - 1
+    colors_order = list(np.array(colors_order)[neworder])
+
+    if (n_components>len(colors_order)):
+        colornames = np.sort(list(mcolors.CSS4_COLORS.keys()))
+        count = len(colors_order)
+        np.random.seed(10)
+        myrandint = np.random.randint(len(colornames))
+        while (count < n_components):
+            myrandint =    np.random.randint(len(colornames))
+            newcolor = colornames[myrandint]
+            trialcount = 0
+            while ((newcolor in colors_order) and (trialcount < 100)):
+                newcolor = colornames[np.random.randint(0,len(colornames))]
+                trialcount+=1
+            #print('new color ',count,newcolor)
+            colors_order.append(newcolor)
+            count+=1
+    return colors_order
+
+def get_discrete_colormap(array, na_color='#707070'):
+    uq = np.sort(np.unique(array[~pd.isna(array)]))
+    colormap = dict(zip(uq, get_colors_order(len(uq))))
+    mapped_colors = array.map(lambda x: colormap.get(x, na_color))
+
+    return mapped_colors, colormap
 
 
 def get_entropy_same_num(samples_meta):
