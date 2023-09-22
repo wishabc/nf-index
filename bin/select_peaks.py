@@ -308,7 +308,7 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     filtered_adata.uns['minv'] = minv
     filtered_adata.uns['maxv'] = maxv
 
-    emb_handler = Embedding(filtered_adata.layers['minmax' if params['Matrix'] == 'signal' else 'binary'].T,
+    emb_handler = Embedding(filtered_adata.layers['minmax' if params['Matrix'] == 'signal' else 'binary'].astype(float).T,
         method='nmf',
         method_params={'n_components': params['N_components']})
     emb_handler.set_default_params()
