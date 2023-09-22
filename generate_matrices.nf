@@ -165,9 +165,18 @@ process generate_matrix {
 	script:
     name = "matrix.${prefix}.mtx.gz"
 	"""
-    awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order} \
-        | xargs paste \
-        | gzip > ${name}
+    awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order}  > file_list.txt
+
+    touch concatenated_output_0.txt
+
+    # Loop through the rest of the batches
+    counter=1
+    xargs -a temp_filenames.txt -n 500 | while read -r batch; do
+        paste "concatenated_output_\$(expr \$counter - 1).txt" <(paste \$batch) > "concatenated_output\${counter}.txt"
+        ((counter++))
+    done
+
+    gzip "concatenated_output_\$(expr \$counter - 1).txt" > ${name}
 	"""
 }
 
