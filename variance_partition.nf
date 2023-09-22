@@ -86,6 +86,7 @@ workflow variancePartition {
                 sort: true,
                 skip: 1
             )
+            | sort_bed
     emit:
         out  
 }

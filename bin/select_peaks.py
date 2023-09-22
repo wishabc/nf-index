@@ -298,6 +298,17 @@ def get_entropy_same_num(samples_meta):
     return {labels_alphabetical.index(k): [labels_alphabetical.index(x) for x in v] for k, v in entropy_same.items()}
 
 
+def get_cumul_fraction(array, normalize=True):
+    x = np.sort(array)[::-1]
+    y = np.arange(len(x)) / (float(len(x)) if normalize else 1_000)
+    return x, y
+
+def get_threshold(array, thr):
+    x, y = get_cumul_fraction(array)
+    idx = len(y) - np.searchsorted(y[::-1], thr)
+    return x[idx]
+
+
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     adata = read_matrices(signal_matrix, binary_matrix, samples_meta, peaks_meta, subset_to_nonzero=False)
     fs = FeatureSelection(
