@@ -321,7 +321,7 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     filtered_adata.obsp['distance_matrix'] = pairwise_distances(filtered_adata.obsm['embedding'].T, metric='jensenshannon')
     
     filtered_adata.varm['basis'] = emb_handler.basis
-    return filtered_adata
+    return filtered_adata, mask
 
 
 if __name__ == '__main__':
@@ -336,8 +336,11 @@ if __name__ == '__main__':
     assert len(peaks_meta) == signal_matrix.shape[0] == binary_matrix.shape[0]
     assert len(samples_meta) == signal_matrix.shape[1] == binary_matrix.shape[1]
 
-    adata = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
+    adata, mask = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
 
-    adata.obs = adata.obs[['extended_annotation2', 'group', 'core_ontology_term', 'entropy']]
+    adata.obs.drop(columns=adata.obs.columns, inplace=True)
+    adata.var.drop(columns=adata.var.columns, inplace=True)
     adata.write(f"{sys.argv[6]}.h5")
+
+    np.savetxt(f"{sys.argv[6]}.selected_peaks.mask.txt", mask)
     
