@@ -228,16 +228,7 @@ def get_metric(distances, labels, same_num_dict=None):
     return entropy
 
 
-def matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta, subset_to_nonzero=True):
-
-    if subset_to_nonzero:
-        binary_nonzero = binary_matrix.sum(axis=1) > 0
-        print('Subsetting binary')
-        binary_matrix = binary_matrix[binary_nonzero, :]
-        print('Subsetting signal')
-        signal_matrix = signal_matrix[binary_nonzero, :]
-        # peaks_meta = peaks_meta[binary_nonzero]
-
+def matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta):
     assert binary_matrix.shape[0] == peaks_meta.shape[0]
     assert binary_matrix.shape[1] == samples_meta.shape[0]
 
@@ -248,10 +239,8 @@ def matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta, su
     adata.obs_names = samples_meta.index
     adata.var_names = peaks_meta.index
     adata.layers['binary'] = binary_matrix.T
-
     adata.obs = samples_meta
     adata.var = peaks_meta
-
     return adata
 
 
@@ -330,10 +319,6 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     filtered_adata.obsm['embedding'] = (embedding / embedding.sum(axis=0)).T
 
     filtered_adata.obsp['distance_matrix'] = pairwise_distances(filtered_adata.obsm['embedding'].T, metric='jensenshannon')
-    filtered_adata.obs['entropy'] = calc_entropy(filtered_adata.obsp['distance_matrix'], 
-        filtered_adata.obs, 
-        entropy_same_num=get_entropy_same_num(filtered_adata.obs)
-    )
     
     filtered_adata.varm['basis'] = emb_handler.basis
     return filtered_adata
@@ -353,4 +338,6 @@ if __name__ == '__main__':
 
     adata = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
 
-    adata.write(sys.argv[6])
+    adata.obs = adata.obs[['extended_annotation2', 'group', 'core_ontology_term', 'entropy']]
+    adata.write(f"{sys.argv[6]}.h5")
+    
