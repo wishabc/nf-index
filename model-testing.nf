@@ -157,7 +157,7 @@ workflow {
 
 
 process select_peaks {
-    publishDir "${params.outdir}/params/${prefix}", pattern: "${prefix}*"
+    publishDir "${params.outdir}/models_results/${prefix}", pattern: "${prefix}*"
     conda params.conda
     tag "${prefix}"
     label "model_testing"
@@ -184,7 +184,7 @@ process select_peaks {
 
 process visualize_results {
 
-    publishDir "${params.outdir}/params/${prefix}/visualizations/"
+    publishDir "${params.outdir}/models_results/${prefix}/visualizations/"
     conda params.conda
     tag "${prefix}"
     label "model_testing"
