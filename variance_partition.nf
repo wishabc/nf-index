@@ -36,7 +36,7 @@ process convert_to_h5 {
     input:
         path binary_matrix
         path vst_matrix
-        path samples_file
+        path samples_names
 
     output:
         path name
