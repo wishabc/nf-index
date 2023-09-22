@@ -141,7 +141,7 @@ class FeatureSelection:
         if self.params['Variance_metric'] == 'binned_var':
             self.peak_ranks = self.get_peak_ranks_binned()
         else:
-            self.peak_ranks =  np.argsort(self.variance)[::-1]
+            self.peak_ranks = np.argsort(self.variance)[::-1]
 
     def get_peak_ranks_binned(self):
         ranks = np.zeros(self.variance.shape, dtype=bool)
@@ -228,14 +228,7 @@ def get_metric(distances, labels, same_num_dict=None):
     return entropy
 
 
-def read_matrices(signal_matrix_path, binary_matrix_path, samples_meta, peaks_meta, subset_to_nonzero=True):
-    print('Reading binary')
-    binary_matrix = np.load(binary_matrix_path)
-    print(binary_matrix.shape, peaks_meta.shape, samples_meta.shape)
-
-    print('Reading signal')
-    signal_matrix = np.load(signal_matrix_path)
-    print(signal_matrix.shape, peaks_meta.shape, samples_meta.shape)
+def matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta, subset_to_nonzero=True):
 
     if subset_to_nonzero:
         binary_nonzero = binary_matrix.sum(axis=1) > 0
@@ -312,7 +305,7 @@ def get_threshold(array, thr):
 
 
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
-    adata = read_matrices(signal_matrix, binary_matrix, samples_meta, peaks_meta, subset_to_nonzero=False)
+    adata = matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta, subset_to_nonzero=False)
     add_sample_labels(adata)
     calc_mean_matrices(adata, rep=1)   
     fs = FeatureSelection(
