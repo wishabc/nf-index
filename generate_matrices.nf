@@ -172,7 +172,7 @@ process generate_matrix {
     # Loop through the rest of the batches
     counter=1
     xargs -a temp_filenames.txt -n 500 | while read -r batch; do
-        paste "concatenated_output_\$(expr \$counter - 1).txt" <(paste \$batch) > "concatenated_output\${counter}.txt"
+        paste "concatenated_output_\$(expr \$counter - 1).txt" <(paste \$batch) > "concatenated_output_\${counter}.txt"
         ((counter++))
     done
 
