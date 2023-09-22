@@ -97,7 +97,8 @@ class FeatureSelection:
         ) & (self.adata.varm['averaged_binary_matrix'].sum(axis=1) >= 1)
         mean_density = self.adata.X.T.mean(axis=1)
         mean_signal_filtered = mean_density[confounders_mask]
-        confounders_mask[confounders_mask] = mean_signal_filtered >= self.params["Filtering_by_mean_signal"]
+        thr = get_threshold(mean_signal_filtered, self.params["Filtering_by_mean_signal"])
+        confounders_mask[confounders_mask] = mean_signal_filtered >= thr
         
         self.adata.var['confounders_mask'] = confounders_mask
         self.adata.var['mean_density'] = mean_density
@@ -156,7 +157,8 @@ class FeatureSelection:
 
     def add_peaks(self):
         print('Adding peaks')
-        new_mask_sub = subset_peaks.add_peaks(self.binary, self.peak_ranks, self.params['Add_peaks_mv'],
+        num_peaks_to_leave = int(self.params['Add_peaks_mv'] * len(self.peak_ranks))
+        new_mask_sub = subset_peaks.add_peaks(self.binary, self.peak_ranks, num_peaks_to_leave,
                                               self.params['Add_peaks_per_group'])
         mask = np.zeros(self.adata.shape[1], dtype=bool)
         mask[self.adata.var['confounders_mask']] = new_mask_sub
@@ -305,7 +307,7 @@ def get_cumul_fraction(array, normalize=True):
 
 def get_threshold(array, thr):
     x, y = get_cumul_fraction(array)
-    idx = len(y) - np.searchsorted(y[::-1], thr)
+    idx = min(np.searchsorted(y, thr), len(y) - 1)
     return x[idx]
 
 
