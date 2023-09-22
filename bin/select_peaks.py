@@ -313,6 +313,8 @@ def get_threshold(array, thr):
 
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     adata = read_matrices(signal_matrix, binary_matrix, samples_meta, peaks_meta, subset_to_nonzero=False)
+    add_sample_labels(adata)
+    calc_mean_matrices(adata, rep=1)   
     fs = FeatureSelection(
         params=params,
         adata=adata
