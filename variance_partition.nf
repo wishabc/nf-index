@@ -3,10 +3,9 @@ nextflow.enable.dsl = 2
 
 
 process variance_partition {
-
     conda "/home/sabramov/miniconda3/envs/condR-clone"
     tag "${start_index}"
-    publishDir "${params.outdir}/variance_partition"
+    scratch true
 
     input:
         tuple val(start_index), path(masterlist), path(h5file)
@@ -24,27 +23,65 @@ process variance_partition {
         ${params.chunk_size} \
         ${h5file} \
         ${masterlist} \
-        ${name}
+        '${params.formula}' \
+        ${name} 
     """
 }
 
+process convert_to_h5 {
+    conda params.conda
+    publishDir params.outdir
+    label "highmem"
+    
+    input:
+        path binary_matrix
+        path vst_matrix
+        path samples_names
+
+    output:
+        path name
+    script:
+    name = "matrices.h5"
+    """
+    python3 $moduleDir/bin/convert_to_h5.py \
+        ${vst_matrix} \
+        ${samples_names} \
+        ${name} \
+        --binary ${binary_matrix}
+    """
+}
+process sort_bed {
+
+    conda params.conda
+    publishDir params.outdir
+
+    input:
+        path unsorted_bed
+    
+    output:
+        path name
+    
+    script:
+    name = "masterlist.vp_annotated.sorted.bed"
+    """
+    sort-bed ${unsorted_bed} > ${name}
+    """
+
+}
 workflow variancePartition {
     take:
         masterlist
         h5file
     main:
-        total_dhs = masterlist.countLines()
-        out = Channel.of(1..total_dhs)
+        out = masterlist
+            | flatMap(it -> (1..it.countLines()))
             | collate(params.chunk_size)
             | map(it -> it[0])
-            | combine(
-                Channel.fromPath(masterlist)
-            )
+            | combine(masterlist)
             | combine(h5file)
             | variance_partition
             | collectFile(
                 name: "masterlist.vp_annotated.bed",
-                storeDir: params.outdir,
                 keepHeader: true,
                 sort: true,
                 skip: 1
@@ -53,14 +90,21 @@ workflow variancePartition {
         out  
 }
 
+workflow convertToH5 {
+    convert_to_h5(
+        Channel.fromPath("$launchDir/${params.outdir}/binary.only_autosomes.filtered.matrix.npy"),
+        Channel.fromPath("$launchDir/${params.outdir}/deseq_normalized.only_autosomes.filtered.sf.vst.npy"),
+        Channel.fromPath("$launchDir/${params.outdir}/samples_order.txt")
+    )
+}
 
 workflow {
     params.chunk_size = 5000
     params.h5file = "$launchDir/${params.outdir}/matrices.h5"
-    params.filtered_masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
-
+    params.masterlist = "$launchDir/${params.outdir}/masterlist.only_autosomes.filtered.bed"
+    params.formula = "~ (1 | extended_annotation) + (1 | ln_finished_date) + (1 | frac_method) + (1 | is_primary_tissues_all)"
     variancePartition(
-        file(params.filtered_masterlist),
+        Channel.fromPath(params.masterlist),
         Channel.fromPath(params.h5file)
     )
 }

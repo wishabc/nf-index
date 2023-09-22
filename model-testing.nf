@@ -149,7 +149,7 @@ workflow {
         | fitModels
         | map(it -> it[1])
         | collectFile(name: 'all.metrics.tsv', 
-            storeDir: "${params.outdir}",
+            storeDir: params.outdir,
             skip: 1,
             sort: true,
             keepHeader: true)
