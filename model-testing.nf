@@ -157,8 +157,7 @@ workflow {
 
 
 process select_peaks {
-
-    publishDir "${params.outdir}/params/${prefix}"
+    publishDir "${params.outdir}/params/${prefix}", pattern: "${prefix}*"
     conda params.conda
     tag "${prefix}"
     label "model_testing"
@@ -167,7 +166,7 @@ process select_peaks {
         tuple val(prefix), val(peaks_params), path(signal_matrix), path(binary_matrix), path(peaks_meta), path(samples_meta)
     
     output:
-        path("${prefix}*")
+        tuple val(prefix), path("${prefix}.selected_peaks.mask.txt"), path("${prefix}.h5"), path(peaks_meta), path(samples_meta)
 
     script:
     """
@@ -183,6 +182,32 @@ process select_peaks {
 
 }
 
+process visualize_results {
+
+    publishDir "${params.outdir}/params/${prefix}/visualizations/"
+    conda params.conda
+    tag "${prefix}"
+    label "model_testing"
+
+    input:
+        tuple val(prefix), path(mask), path(h5_file), path(peaks_meta), path(samples_meta)
+    
+    output:
+        path("${name}*")
+
+    script:
+    name = "${prefix}.visualizations"
+    """
+    python3 $moduleDir/bin/visualize_results.py \
+        ${samples_meta} \
+        ${peaks_meta} \
+        ${h5_file} \
+        ${mask} \
+        ${name}
+    """
+
+}
+
 workflow peaksSelection {
     Channel.fromPath(params.hyper_params_list)
         | splitCsv(header:true, sep:'\t')
@@ -194,5 +219,6 @@ workflow peaksSelection {
             file(row.peaks_meta),
             file(row.samples_meta)))
         | select_peaks
+        | visualize_results
 }
 
