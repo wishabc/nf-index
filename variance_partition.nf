@@ -101,7 +101,7 @@ workflow convertToH5 {
 workflow {
     params.chunk_size = 5000
     params.h5file = "$launchDir/${params.outdir}/matrices.h5"
-    params.masterlist = "$launchDir/${params.outdir}/masterlist.filtered.bed"
+    params.masterlist = "$launchDir/${params.outdir}/masterlist.only_autosomes.filtered.bed"
     params.formula = "~ (1 | extended_annotation) + (1 | ln_finished_date) + (1 | frac_method) + (1 | is_primary_tissues_all)"
     variancePartition(
         Channel.fromPath(params.masterlist),
