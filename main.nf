@@ -313,7 +313,8 @@ workflow existingMatrices {
         | combine(autosomes_mask)
         | apply_filter_and_convert_to_np
     
-    samples_order = get_samples_order()
+    samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
+
 
     out = normalizeMatrix(matrices, samples_order, Channel.empty())
 }
