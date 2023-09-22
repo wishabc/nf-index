@@ -64,7 +64,8 @@ process sort_bed {
     script:
     name = "masterlist.vp_annotated.sorted.bed"
     """
-    sort-bed ${unsorted_bed} > ${name}
+    head -1 ${unsorted_bed} > ${name}
+    tail -n+2 ${unsorted_bed} | sort-bed - >> ${name}
     """
 
 }
