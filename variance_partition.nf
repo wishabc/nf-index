@@ -74,6 +74,13 @@ workflow variancePartition {
         out  
 }
 
+workflow convertToH5 {
+    convert_to_h5(
+        Channel.fromPath("$launchDir/${params.outdir}/binary.only_autosomes.filtered.matrix.npy"),
+        Channel.fromPath("$launchDir/${params.outdir}/deseq_normalized.only_autosomes.filtered.sf.vst.npy"),
+        Channel.fromPath("$launchDir/${params.outdir}/samples_order.txt")
+    )
+}
 
 workflow {
     params.chunk_size = 5000
