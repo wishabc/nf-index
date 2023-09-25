@@ -255,8 +255,7 @@ workflow readSamplesFile {
 				row.ag_id,
 				file(row.filtered_alignments_bam),
 				file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"),
-				file(row.hotspot_peaks_point1per),
-				row.paired_aligned && (row.paired_aligned != 0)
+				file(row.hotspot_peaks_point1per)
 			))
 	emit:
 		bams_hotspots

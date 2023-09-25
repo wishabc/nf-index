@@ -126,7 +126,6 @@ process count_tags {
 		path name
 
 	script:
-	tag = has_paired ? '-p' : ''
     name = "${id}.counts.txt"
     ext = bam_file.extension
 	"""
