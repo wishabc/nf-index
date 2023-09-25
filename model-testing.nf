@@ -188,6 +188,7 @@ process visualize_results {
     conda params.conda
     tag "${prefix}"
     label "model_testing"
+    errorStrategy "ignore"
 
     input:
         tuple val(prefix), path(mask), path(h5_file), path(peaks_meta), path(samples_meta)

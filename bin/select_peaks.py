@@ -11,7 +11,7 @@ from sklearn.decomposition import PCA
 import anndata as ad
 
 
-def add_sample_labels(adata, by='extended_annotation2', fallback='core_ontology_term'):
+def add_sample_labels(adata, by='extended_annotation', fallback='core_ontology_term'):
     adata.obs['group'] = np.unique(
         np.where(
             adata.obs[by].notna(),
@@ -178,12 +178,12 @@ def pairwise_distances(X, metric='euclidean'):
 
 
 def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
-    validation_idx = samples_meta['core_annotation2'].notna()
+    validation_idx = samples_meta['core_annotation'].notna()
 
     entropy = np.full(validation_idx.shape, np.nan)
     entropy[validation_idx] = get_entropy_scores(
         euclid_dist[validation_idx, :][:, validation_idx], 
-        np.unique(samples_meta.loc[validation_idx, 'core_annotation2'], return_inverse=True)[1],
+        np.unique(samples_meta.loc[validation_idx, 'core_annotation'], return_inverse=True)[1],
         entropy_same_num
     )
 
@@ -276,9 +276,9 @@ def get_entropy_same_num(samples_meta):
             else:
                 entropy_same[x] = list(s - {x})
 
-    validation_idx = samples_meta['core_annotation2'].notna()
+    validation_idx = samples_meta['core_annotation'].notna()
 
-    labels_alphabetical = list(np.unique(samples_meta.loc[validation_idx, 'core_annotation2'].to_numpy()))
+    labels_alphabetical = list(np.unique(samples_meta.loc[validation_idx, 'core_annotation'].to_numpy()))
     return {labels_alphabetical.index(k): [labels_alphabetical.index(x) for x in v] for k, v in entropy_same.items()}
 
 
