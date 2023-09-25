@@ -287,7 +287,7 @@ if __name__ == '__main__':
     samples_meta = pd.read_table(sys.argv[1])
     peaks_meta = pd.read_table(sys.argv[2])
     adata = ad.read_h5ad(sys.argv[3])
-    mask123 = np.loadtxt(sys.argv[4], dtype=bool)
+    mask123 = np.loadtxt(sys.argv[4]).astype(bool)
 
     adata.obs = samples_meta
     adata.obs['core_system'] = adata.obs['system']
