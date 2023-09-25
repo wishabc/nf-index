@@ -180,6 +180,16 @@ class ModelPlotter():
         self.adata.obsp['connectivities'] = csr_matrix(1 - self.adata.obsp['distance_matrix'])
         self.adata.obsp['distances'] = csr_matrix(self.adata.obsp['distance_matrix'])
 
+
+    @staticmethod
+    def get_date_num(date):
+        if pd.isna(date):
+            return np.nan
+        if '-' not in date:
+            return np.nan
+        vals = list(map(int, date.split('-')))
+        return (vals[0] - 2015) * 12 + vals[1]
+
     def calculate_clustering(self):
         sc.pp.neighbors(self.adata, n_neighbors=self.nearest_neighbors, use_rep='X', random_state=234234)
         sc.tl.leiden(self.adata, resolution=self.resolution)
