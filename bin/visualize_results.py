@@ -58,19 +58,19 @@ def get_entropy_same_num(samples_meta):
             else:
                 entropy_same[x] = list(s - {x})
 
-    validation_idx = samples_meta['core_annotation2'].notna()
+    validation_idx = samples_meta['core_annotation'].notna()
 
-    labels_alphabetical = list(np.unique(samples_meta.loc[validation_idx, 'core_annotation2'].to_numpy()))
+    labels_alphabetical = list(np.unique(samples_meta.loc[validation_idx, 'core_annotation'].to_numpy()))
     return {labels_alphabetical.index(k): [labels_alphabetical.index(x) for x in v] for k, v in entropy_same.items()}
 
 
 def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
-    validation_idx = samples_meta['core_annotation2'].notna()
+    validation_idx = samples_meta['core_annotation'].notna()
 
     entropy = np.full(validation_idx.shape, np.nan)
     entropy[validation_idx] = get_entropy_scores(
         euclid_dist[validation_idx, :][:, validation_idx], 
-        np.unique(samples_meta.loc[validation_idx, 'core_annotation2'], return_inverse=True)[1],
+        np.unique(samples_meta.loc[validation_idx, 'core_annotation'], return_inverse=True)[1],
         entropy_same_num
     )
 
@@ -133,7 +133,7 @@ class ModelPlotter():
 
         self.adata = adata
 
-        self.base_columns = ['core_system', 'super_state', 'growth_stage', 'raj_dataset', 'core_annotation2', 'extended_annotation2',
+        self.base_columns = ['core_system', 'super_state', 'growth_stage', 'raj_dataset', 'core_annotation', 'extended_annotation',
                             'treatment_class']
         self.other_columns = ['subsystem', 'donor_sex', 'disease_pathology', 'sampling_origin', 'organ', 'organ_region',
             'cell_type',
@@ -190,18 +190,18 @@ class ModelPlotter():
         self.adata.obs.loc[:, ['TSNE1', 'TSNE2']] = self.adata.obsm['X_tsne']
 
     def average_distance_matrix(self):
-        work_data = self.adata.obs[self.adata.obs['core_annotation2'].notna()]
-        distances = self.adata.obsp['distance_matrix'][:, self.adata.obs['core_annotation2'].notna()][self.adata.obs['core_annotation2'].notna(), :]
-        unique_labels = np.unique(work_data['core_annotation2'])
+        work_data = self.adata.obs[self.adata.obs['core_annotation'].notna()]
+        distances = self.adata.obsp['distance_matrix'][:, self.adata.obs['core_annotation'].notna()][self.adata.obs['core_annotation'].notna(), :]
+        unique_labels = np.unique(work_data['core_annotation'])
         M = len(unique_labels)
         
         groupped_distance_matrix = np.zeros((M, M), dtype=np.float_)
         for i in range(M):
-            idx_i = work_data['core_annotation2'] == unique_labels[i]
+            idx_i = work_data['core_annotation'] == unique_labels[i]
             matrix_i = distances[idx_i, :]
             n = idx_i.sum()
             for j in range(i, M):
-                idx_j =  work_data['core_annotation2'] == unique_labels[j]
+                idx_j =  work_data['core_annotation'] == unique_labels[j]
                 matrix_ij = matrix_i[:, idx_j]
                 
                 if i == j:
@@ -219,21 +219,21 @@ class ModelPlotter():
         
         unique_labels, adm = self.average_distance_matrix()
         linkage, order = hierarchical_clustering_order(adm)
-        row_colors = list(map(lambda x: self.colormaps['core_annotation2']['colormap'].get(x), unique_labels[order]))
+        row_colors = list(map(lambda x: self.colormaps['core_annotation']['colormap'].get(x), unique_labels[order]))
 
         g = sns.clustermap(-adm,
            row_colors=row_colors, cmap='RdYlBu_r')
 
         g.ax_heatmap.set_yticks(np.arange(adm.shape[0]) + 0.5)
-        g.ax_heatmap.set_yticklabels([f'{lab} [{(self.adata.obs["core_annotation2"] == lab).sum()}]' for lab in unique_labels[order]], rotation=0)
+        g.ax_heatmap.set_yticklabels([f'{lab} [{(self.adata.obs["core_annotation"] == lab).sum()}]' for lab in unique_labels[order]], rotation=0)
         
         left, bottom, width, height = g.ax_heatmap.get_position().bounds
         
         # Add new axes on the right
         ax2 = g.fig.add_axes([left + width * 1.5, bottom, width * 0.7, height])  # [left, bottom, width, height]
         
-        hp = sns.boxplot(data=self.adata.obs, x='entropy', y='core_annotation2', order=unique_labels[order],
-             palette=self.colormaps['core_annotation2']['colormap'], ax=ax2)
+        hp = sns.boxplot(data=self.adata.obs, x='entropy', y='core_annotation', order=unique_labels[order],
+             palette=self.colormaps['core_annotation']['colormap'], ax=ax2)
         ax2.set_yticklabels(['' for _ in ax2.get_yticks()])
         ax2.set_ylabel('')
         # ax2.set_xticklabels(ax2.get_xticklabels(), rotation=90)
@@ -244,7 +244,7 @@ class ModelPlotter():
 
     def plot_tsne(self, columns=None, save_prefix=None):
         if columns is None:
-            columns = ['extended_annotation2', 'major_component', 'leiden']
+            columns = ['extended_annotation', 'major_component', 'leiden']
         
         for column in columns:
             fig, ax = plt.subplots(figsize=(5, 5))
