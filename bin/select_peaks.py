@@ -316,9 +316,13 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
 
     embedding = emb_handler.embedding
 
-    filtered_adata.obsm['embedding'] = (embedding / embedding.sum(axis=0)).T
+    filtered_adata.obsm['embedding'] = embedding.T
+    filtered_adata.obsm['normalized_embedding'] = (embedding / embedding.sum(axis=0)).T
 
-    filtered_adata.obsp['distance_matrix'] = pairwise_distances(filtered_adata.obsm['embedding'].T, metric='jensenshannon')
+    filtered_adata.obsp['distance_matrix'] = pairwise_distances(
+        filtered_adata.obsm['normalized_embedding'].T,
+        metric='jensenshannon'
+    )
     
     filtered_adata.varm['basis'] = emb_handler.model_object.components_.T
     return filtered_adata, mask
