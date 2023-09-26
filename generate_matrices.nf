@@ -166,16 +166,15 @@ process generate_matrix {
 	"""
     awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order}  > file_list.txt
 
-    touch concatenated_output_0.txt
+    touch concatenated_output_final.txt
 
     # Loop through the rest of the batches
-    counter=1
     xargs -a file_list.txt -n 500 | while read -r batch; do
-        paste "concatenated_output_\$(expr \$counter - 1).txt" <(paste \$batch) | sed 's/^\t//' > "concatenated_output_\${counter}.txt"
-        ((counter++))
+        paste "concatenated_output_final.txt" <(paste \$batch) | sed 's/^\t//' > "tmp.txt"
+        mv tmp.txt concatenated_output_final.txt
     done
 
-    gzip "concatenated_output_\$(expr \$counter - 1).txt" > ${name}
+    gzip "concatenated_output_final.txt" > ${name}
 	"""
 }
 
