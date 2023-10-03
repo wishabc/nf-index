@@ -33,6 +33,7 @@ prefix <- args[5]
 params_f <- NULL
 
 if (length(args) >= 6) {
+  print("Taking existing params")
   params_f <- args[6]
 }
 

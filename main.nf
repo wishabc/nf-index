@@ -344,12 +344,24 @@ workflow npyMatrices {
 
 
 workflow existingModel {
-	params.normalization_params_dir = "$launchDir/${params.outdir}/params"
-	file(params.normalization_params_dir, checkIfExists: true, type: 'dir')
-	existing_params = Channel.fromPath("${params.normalization_params_dir}/*")
+    params.base_dir = "$launchDir/${params.outdir}"
+    normalization_params_dir = "${params.base_dir}/params"
+    file(normalization_params_dir, checkIfExists: true, type: 'dir')
+    autosomes_mask = Channel.fromPath(params.index_file)
+        | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
+        | map(it -> it[3]) // mask
+
+    matrices = Channel.of('binary', 'counts')
+        | map(it -> tuple("${it}.only_autosomes", file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
+        | combine(autosomes_mask)
+        | apply_filter_and_convert_to_np
+	
+	existing_params = Channel.fromPath("${normalization_params_dir}/*")
 		| map(it -> file(it))
-	bams_hotspots = readSamplesFile()
-	out = generateAndNormalize(bams_hotspots, existing_params)
+    
+    samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
+
+    out = normalizeMatrix(matrices, samples_order, existing_params)
 }
 
 
