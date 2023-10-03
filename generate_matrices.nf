@@ -174,7 +174,7 @@ process generate_matrix {
         mv tmp.txt concatenated_output_final.txt
     done
 
-    gzip -с concatenated_output_final.txt > ${name}
+    gzip -c concatenated_output_final.txt > ${name}
 	"""
 }
 
