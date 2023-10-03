@@ -345,8 +345,6 @@ workflow npyMatrices {
 
 workflow existingModel {
     params.base_dir = "$launchDir/${params.outdir}"
-    normalization_params_dir = "${params.base_dir}/params"
-    file(normalization_params_dir, checkIfExists: true, type: 'dir')
     autosomes_mask = Channel.fromPath(params.index_file)
         | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
         | map(it -> it[3]) // mask
@@ -356,7 +354,7 @@ workflow existingModel {
         | combine(autosomes_mask)
         | apply_filter_and_convert_to_np
 	
-	existing_params = Channel.fromPath("${normalization_params_dir}/*")
+	existing_params = Channel.fromPath("${params.base_dir}/params/*")
 		| map(it -> file(it))
     
     samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
