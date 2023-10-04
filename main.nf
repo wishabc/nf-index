@@ -152,6 +152,7 @@ process annotate_masterlist {
     publishDir "${params.outdir}/annotations"
     scratch true
     label "bigmem"
+    errorStrategy 'ignore'
 
     input: 
         tuple path(binary_matrix), path(filtered_masterlist), path(mask)

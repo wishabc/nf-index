@@ -8,13 +8,19 @@ import sys
 
 #Load in Binary Matrix and Metadata for subsampled SPOT score
 binary_file = sys.argv[1]
-with gzip.open(binary_file, 'rb') as f:
-    b = np.genfromtxt(f, delimiter='\t', dtype=np.uint8)
+#with gzip.open(binary_file, 'rb') as f:
+#    b = np.genfromtxt(f, delimiter='\t', dtype=np.uint8)
+
+b = np.load(binary_file)
+b_int  = b.astype(int)
+b_filtered = pd.DataFrame(b_int)
+del b_int
+del b
 
 mask_file = sys.argv[2]
 mask_df = pd.read_table(mask_file, header=None)
 mask_df.columns = ['mask']
-b_filtered = b[mask_df['mask'] == 1]
+#b_filtered = b[mask_df['mask'] == 1]
 print(b_filtered.shape)
 
 samples_file = sys.argv[3]
