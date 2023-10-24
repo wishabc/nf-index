@@ -168,6 +168,12 @@ process annotate_masterlist {
      echo "${filtered_masterlist}"
      head -10 ${filtered_masterlist}
 
+
+    cat ${params.chrom_sizes} \
+    | awk -v OFS='\t' '{ print \$1,0,\$2 }' \
+    > chrom_sizes.bed
+
+
      python $moduleDir/bin/spot1Annotations.py \
         ${binary_matrix} \
 	${mask} \
@@ -183,7 +189,7 @@ process annotate_masterlist {
     bash $moduleDir/bin/gencodeAnnotations.sh \
 	${filtered_masterlist} \
 	${params.gencode} \
-	${params.chromInfo} 
+	chrom_sizes.bed
 
 
     echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
