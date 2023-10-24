@@ -130,14 +130,14 @@ process count_tags {
     ext = bam_file.extension
 	"""
     if [ ${ext} != 'bam' ]; then 
-        samtools view -bh ${bam_file} > align.bam
+        samtools view -bh --reference ${params.genome_fasta} ${bam_file} > align.bam
         samtools index align.bam
     else
         ln -s ${bam_file} align.bam
         ln -s ${bam_file_index} align.bam.bai
     fi
 
-    count=`samtools stats ${bam_file} \
+    count=`samtools stats align.bam \
         | grep "^SN" \
         | grep "mapped and paired" \
         | cut -f3` && [[ \$count -gt 0 ]] && tag="-p" || tag=""
