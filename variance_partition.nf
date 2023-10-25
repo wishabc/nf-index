@@ -93,19 +93,19 @@ workflow variancePartition {
         out  
 }
 
-params.masterlist = "$launchDir/${params.outdir}/masterlist.only_autosomes.filtered.bed"
+params.masterlist = "${params.outdir}/masterlist.only_autosomes.filtered.bed"
 
 workflow convertToH5 {
     h5 = convert_to_h5(
-        Channel.fromPath("$launchDir/${params.outdir}/binary.only_autosomes.filtered.matrix.npy"),
-        Channel.fromPath("$launchDir/${params.outdir}/deseq_normalized.only_autosomes.filtered.sf.vst.npy"),
-        Channel.fromPath("$launchDir/${params.outdir}/samples_order.txt")
+        Channel.fromPath("${params.outdir}/binary.only_autosomes.filtered.matrix.npy"),
+        Channel.fromPath("${params.outdir}/deseq_normalized.only_autosomes.filtered.sf.vst.npy"),
+        Channel.fromPath("${params.outdir}/samples_order.txt")
     )
     variancePartition(Channel.fromPath(params.masterlist), h5)
 }
 
 workflow {
-    params.h5file = "$launchDir/${params.outdir}/matrices.h5"
+    params.h5file = "${params.outdir}/matrices.h5"
     params.formula = "~ (1 | extended_annotation) + (1 | ln_finished_date) + (1 | frac_method) + (1 | is_primary_tissues_all)"
     variancePartition(
         Channel.fromPath(params.masterlist),
