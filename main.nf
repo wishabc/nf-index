@@ -308,7 +308,7 @@ workflow {
 
 
 workflow existingMatrices {
-    params.base_dir = "$launchDir/${params.outdir}"
+    params.base_dir = params.outdir
 
     autosomes_mask = Channel.fromPath(params.index_file)
         | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
@@ -339,7 +339,7 @@ workflow annotateMasterlist {
 
 
 workflow npyMatrices {
-    params.base_dir = "$launchDir/${params.outdir}"
+    params.base_dir = params.outdir
     matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
         | map(it -> tuple(it, file("${params.base_dir}/${it}.filtered.matrix.npy")))
     
@@ -351,7 +351,7 @@ workflow npyMatrices {
 
 
 workflow existingModel {
-    params.base_dir = "$launchDir/${params.outdir}"
+    params.base_dir = params.outdir
     matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
         | map(it -> tuple(it, file("${params.base_dir}/${it}.filtered.matrix.npy")))
 	
