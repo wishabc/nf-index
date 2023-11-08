@@ -307,7 +307,7 @@ workflow {
 }
 
 
-workflow existingMatrices {
+workflow convertToNumpy {
     params.base_dir = params.outdir
 
     autosomes_mask = Channel.fromPath(params.index_file)
@@ -318,9 +318,15 @@ workflow existingMatrices {
         | map(it -> tuple("${it}.only_autosomes", file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
         | combine(autosomes_mask)
         | apply_filter_and_convert_to_np
+}
+
+
+workflow normalizeNpyMatrices {
+    params.base_dir = params.outdir
+    matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
+        | map(it -> tuple(it, file("${params.base_dir}/${it}.filtered.matrix.npy")))
     
     samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
-
 
     out = normalizeMatrix(matrices, samples_order, Channel.empty())
 }
@@ -335,18 +341,6 @@ workflow annotateMasterlist {
     Channel.fromPath("$launchDir/${params.outdir}/annotations/binary.filtered.matrix.npy")
         | combine(index_and_mask)
         | annotate_masterlist
-}
-
-
-workflow npyMatrices {
-    params.base_dir = params.outdir
-    matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
-        | map(it -> tuple(it, file("${params.base_dir}/${it}.filtered.matrix.npy")))
-    
-        
-    samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
-
-    out = normalizeMatrix(matrices, samples_order, Channel.empty())
 }
 
 
