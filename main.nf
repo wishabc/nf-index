@@ -338,7 +338,7 @@ workflow annotateMasterlist {
         | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
         | map(it -> tuple(it[0], it[1])) // index, mask
 
-    Channel.fromPath("$launchDir/${params.outdir}/annotations/binary.filtered.matrix.npy")
+    Channel.fromPath("${params.outdir}/annotations/binary.filtered.matrix.npy")
         | combine(index_and_mask)
         | annotate_masterlist
 }
