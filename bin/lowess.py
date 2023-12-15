@@ -214,8 +214,10 @@ class DataNormalize:
         thresholds = np.floor(perc[i] * density_mat.shape[1])
         for ind, i in enumerate(thresholds):
             over = num_samples_per_peak >= i
-            correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0], axis=0,
-                                               arr=density_mat[over, :])
+            correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0],
+                axis=0,
+                arr=density_mat[over, :]
+            )
             avg_cor = np.average(correlations, weights=weights)
             logger.info(f'Selecting threshold, iteration #{ind}. Correlation {avg_cor}')
             if avg_cor > self.correlation_limit:
@@ -348,19 +350,6 @@ def check_and_open_matrix_file(path, outpath):
         np.save(outpath, np_arr)
         return np_arr
 
-
-def make_out_path(outdir, prefix, matrix_type='signal', mode='npz'):
-    basename = os.path.join(outdir, f'{prefix}.{matrix_type}')
-    if mode == 'npz':
-        return basename + '.npz'
-    elif mode == 'numpy':
-        return basename + '.npy'
-    elif mode == 'txt':
-        return basename + '.txt'
-    elif mode == '':
-        return basename
-    else:
-        raise ValueError(f'Mode {mode} not in (npz, numpy, txt)')
 
 
 def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calculated_mean, weights):
