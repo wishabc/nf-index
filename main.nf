@@ -215,8 +215,8 @@ process annotate_masterlist {
         is_encode3.txt \
         dist_gene.txt \
         gwas_catalog_count.txt \
-	repeats.txt \
-	gencode_annotations.txt \
+        repeats.txt \
+        gencode_annotations.txt \
         spot1_metrics.tsv \
         gc_content.txt \
         | cat header.txt - > ${name}
