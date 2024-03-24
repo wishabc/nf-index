@@ -1,26 +1,3 @@
-import os
-import numpy as np
-from numpy import ma
-from scipy.stats import expon, spearmanr
-from statsmodels.nonparametric import smoothers_lowess
-from convert_to_numpy import read_matrix
-import multiprocessing as mp
-import logging
-import sys
-import argparse
-import gc
-import json
-
-handler = logging.StreamHandler(sys.stdout)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s  %(levelname)s  %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
-dtype = np.float64
-
-
 class DataNormalize:
     def __init__(self,
                  peak_outlier_threshold=0.999,
@@ -30,8 +7,9 @@ class DataNormalize:
                  sample_number=75_000,
                  bin_number=100,
                  min_peak_replication=0.25,
-                 sample_method='raw',
+                 sample_method='log',
                  cv_number=30,
+                 common_scale=50_000,
                  jobs=1,
                  ):
         self.cv_number = cv_number
@@ -42,9 +20,11 @@ class DataNormalize:
         self.peak_outlier_threshold = peak_outlier_threshold
         self.delta_fraction = delta_fraction
         self.correlation_limit = correlation_limit
-        self.cv_fraction = self.delta = None
+        self.cv_fraction = None
+        self.delta = 0
         self.sample_method = sample_method
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
+        self.common_scale = common_scale
         self.set_randomizer()
     
 
@@ -67,51 +47,67 @@ class DataNormalize:
         p = ~arr.mask
         return self.seed.choice(np.arange(arr.size)[p], size=int(size), replace=False)
 
-    def select_peaks_uniform(self, peaks, decent_peaks_mask, ignore=None):
+    @staticmethod
+    def check_argsort_thresholds(argsorts, bin_size):
+        unique_elements, counts = np.unique(argsorts, return_counts=True)
+        max_elems_in_bin = unique_elements[counts == counts.max()].max()
+
+        if max_elems_in_bin < bin_size:
+            logger.warning(f'Not enough peaks to sample in one of the bins: {max_elems_in_bin} < {bin_size}')
+            #bin_size = (max_elems_in_bin + bin_size) / 2
+
+    @staticmethod
+    def masked_ranks(a):
+        ranks = np.ma.array(np.empty_like(a, dtype=int), mask=a.mask)
+        ranks[~a.mask] = np.argsort(np.argsort(a[~a.mask]))
+        return ranks
+
+    def select_peaks_uniform(self, log_cpm, mean_log_cpm, weights, num_samples_per_peak):
         """
         Returns row indices of selected peaks
         """
-        if ignore is not None:
-            peaks_mask = decent_peaks_mask & ~ignore
-        else:
-            peaks_mask = decent_peaks_mask
+        # max_value = self.outlier_limit(masked_log_means)
+        # new_mask = ~masked_log_means.mask & (masked_log_means < max_value)
+        # vls = ma.masked_where(~new_mask, masked_log_means)
+        trimmed_log_means = mean_log_cpm
+        reproducible_peaks = num_samples_per_peak >= self.min_peak_replication * log_cpm.shape[1]
+    
+        masked_log_means = ma.masked_array(trimmed_log_means, ~reproducible_peaks)
+        
+        size = masked_log_means.count()
+        if size < self.sample_number:
+            logger.warning(f'Number of peaks is less than the sample number ({size} < {self.sample_number})')
+        peaks_to_sample = min(self.sample_number, size)
+        
+        bin_edges = np.linspace(trimmed_log_means.min(), trimmed_log_means.max(), self.bin_number + 1)
+        bin_size = np.ceil(peaks_to_sample / self.bin_number)
+        sampled_peaks_indicies = np.zeros(mean_log_cpm.shape, dtype=bool)
 
-        masked_peaks = ma.masked_array(peaks, ~peaks_mask)
-        k = min(self.sample_number, masked_peaks.count())
+        peak_variance = log_cpm.var(axis=1) # TODO: weighted variance
+        
+        per_bin_argsorts = np.full_like(masked_log_means, np.nan)
+        per_bin_argsorts = np.ma.masked_array(per_bin_argsorts, masked_log_means.mask)
+        for i in range(self.bin_number):
+            window_min = bin_edges[i]
+            window_max = bin_edges[i + 1]
 
-        if self.sample_method == 'random':
-            result_indices = self.sample_masked_array(masked_peaks, k)
-        else:
-            if self.sample_method == 'log':
-                vls = np.log(masked_peaks + 1)
-            elif self.sample_method == 'raw':
-                max_value = self.outlier_limit(masked_peaks)
-                new_mask = ~masked_peaks.mask & (masked_peaks < max_value)
-                vls = ma.masked_where(~new_mask, masked_peaks)
-            else:
-                raise ValueError('Method not in (random, log, raw)')
-            bin_width = (vls.max() - vls.min()) / self.bin_number
-            bin_size = np.ceil(k / self.bin_number)
-            sampled_peaks_indicies = []
+            new_mask = ~masked_log_means.mask & (trimmed_log_means >= window_min) & (trimmed_log_means < window_max)
+            if i == self.bin_number - 1:
+                new_mask |= (trimmed_log_means == window_max)
+            peak_variance_window = ma.masked_where(~new_mask, peak_variance)
+            per_bin_argsorts[new_mask] = self.masked_ranks(peak_variance_window)[new_mask]
 
-            for i in np.arange(vls.min(), vls.max(), bin_width):
-                window_min = i
-                window_max = i + bin_width
-                new_mask = ~vls.mask & (vls >= window_min) & (vls < window_max)
-                window_peaks = ma.masked_where(~new_mask, vls)
-
-                if window_peaks.count() == 0:
-                    continue
-                sampled_window_peaks_indices = self.sample_masked_array(window_peaks,
-                                                                        size=min(bin_size, window_peaks.count()))
-
-                sampled_peaks_indicies.append(sampled_window_peaks_indices)
-
-            result_indices = np.unique(np.concatenate(sampled_peaks_indicies))
-        # Convert to mask
-        res = np.zeros(peaks.shape, dtype=bool)
-        res[result_indices] = True
-        return res
+        #self.check_argsort_thresholds(per_bin_argsorts, bin_size)
+    
+        top_by_variance_thresholds = np.linspace(0, bin_size, 10)[::-1]
+        sampled_peaks_indicies = self.choose_best_score_by_correlation(
+            mean_log_cpm=masked_log_means, 
+            log_cpm=log_cpm,
+            peak_scores=-per_bin_argsorts, # - to choose "top" peaks
+            score_thresholds=-top_by_variance_thresholds,
+            weights=weights
+        )
+        return sampled_peaks_indicies
 
     @staticmethod
     def extrapolate(interpolated, to_extrap, base, predict):
@@ -198,9 +194,12 @@ class DataNormalize:
         """
         return np.nanmin(ma.masked_where(matrix <= 0.0, matrix), axis=0)
 
-
-    def get_peak_subset(self, ref_peaks, num_samples_per_peak: np.ndarray,
-                        density_mat: np.ndarray, weights: np.ndarray) -> np.ndarray:
+    def choose_best_score_by_correlation(self, 
+                        mean_log_cpm: np.ma.MaskedArray,
+                        log_cpm: np.ndarray,
+                        peak_scores: np.ma.MaskedArray,
+                        score_thresholds: np.ndarray,
+                        weights: np.ndarray) -> np.ndarray:
         """
         Select a subset of peaks well correlated to a reference (mean or geometric mean)
 
@@ -208,25 +207,29 @@ class DataNormalize:
         --------
         Indices for selected subset of peaks
         """
-        n = np.max(num_samples_per_peak)
-        perc = np.linspace(0, 1, 21)[:-1]
-        i = np.where(perc >= self.min_peak_replication)[0]
-        thresholds = np.floor(perc[i] * density_mat.shape[1])
-        for ind, i in enumerate(thresholds):
-            over = num_samples_per_peak >= i
-            correlations = np.apply_along_axis(lambda x: spearmanr(x, ref_peaks[over])[0],
+        best_thr = score_thresholds[0]
+        best_correlation = -np.inf
+        
+        for ind, thr in enumerate(score_thresholds):
+            over = (peak_scores >= thr).filled(False)
+            print(thr, over.sum())
+            print(np.unique(peak_scores))
+            correlations = np.apply_along_axis(
+                lambda x: spearmanr(x, mean_log_cpm[over])[0],
                 axis=0,
-                arr=density_mat[over, :]
+                arr=log_cpm[over, :]
             )
             avg_cor = np.average(correlations, weights=weights)
-            logger.info(f'Selecting threshold, iteration #{ind}. Correlation {avg_cor}')
+            if avg_cor > best_correlation:
+                best_correlation = avg_cor
+                best_thr = thr
+            logger.info(f'Selecting threshold, iteration #{ind}. Correlation {avg_cor}.')
             if avg_cor > self.correlation_limit:
                 break
+        else:
+            logger.warning(f'Caution: individual samples may be poorly captured by mean! Best correlation({best_correlation:.2f})')
 
-        if i > n:
-            logger.warning('Caution: individual samples may be poorly captured by mean!')
-
-        return num_samples_per_peak >= i
+        return peak_scores >= best_thr
 
     @staticmethod
     def unpack_and_apply(x, func1d, kwargs, *args):
@@ -254,39 +257,38 @@ class DataNormalize:
             return result if axis == 0 else result.T
         else:
             return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
-    
-    def get_xcounts(self, density_mat, mean_pseudocount, weights):
-        logger.info('Computing mean and pseudocounts for each peak')
-        mean_density = np.average(density_mat, axis=1, weights=weights)
-        xvalues = np.log(mean_density + mean_pseudocount)
-        return mean_density, xvalues
 
-    def sample_peaks(self, density_mat: np.ndarray, mean_density: np.ndarray, peaks_mat: np.ndarray, weights: np.ndarray):
+    def sample_peaks(self, log_cpm: np.ndarray, mean_log_cpm: np.ndarray, num_samples_per_peak: np.ndarray, weights: np.ndarray):
         """
         Select well-correlated peaks and sample a subset
         """
-        num_samples_per_peak = self.get_num_samples_per_peak(peaks_mat)
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
-        decent_peaks_mask = self.get_peak_subset(mean_density, num_samples_per_peak, density_mat, weights)
-        sampled_peaks_mask = self.select_peaks_uniform(mean_density, decent_peaks_mask)
-        logger.info(
-            f'Found {decent_peaks_mask.sum():,} well-correlated peaks, using method "{self.sample_method}"'
-            f' and sampled {sampled_peaks_mask.sum():,} peaks')
-
-        self.delta = np.percentile(mean_density, 99) * self.delta_fraction
+    
+        sampled_peaks_mask = self.select_peaks_uniform(
+            log_cpm, 
+            mean_log_cpm, 
+            weights=weights,
+            num_samples_per_peak=num_samples_per_peak
+        )
+        logger.info(f'Sampled {sampled_peaks_mask.sum():,} well-correlated peaks')
 
         return sampled_peaks_mask
 
-    def fit_lowess_params(self, diffs: np.ndarray, xvalues: np.ndarray,
-        sampled_peaks_mask: np.ndarray, weights: np.ndarray):
+    def fit_lowess_params(self, diffs: np.ndarray, xvalues: np.ndarray, sampled_peaks_mask: np.ndarray, weights: np.ndarray):
         _, S = diffs.shape
         logger.info('Computing LOWESS smoothing parameter via cross-validation')
         cv_set = self.seed.choice(S, size=min(self.cv_number, S), replace=False, p=weights)
-
-        cv_fraction = np.mean(self.parallel_apply_2D(self.choose_fraction_cv, axis=0,
-                                                     arr=diffs[:, cv_set], x=xvalues,
-                                                     sampled=sampled_peaks_mask,
-                                                     delta=self.delta))
+        
+        cv_fraction = np.mean(
+            self.parallel_apply_2D(
+                self.choose_fraction_cv,
+                axis=0,
+                arr=diffs[:, cv_set], 
+                x=xvalues,
+                sampled=sampled_peaks_mask,
+                delta=self.delta
+            )
+        )
         self.cv_fraction = cv_fraction
 
     def lowess_normalize(self, diffs: np.ndarray, xvalues: np.ndarray,
@@ -295,12 +297,17 @@ class DataNormalize:
         Normalizes to the mean of of the dataset
         Uses only well-correlated peaks to perform normalization
         """
-
         logger.info(f'Computing LOWESS on all the data with params - delta = {self.delta}, frac = {self.cv_fraction}')
 
-        norm = self.parallel_apply_2D(self.fit_and_extrapolate, axis=0,
-                                      arr=diffs, x=xvalues, sampled=sampled_peaks_mask,
-                                      delta=self.delta, frac=self.cv_fraction)
+        norm = self.parallel_apply_2D(
+            self.fit_and_extrapolate, 
+            axis=0,
+            arr=diffs,
+            x=xvalues,
+            sampled=sampled_peaks_mask,
+            delta=self.delta,
+            frac=self.cv_fraction
+        )
 
         logger.info('Normalizing finished')
         return np.exp(norm)
@@ -332,9 +339,9 @@ class DataNormalize:
             weights=weights
         )
 
-    @staticmethod
-    def get_scale_factors(matrix):
-        return np.divide(1., (matrix.sum(axis=0) * 2 / 1.e5), dtype=dtype)
+    def get_scale_factors(self, matrix):
+        # Divide by 50k - average # of peaks per sample
+        return np.divide(self.common_scale, matrix.sum(axis=0), dtype=dtype)
 
 
 def check_and_open_matrix_file(path, outpath):
@@ -367,113 +374,3 @@ def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calc
     as_scale_factors = (sf.T / sf_geomean).T
     np.save(scale_factor_path, as_scale_factors)
     return sf_geomean
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Matrix normalization using lowess')
-    parser.add_argument('peak_matrix', help='Path to binary peaks matrix')
-    parser.add_argument('signal_matrix', help='Path to matrix with read counts for each peak in every sample')
-    parser.add_argument('output', help='Path to directory to save normalized matrix into.')
-    parser.add_argument('--prefix', help='Filenames prefix', default='matrix')
-    parser.add_argument('--weights', help='Path to weights (for weighted lowess)')
-    parser.add_argument('--jobs', type=int,
-                        help='Number of jobs to parallelize calculations '
-                             '(can\'t be larger than number of samples. If 0 is provided - uses all available cores')
-    parser.add_argument('--model_params', help='Use existing lowess params ffor normalization. Expected to provide basename of the files with lowess params. E.g. provide "prefix.lowess_params" to load both params files: "prefix.lowess_params.json" and "prefix.lowess_params.npz".', default=None)
-    p_args = parser.parse_args()
-
-    model_params = p_args.model_params
-
-    if not os.path.exists(p_args.output):
-        os.mkdir(p_args.output)
-    base_path = os.path.join(p_args.output, p_args.prefix)
-    
-    dens_outpath = f'{base_path}.density.npy'
-    lowess_outpath = f'{base_path}.lowess.npy'
-    
-    model_save_params_path = f'{base_path}.lowess_params'
-
-    logger.info('Reading matrices')
-    counts_matrix = np.load(p_args.signal_matrix)
-    peaks_matrix = np.load(p_args.peak_matrix)
-    
-    N, S = counts_matrix.shape
-    assert counts_matrix.shape == peaks_matrix.shape
-    logger.info(f'Normalizing matrix with shape: {N:,};{S}')
-
-    if p_args.weights is not None:
-        weights = np.load(p_args.weights)
-    else:
-        weights = np.ones(S)
-
-    weights = weights / weights.sum()
-    data_norm = DataNormalize(jobs=p_args.jobs)
-    scale_factors = data_norm.get_scale_factors(counts_matrix)
-    density_matrix = counts_matrix * scale_factors
-    pseudocounts = data_norm.get_pseudocounts(density_matrix)
-    mean_pseudocount = pseudocounts.mean()
-    np.save(dens_outpath, density_matrix)
-    mean_scale_factors = scale_factors.mean()
-    mat_and_pseudo = np.log(density_matrix + pseudocounts)
-    del scale_factors
-    del counts_matrix
-
-    if model_params is None:
-        mean_density, xvals = data_norm.get_xcounts(
-            density_mat=density_matrix,
-            mean_pseudocount=mean_pseudocount,
-            weights=weights
-        )
-    
-        sampled_mask = data_norm.sample_peaks(
-            density_mat=density_matrix,
-            mean_density=mean_density,
-            peaks_mat=peaks_matrix,
-            weights=weights)
-        
-        differences = (mat_and_pseudo.T - xvals).T
-        del density_matrix
-        del peaks_matrix
-        gc.collect()
-
-        data_norm.fit_lowess_params(diffs=differences,
-            xvalues=xvals,
-            sampled_peaks_mask=sampled_mask,
-            weights=weights)
-        deseq2_mean_sf = None
-    else:
-        del density_matrix
-        del peaks_matrix
-        gc.collect()
-
-        xvals, sampled_mask, deseq2_mean_sf, weights = data_norm.load_params(model_params)
-        differences = (mat_and_pseudo.T - xvals).T
-
-    lowess_norm = data_norm.lowess_normalize(diffs=differences,
-        xvalues=xvals, sampled_peaks_mask=sampled_mask)
-
-    del differences
-    gc.collect()
-    np.save(lowess_outpath, lowess_norm)
-
-    logger.info('Reconstructing normed matrix')
-    density_matrix = np.load(dens_outpath)
-    normed = density_matrix / lowess_norm
-    normed = normed / mean_scale_factors
-
-    del density_matrix
-    del lowess_norm
-    gc.collect()
-    
-    logger.info('Saving normed matrix')
-    np.save(f'{base_path}.normed.npy', normed)
-    logger.info('Reading raw tags...')
-    counts_matrix = np.load(p_args.signal_matrix)
-
-    deseq2_mean_sf = get_deseq2_scale_factors(counts_matrix,
-        normed,
-        f'{base_path}.scale_factors.npy',
-        calculated_mean=deseq2_mean_sf,
-        weights=weights
-    )
-    data_norm.save_params(model_save_params_path, xvals, sampled_mask, deseq2_mean_sf, weights)
