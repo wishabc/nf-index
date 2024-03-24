@@ -1,3 +1,26 @@
+import os
+import numpy as np
+from numpy import ma
+from scipy.stats import expon, spearmanr
+from statsmodels.nonparametric import smoothers_lowess
+from convert_to_numpy import read_matrix
+import multiprocessing as mp
+import logging
+import sys
+import argparse
+import gc
+import json
+
+handler = logging.StreamHandler(sys.stdout)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s  %(levelname)s  %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+
+dtype = np.float64
+
+
 class DataNormalize:
     def __init__(self,
                  peak_outlier_threshold=0.999,
@@ -61,6 +84,7 @@ class DataNormalize:
         ranks = np.ma.array(np.empty_like(a, dtype=int), mask=a.mask)
         ranks[~a.mask] = np.argsort(np.argsort(a[~a.mask]))
         return ranks
+
 
     def select_peaks_uniform(self, log_cpm, mean_log_cpm, weights, num_samples_per_peak):
         """
@@ -209,11 +233,8 @@ class DataNormalize:
         """
         best_thr = score_thresholds[0]
         best_correlation = -np.inf
-        
         for ind, thr in enumerate(score_thresholds):
             over = (peak_scores >= thr).filled(False)
-            print(thr, over.sum())
-            print(np.unique(peak_scores))
             correlations = np.apply_along_axis(
                 lambda x: spearmanr(x, mean_log_cpm[over])[0],
                 axis=0,
@@ -374,3 +395,113 @@ def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calc
     as_scale_factors = (sf.T / sf_geomean).T
     np.save(scale_factor_path, as_scale_factors)
     return sf_geomean
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser('Matrix normalization using lowess')
+    parser.add_argument('peak_matrix', help='Path to binary peaks matrix')
+    parser.add_argument('signal_matrix', help='Path to matrix with read counts for each peak in every sample')
+    parser.add_argument('output', help='Path to directory to save normalized matrix into.')
+    parser.add_argument('--prefix', help='Filenames prefix', default='matrix')
+    parser.add_argument('--weights', help='Path to weights (for weighted lowess)')
+    parser.add_argument('--jobs', type=int,
+                        help='Number of jobs to parallelize calculations '
+                             '(can\'t be larger than number of samples. If 0 is provided - uses all available cores')
+    parser.add_argument('--model_params', help='Use existing lowess params ffor normalization. Expected to provide basename of the files with lowess params. E.g. provide "prefix.lowess_params" to load both params files: "prefix.lowess_params.json" and "prefix.lowess_params.npz".', default=None)
+    p_args = parser.parse_args()
+
+    model_params = p_args.model_params
+
+    if not os.path.exists(p_args.output):
+        os.mkdir(p_args.output)
+    base_path = os.path.join(p_args.output, p_args.prefix)
+    
+    cpm_matrix_outpath = f'{base_path}.density.npy'
+    lowess_outpath = f'{base_path}.lowess.npy'
+    
+    model_save_params_path = f'{base_path}.lowess_params'
+
+    logger.info('Reading matrices')
+    counts_matrix = np.load(p_args.signal_matrix)
+    peaks_matrix = np.load(p_args.peak_matrix)
+    
+    N, S = counts_matrix.shape
+    assert counts_matrix.shape == peaks_matrix.shape
+    logger.info(f'Normalizing matrix with shape: {N:,};{S}')
+
+    if p_args.weights is not None:
+        weights = np.load(p_args.weights)
+    else:
+        weights = np.ones(S)
+
+    pseudocount = 1
+    weights = weights / weights.sum()
+    data_norm = DataNormalize(jobs=p_args.jobs)
+    scale_factors = data_norm.get_scale_factors(counts_matrix)
+    cpm_matrix = counts_matrix * scale_factors
+    np.save(cpm_matrix_outpath, cpm_matrix)
+    log_cpm_matrix = np.log(cpm_matrix + pseudocount * scale_factors)
+
+    num_samples_per_peak = data_norm.get_num_samples_per_peak(peaks_matrix)
+    del scale_factors
+    del counts_matrix
+    del peaks_matrix
+
+    if model_params is None:
+        mean_log_cpm = np.average(log_cpm_matrix, axis=1, weights=weights)
+
+        sampled_mask = data_norm.sample_peaks(
+            log_cpm=log_cpm_matrix,
+            mean_log_cpm=mean_log_cpm,
+            num_samples_per_peak=num_samples_per_peak,
+            weights=weights
+        )
+        
+        log_differences = log_cpm_matrix - mean_log_cpm[:, None]
+        
+        data_norm.fit_lowess_params(
+            diffs=log_differences,
+            xvalues=mean_log_cpm,
+            sampled_peaks_mask=sampled_mask,
+            weights=weights
+        )
+        deseq2_mean_sf = None
+    else:
+        mean_log_cpm, sampled_mask, deseq2_mean_sf, weights = data_norm.load_params(model_params)
+        log_differences = log_cpm_matrix - mean_log_cpm[:, None]
+
+    del log_cpm_matrix
+    gc.collect()
+    lowess_norm = data_norm.lowess_normalize(
+        diffs=log_differences,
+        xvalues=mean_log_cpm,
+        sampled_peaks_mask=sampled_mask
+    )
+
+    del log_differences
+    gc.collect()
+    np.save(lowess_outpath, lowess_norm)
+
+    logger.info('Reconstructing normed matrix')
+    cpm_matrix = np.load(cpm_matrix_outpath)
+    normed = cpm_matrix / lowess_norm
+    # Not sure
+    normed = normed / data_norm.common_scale
+
+    del cpm_matrix
+    del lowess_norm
+    gc.collect()
+    
+    logger.info('Saving normed matrix')
+    np.save(f'{base_path}.normed.npy', normed)
+    logger.info('Reading raw tags...')
+    counts_matrix = np.load(p_args.signal_matrix)
+
+    deseq2_mean_sf = get_deseq2_scale_factors(
+        counts_matrix,
+        normed,
+        f'{base_path}.scale_factors.npy',
+        calculated_mean=deseq2_mean_sf,
+        weights=weights
+    )
+    data_norm.save_params(model_save_params_path, xvals, sampled_mask, deseq2_mean_sf, weights)
