@@ -53,4 +53,3 @@ if __name__ == '__main__':
         assert mask.shape[0] == matrix_dense.shape[0]
         matrix_dense = matrix_dense[mask, :]
     np.save(args.outpath, matrix_dense)
-    #convert_to_sparse(matrix_dense, out_path)

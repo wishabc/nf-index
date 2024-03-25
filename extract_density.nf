@@ -1,3 +1,5 @@
+#!/usr/bin/env nextflow
+nextflow.enable.dsl = 2
 
 
 process extract_max_density {

@@ -23,7 +23,7 @@ process collate_and_chunk {
             -v minChunkSep2=4000 \
             -v minPerChunk=500 \
             -v maxPerChunk=100000 \
-            -f $moduleDir/bin/chunk_bed.awk
+            -f $moduleDir/bin/index_scripts/chunk_bed.awk
     """
 }
 
@@ -43,7 +43,7 @@ process process_chunk {
     script:
     prefix = "${chunk_file.baseName}"
     """
-    Rscript $moduleDir/bin/code_build.R \
+    Rscript $moduleDir/bin/index_scripts/code_build.R \
         ${prefix} \
         $moduleDir/bin \
         ./
@@ -68,7 +68,7 @@ process resolve_overlaps {
     script:
     prefix = "${chunk_file.baseName}"
     """
-    Rscript $moduleDir/bin/code_overlap.R \
+    Rscript $moduleDir/bin/index_scripts/code_overlap.R \
         ${prefix} \
         $moduleDir/bin
     """
@@ -111,7 +111,7 @@ process merge_chunks {
         | awk -v OFS='\t' '{ print \$1,0,\$2 }' \
         > chrom_sizes.bed
     
-    bash $moduleDir/bin/code_gen_masterlist.sh \
+    bash $moduleDir/bin/index_scripts/code_gen_masterlist.sh \
         ${params.masterlist_id} \
         chrom_sizes.bed \
         ./

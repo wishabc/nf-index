@@ -24,7 +24,7 @@ process fit_nmf {
 	script:
     prefix = "${fname}.${n_components}"
 	"""
-    python3 $moduleDir/bin/perform_NMF.py \
+    python3 $moduleDir/bin/post_processing/perform_NMF.py \
         ${matrix_path} \
         ${prefix} \
         ${n_components} \
@@ -48,7 +48,7 @@ process visualize_nmf {
 
 	script:
 	"""
-    python3 $moduleDir/bin/visualize_nmf.py \
+    python3 $moduleDir/bin/post_processing/visualize_nmf.py \
         ${params.clustering_meta} \
         ${params.samples_order_path} \
         ${prefix} \

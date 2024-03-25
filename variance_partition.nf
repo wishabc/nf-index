@@ -17,7 +17,7 @@ process variance_partition {
     name = "${start_index}.variance_partition.tsv"
     end_index = start_index + params.chunk_size - 1
     """
-    Rscript $moduleDir/bin/variance_partition.R \
+    Rscript $moduleDir/bin/variance_partition/variance_partition.R \
         ${params.samples_file} \
         ${start_index} \
         ${params.chunk_size} \
@@ -43,7 +43,7 @@ process convert_to_h5 {
     script:
     name = "matrices.h5"
     """
-    python3 $moduleDir/bin/convert_to_h5.py \
+    python3 $moduleDir/bin/variance_partition/convert_to_h5.py \
         ${vst_matrix} \
         ${samples_names} \
         ${name} \

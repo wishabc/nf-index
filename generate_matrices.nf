@@ -7,7 +7,6 @@ process get_samples_order {
     
     output:
         path name
-    
 
     script:
     name = "samples_order.txt"
@@ -47,7 +46,7 @@ process write_rows {
     script:
     binary = "${chunk_file.baseName}.binary.txt"
     """
-    $moduleDir/bin/writeRowsPerChunkForMatrices \
+    $moduleDir/bin/index_scripts/writeRowsPerChunkForMatrices \
         ${samples_order} \
         ${chunks_order} \
         ${chunk_file} \
@@ -89,7 +88,8 @@ process collect_chunks {
     script:
     matrix = "matrix.${prefix}.mtx.gz"
     """
-    ls chunks/ | wc -l \
+    ls chunks/ \
+        | wc -l \
         | awk -v dir="chunks/" \
          '{for(i=1;i<=\$1;i++){printf("%s/chunk%04d.${prefix}.txt ",dir,i)}printf("\\n");}' \
         | xargs cat | gzip > ${matrix}
@@ -130,7 +130,9 @@ process count_tags {
     ext = bam_file.extension
 	"""
     if [ ${ext} != 'bam' ]; then 
-        samtools view -bh --reference ${params.genome_fasta} ${bam_file} > align.bam
+        samtools view -bh \
+            --reference ${params.genome_fasta} \
+            ${bam_file} > align.bam
         samtools index align.bam
     else
         ln -s ${bam_file} align.bam
@@ -164,7 +166,7 @@ process generate_matrix {
 	script:
     name = "matrix.${prefix}.mtx.gz"
 	"""
-    awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order}  > file_list.txt
+    awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order} > file_list.txt
 
     touch concatenated_output_final.txt
 
@@ -249,7 +251,6 @@ workflow {
     } else {
         peaks_files = Channel.empty()
     }
-
     
     generateMatrices(unfiltered_masterlist, samples_order, peaks_files, bams_hotspots)
 }
