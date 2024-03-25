@@ -10,11 +10,10 @@ process normalize_matrix {
 	publishDir "${params.outdir}/norm", pattern: "${prefix}.scale_factors.npy"
 	publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.*"
 
-
 	input:
         path peaks_matrix
 		path signal_matrix
-		val norm_params
+		path norm_params, stageAs: "params/*"
 
 	output:
 		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
@@ -25,7 +24,7 @@ process normalize_matrix {
 	script:
 	prefix = 'normalized.only_autosomes.filtered'
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
-	normalization_params = n ? "--model_params ${n.parent}/${n.baseName}" : ""
+	normalization_params = n ? "--model_params params/${n.baseName}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
@@ -47,7 +46,7 @@ process deseq2 {
 	input:
 		tuple path(signal_matrix), path(scale_factors)
 		path samples_order
-		val norm_params
+		path norm_params, stageAs: "params/*"
 
 	output:
 		path "${prefix}*.npy", emit: matrix
@@ -55,7 +54,7 @@ process deseq2 {
 
 	script:
 	prefix = "deseq_normalized.only_autosomes.filtered"
-	normalization_params = norm_params ?: ""
+	normalization_params = norm_params ? "params/${norm_params}" : ""
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
 		${signal_matrix} \
@@ -97,29 +96,28 @@ workflow normalizeMatrix {
 		out
 }
 
-workflow normalizeNpyMatrices {
-    params.base_dir = params.outdir
+// Re-use existing model from other run (e.g. different samples)
+workflow normalizeUsingExistingModel {
+    params.template_dir = "/path/to/previous/run"
+    if (!file(params.template_dir).exists()) {
+        error "Template directory ${params.template_dir} does not exist!"
+    }
     matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
-        | map(it -> tuple(it, file("${params.base_dir}/${it}.filtered.matrix.npy")))
+        | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy")))
     
-    samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
+    samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
 
-    out = normalizeMatrix(matrices, samples_order, Channel.empty())
-}
-
-workflow existingModel {
-    params.base_dir = params.outdir
-    matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
-        | map(it -> tuple(it, file("${params.base_dir}/${it}.filtered.matrix.npy")))
-	
-	existing_params = Channel.fromPath("${params.base_dir}/params/*")
-		| map(it -> file(it))
-    
-    samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
+    existing_params = Channel.fromPath("${template_dir}/params/*")
 
     out = normalizeMatrix(matrices, samples_order, existing_params)
 }
 
+// De-novo normalization
 workflow {
+    matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
+        | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy")))
+    
+    samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
 
+    out = normalizeMatrix(matrices, samples_order, Channel.empty())
 }
