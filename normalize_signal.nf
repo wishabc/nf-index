@@ -108,7 +108,7 @@ workflow normalizeUsingExistingModel {
     
     samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
 
-    existing_params = Channel.fromPath("${template_dir}/params/*")
+    existing_params = Channel.fromPath("${params.template_dir}/params/*")
 
     out = normalizeMatrix(matrices, samples_order, existing_params)
 }
@@ -119,6 +119,7 @@ workflow {
         | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy", checkIfExists: true)))
     
     samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
+    | view()
 
     out = normalizeMatrix(matrices, samples_order, Channel.empty())
 }
