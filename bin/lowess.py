@@ -43,17 +43,16 @@ class DataNormalize:
         self.bin_count_quantile = bin_count_quantile
         self.delta_fraction = delta_fraction
         self.correlation_limit = correlation_limit
-        self.cv_fraction = None
+        self.cv_fraction = self.seed = None
         self.delta = 0
         self.sample_method = sample_method
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
         self.common_scale = common_scale
         self.set_randomizer()
-    
 
     def set_randomizer(self):
         self.seed = np.random.RandomState(self.seed_number)
-    
+
     def outlier_limit(self, x):
         """
         Returns the outlier limit for the data by fitting an exponential distribution to the right tail
@@ -74,7 +73,7 @@ class DataNormalize:
     def masked_ranks(a):
         ranks = np.ma.array(np.empty_like(a, dtype=int), mask=a.mask)
         ranks[~a.mask] = np.argsort(np.argsort(a[~a.mask]))
-        return ranks# / a.count()
+        return ranks  # / a.count()
 
     @staticmethod
     def weighted_variance(x, w):
@@ -94,16 +93,14 @@ class DataNormalize:
 
         max_value = self.outlier_limit(repr_log_means)
         masked_log_means = ma.masked_where(
-            ~repr_log_means.mask & (repr_log_means > max_value), 
+            ~repr_log_means.mask & (repr_log_means > max_value),
             repr_log_means
         )
 
         bin_edges = np.linspace(masked_log_means.min(), masked_log_means.max(), self.bin_number + 1)
 
-        sampled_peaks_indicies = np.zeros(mean_log_cpm.shape, dtype=bool)
-        
         peak_variance = self.weighted_variance(log_cpm, weights)
-        
+
         per_bin_ranks = np.full_like(masked_log_means, np.nan)
         per_bin_ranks = np.ma.masked_array(per_bin_ranks, masked_log_means.mask)
         for i in range(self.bin_number):
@@ -119,14 +116,14 @@ class DataNormalize:
         counts, _ = np.histogram(masked_log_means.compressed(), bins=bin_edges)
         bin_size = np.quantile(counts, self.bin_count_quantile)
 
-        #self.check_argsort_thresholds(per_bin_argsorts, bin_size)
-    
+        # self.check_argsort_thresholds(per_bin_argsorts, bin_size)
+
         bottom_by_variance_thresholds = np.linspace(0, bin_size, 20)[::-1]
         # bottom_by_variance_thresholds = np.linspace(0, 1, 20)[1:][::-1] # for percentiles
         sampled_peaks_indicies = self.choose_best_score_by_correlation(
             mean_log_cpm=masked_log_means,
             log_cpm=log_cpm,
-            peak_scores=-per_bin_ranks, # - to choose "top" peaks
+            peak_scores=-per_bin_ranks,  # - to choose "top" peaks
             score_thresholds=-bottom_by_variance_thresholds,
             weights=weights,
         )
@@ -162,10 +159,11 @@ class DataNormalize:
         extrapolated = self.extrapolate(interpolated, x, x[sampled], lowess_est)
         return extrapolated
 
-    def run_lowess(self, y, x, sampled, frac, delta):
+    @staticmethod
+    def run_lowess(y, x, sampled, frac, delta):
         return smoothers_lowess.lowess(y[sampled], x[sampled],
-                                                return_sorted=False, it=4,
-                                                frac=frac, delta=delta)
+                                       return_sorted=False, it=4,
+                                       frac=frac, delta=delta)
 
     def fit_and_extrapolate(self, y, x, sampled, frac, delta):
         smoothed_values = self.run_lowess(y, x, sampled, frac, delta)
@@ -217,12 +215,12 @@ class DataNormalize:
         """
         return np.nanmin(ma.masked_where(matrix <= 0.0, matrix), axis=0)
 
-    def choose_best_score_by_correlation(self, 
-                        mean_log_cpm: np.ma.MaskedArray,
-                        log_cpm: np.ndarray,
-                        peak_scores: np.ma.MaskedArray,
-                        score_thresholds: np.ndarray,
-                        weights: np.ndarray) -> np.ndarray:
+    def choose_best_score_by_correlation(self,
+                                         mean_log_cpm: np.ma.MaskedArray,
+                                         log_cpm: np.ndarray,
+                                         peak_scores: np.ma.MaskedArray,
+                                         score_thresholds: np.ndarray,
+                                         weights: np.ndarray) -> np.ndarray:
         """
         Select a subset of peaks well correlated to a reference (mean or geometric mean)
 
@@ -247,7 +245,8 @@ class DataNormalize:
             if avg_cor > self.correlation_limit:
                 break
         else:
-            logger.warning(f'Caution: individual samples may be poorly captured by mean! Best correlation({best_correlation:.2f})')
+            logger.warning(
+                f'Caution: individual samples may be poorly captured by mean! Best correlation({best_correlation:.2f})')
 
         return peak_scores >= best_thr
 
@@ -278,15 +277,16 @@ class DataNormalize:
         else:
             return np.apply_along_axis(func1d, axis, arr, *args, **kwargs)
 
-    def sample_peaks(self, log_cpm: np.ndarray, mean_log_cpm: np.ndarray, num_samples_per_peak: np.ndarray, weights: np.ndarray):
+    def sample_peaks(self, log_cpm: np.ndarray, mean_log_cpm: np.ndarray, num_samples_per_peak: np.ndarray,
+                     weights: np.ndarray):
         """
         Select well-correlated peaks and sample a subset
         """
         logger.info(f'Sampling representative (well-correlated) peaks (r2>{self.correlation_limit}) to mean')
-    
+
         sampled_peaks_mask = self.select_peaks_uniform(
-            log_cpm, 
-            mean_log_cpm, 
+            log_cpm,
+            mean_log_cpm,
             weights=weights,
             num_samples_per_peak=num_samples_per_peak
         )
@@ -294,16 +294,17 @@ class DataNormalize:
 
         return sampled_peaks_mask
 
-    def fit_lowess_params(self, diffs: np.ndarray, xvalues: np.ndarray, sampled_peaks_mask: np.ndarray, weights: np.ndarray):
+    def fit_lowess_params(self, diffs: np.ndarray, xvalues: np.ndarray, sampled_peaks_mask: np.ndarray,
+                          weights: np.ndarray):
         _, S = diffs.shape
         logger.info('Computing LOWESS smoothing parameter via cross-validation')
         cv_set = self.seed.choice(S, size=min(self.cv_number, S), replace=False, p=weights)
-        
+
         cv_fraction = np.mean(
             self.parallel_apply_2D(
                 self.choose_fraction_cv,
                 axis=0,
-                arr=diffs[:, cv_set], 
+                arr=diffs[:, cv_set],
                 x=xvalues,
                 sampled=sampled_peaks_mask,
                 delta=self.delta
@@ -312,7 +313,7 @@ class DataNormalize:
         self.cv_fraction = cv_fraction
 
     def lowess_normalize(self, diffs: np.ndarray, xvalues: np.ndarray,
-        sampled_peaks_mask: np.ndarray):
+                         sampled_peaks_mask: np.ndarray):
         """
         Normalizes to the mean of of the dataset
         Uses only well-correlated peaks to perform normalization
@@ -320,7 +321,7 @@ class DataNormalize:
         logger.info(f'Computing LOWESS on all the data with params - delta = {self.delta}, frac = {self.cv_fraction}')
 
         norm = self.parallel_apply_2D(
-            self.fit_and_extrapolate, 
+            self.fit_and_extrapolate,
             axis=0,
             arr=diffs,
             x=xvalues,
@@ -332,30 +333,32 @@ class DataNormalize:
         logger.info('Normalizing finished')
         return np.exp(norm)
 
-    def load_params(self, model_params):
-        # unpack params from npz array
-        with open(f'{model_params}.json') as f:
+    def load_params(self, model_params_path):
+        # TODO: remove deseq2_mean_sf
+        with open(f'{model_params_path}.json') as f:
             class_params = json.load(f)
         for key, value in class_params.items():
             setattr(self, key, value)
         self.set_randomizer()
-        arrays = np.load(f'{model_params}.npz')
-        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf'], arrays['weights']
-        
+        arrays = np.load(f'{model_params_path}.npz')
+        #arrays['deseq2_mean_sf']
+        return arrays['xvalues'], arrays['sampled_mask'], None, arrays['weights']
+
     def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf, weights):
         for ext in '.npz', '.json':
             if os.path.exists(f'{save_path}{ext}'):
                 logger.warning(f'File {save_path}{ext} exists, model params were not saved')
                 return
-        
+
         with open(f'{save_path}.json', 'w') as f:
-            params_dict  = {x:y for x,y in self.__dict__.items() if x != 'seed'}
+            params_dict = {x: y for x, y in self.__dict__.items() if x != 'seed'}
             json.dump(params_dict, f, indent=2)
 
-        np.savez_compressed(f'{save_path}.npz',
+        np.savez_compressed(
+            f'{save_path}.npz',
             xvalues=xvals,
             sampled_mask=sampled_mask,
-            deseq2_mean_sf=deseq2_mean_sf,
+            #deseq2_mean_sf=deseq2_mean_sf,
             weights=weights
         )
 
@@ -378,34 +381,27 @@ def check_and_open_matrix_file(path, outpath):
         return np_arr
 
 
-
-def get_deseq2_scale_factors(raw_tags, as_normed_matrix, scale_factor_path, calculated_mean, weights):
-    logger.info('Calculating scale factors...')
-    sf = raw_tags / as_normed_matrix
-    i = (raw_tags == 0) | (as_normed_matrix == 0)
-    sf[i] = 1
-
-    sf[np.isnan(sf)] = 1
-    sf[~np.isfinite(sf)] = 1
-    if calculated_mean is not None:
-        sf_geomean = calculated_mean
-    else:
-        sf_geomean = np.exp(np.average(np.log(sf), axis=1, weights=weights))
-    as_scale_factors = (sf.T / sf_geomean).T
-    np.save(scale_factor_path, as_scale_factors)
-    return sf_geomean
+# def get_deseq2_scale_factors(raw_count_matrix, lowess_normed_matrix, calculated_mean, weights):
+#     logger.info('Calculating scale factors...')
+#     sf = raw_count_matrix / lowess_normed_matrix
+#     i = (raw_count_matrix == 0) | (lowess_normed_matrix == 0)
+#     sf[i] = 1
+#
+#     sf[np.isnan(sf)] = 1
+#     sf[~np.isfinite(sf)] = 1
+#
+#     return sf_geomean
 
 
-def main(counts_matrix, peaks_matrix, weights=None):
-    cpm_matrix_outpath = "tmp.cpm.npy"
-    N, S = counts_matrix.shape
-    assert counts_matrix.shape == peaks_matrix.shape
+def main(count_matrix, peak_matrix, weights=None):
+    N, S = count_matrix.shape
+    assert count_matrix.shape == peak_matrix.shape
     logger.info(f'Normalizing matrix with shape: {N:,};{S}')
     if weights is None:
         weights = np.ones(S)
     weights = weights / weights.sum()
     pseudocount = 1
-        
+
     data_norm = DataNormalize(
         jobs=p_args.jobs,
         peak_outlier_threshold=1,
@@ -413,14 +409,10 @@ def main(counts_matrix, peaks_matrix, weights=None):
         min_peak_replication=0,
         bin_number=20,
     )
-    scale_factors = data_norm.get_scale_factors(counts_matrix)
-    cpm_matrix = counts_matrix * scale_factors
+    scale_factors = data_norm.get_scale_factors(count_matrix)
+    log_cpm_matrix = np.log((count_matrix + pseudocount) * scale_factors)
 
-    np.save(cpm_matrix_outpath, cpm_matrix)
-
-    log_cpm_matrix = np.log(cpm_matrix + pseudocount * scale_factors)
-
-    num_samples_per_peak = data_norm.get_num_samples_per_peak(peaks_matrix)
+    num_samples_per_peak = data_norm.get_num_samples_per_peak(peak_matrix)
 
     if model_params is None:
         mean_log_cpm = np.average(log_cpm_matrix, axis=1, weights=weights)
@@ -431,61 +423,41 @@ def main(counts_matrix, peaks_matrix, weights=None):
             num_samples_per_peak=num_samples_per_peak,
             weights=weights
         )
-        
+
         log_differences = log_cpm_matrix - mean_log_cpm[:, None]
-        
+
         data_norm.fit_lowess_params(
             diffs=log_differences,
             xvalues=mean_log_cpm,
             sampled_peaks_mask=sampled_mask,
             weights=weights
         )
-        deseq2_mean_sf = None
+        #deseq2_mean_sf = None
     else:
-        mean_log_cpm, sampled_mask, deseq2_mean_sf, weights = data_norm.load_params(model_params)
+        mean_log_cpm, sampled_mask, _, weights = data_norm.load_params(model_params)
         log_differences = log_cpm_matrix - mean_log_cpm[:, None]
-    
-    lowess_norm = data_norm.lowess_normalize(
+
+    lowess_normalized = data_norm.lowess_normalize(
         diffs=log_differences,
         xvalues=mean_log_cpm,
         sampled_peaks_mask=sampled_mask
     )
-    del log_differences
-    gc.collect()
+    normalized = ((1 + count_matrix) / lowess_normalized - 1)
+    sf = count_matrix / normalized
 
-    return data_norm, log_cpm_matrix, lowess_norm
-    
-def reconstruct_deseq2_scale_factors():
-    logger.info('Reconstructing normed matrix')
-    cpm_matrix = np.load(cpm_matrix_outpath)
-    normed = cpm_matrix / lowess_norm
-    # Not sure
-    normed = normed / data_norm.common_scale
+    i = (count_matrix <= 0) | (normalized <= 0)
+    sf[i] = 1
+    sf[np.isnan(sf)] = 1
+    sf[~np.isfinite(sf)] = 1
 
-    del cpm_matrix
-    del lowess_norm
-    gc.collect()
-    
-    logger.info('Saving normed matrix')
-    np.save(f'{base_path}.normed.npy', normed)
-    logger.info('Reading raw tags...')
-    counts_matrix = np.load(p_args.signal_matrix)
+    # if deseq2_mean_sf is not None:
+    #     sf_geometric_mean = deseq2_mean_sf
+    # else:
+    #     sf_geometric_mean = np.exp(np.average(np.log(sf), axis=1, weights=weights))
+    # sf /= sf_geometric_mean[:, None]
 
-    deseq2_mean_sf = get_deseq2_scale_factors(
-        counts_matrix,
-        normed,
-        f'{base_path}.scale_factors.npy',
-        calculated_mean=deseq2_mean_sf,
-        weights=weights
-    )
-    data_norm.save_params(
-        model_save_params_path, 
-        mean_log_cpm,
-        sampled_mask,
-        deseq2_mean_sf,
-        weights
-    )
-    
+    return data_norm, sf, (log_differences, mean_log_cpm, sampled_mask)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
@@ -497,7 +469,9 @@ if __name__ == '__main__':
     parser.add_argument('--jobs', type=int,
                         help='Number of jobs to parallelize calculations '
                              '(can\'t be larger than number of samples. If 0 is provided - uses all available cores')
-    parser.add_argument('--model_params', help='Use existing lowess params ffor normalization. Expected to provide basename of the files with lowess params. E.g. provide "prefix.lowess_params" to load both params files: "prefix.lowess_params.json" and "prefix.lowess_params.npz".', default=None)
+    parser.add_argument('--model_params',
+                        help='Use existing lowess params ffor normalization. Expected to provide basename of the files with lowess params. E.g. provide "prefix.lowess_params" to load both params files: "prefix.lowess_params.json" and "prefix.lowess_params.npz".',
+                        default=None)
     p_args = parser.parse_args()
 
     model_params = p_args.model_params
@@ -506,24 +480,32 @@ if __name__ == '__main__':
         os.mkdir(p_args.output)
     base_path = os.path.join(p_args.output, p_args.prefix)
 
-    model_save_params_path = f'{base_path}.lowess_params'
-
     logger.info('Reading matrices')
     counts_matrix = np.load(p_args.signal_matrix)
     peaks_matrix = np.load(p_args.peak_matrix)
-    
-    
+
     if p_args.weights is not None:
-        weights = np.load(p_args.weights)
+        sample_weights = np.load(p_args.weights)
     else:
-        weights = None
+        sample_weights = None
 
-    log_cpm_matrix, lowess_norm = main(counts_matrix, peaks_matrix, weights=weights)
-
-    np.save(f'{base_path}.logcpm.npy', log_cpm_matrix)
-    del log_cpm_matrix
+    data_normalize, deseq_scale_factors, params = main(counts_matrix, peaks_matrix, weights=sample_weights)
+    
+    log_diffs, mean_log_cpms, sampled_peaks_mask = params
+    np.save(f'{base_path}.log_difference.npy', log_diffs)
+    del log_diffs
     gc.collect()
 
-    np.save(f'{base_path}.lowess.npy', lowess_norm)
-
+    sf_geometric_mean = None
     
+    data_normalize.save_params(
+        f'{base_path}.lowess_params',
+        mean_log_cpms,
+        sampled_peaks_mask,
+        sf_geometric_mean,
+        sample_weights
+    )
+
+    np.save(f'{base_path}.scale_factors.npy', deseq_scale_factors)
+
+

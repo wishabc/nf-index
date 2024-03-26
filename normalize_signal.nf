@@ -7,8 +7,8 @@ def non_required_arg(value, key) {
 process normalize_matrix {
 	conda params.conda
 	label "bigmem"
-	publishDir "${params.outdir}/norm", pattern: "${prefix}.normed.npy"
 	publishDir "${params.outdir}/norm", pattern: "${prefix}.scale_factors.npy"
+    publishDir "${params.outdir}/norm", pattern: "${prefix}.log_difference.npy"
 	publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.*"
 
 	input:
@@ -18,7 +18,7 @@ process normalize_matrix {
 
 	output:
 		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
-		path "${prefix}.normed.npy", emit: normed_matrix
+        path "${prefix}.log_difference.npy", emit: log_diffs
 		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
 		
 
