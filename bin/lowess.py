@@ -93,7 +93,7 @@ class DataNormalize:
         Returns weighted variance
         """
         mean = np.average(x, weights=w, axis=1)
-        return np.average((x - mean) ** 2, weights=w[:, None], axis=1)
+        return np.average((x - mean[:, None]) ** 2, weights=w, axis=1)
 
     def select_peaks_uniform(self, log_cpm, mean_log_cpm, weights, num_samples_per_peak):
         """
