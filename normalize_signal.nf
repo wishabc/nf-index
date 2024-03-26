@@ -55,7 +55,7 @@ process deseq2 {
 
 	script:
 	prefix = "deseq_normalized.only_autosomes.filtered"
-	normalization_params = norm_params.name != "empty.params" ? "params/${norm_params.name}" : ""
+	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
 		${signal_matrix} \
