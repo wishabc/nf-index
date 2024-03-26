@@ -14,7 +14,7 @@ process normalize_matrix {
 	input:
         path peaks_matrix
 		path signal_matrix
-		path norm_params, stageAs: "params/*"
+		val norm_params
 
 	output:
 		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
@@ -25,7 +25,7 @@ process normalize_matrix {
 	script:
 	prefix = 'normalized.only_autosomes.filtered'
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
-	normalization_params = n ? "--model_params params/${n.baseName}" : ""
+	normalization_params = n ? "--model_params ${n.parent}/${n.baseName}" : ""
 	"""
 	python3 $moduleDir/bin/lowess.py \
 		${peaks_matrix} \
@@ -47,7 +47,7 @@ process deseq2 {
 	input:
 		tuple path(signal_matrix), path(scale_factors)
 		path samples_order
-		path norm_params, stageAs: "params/*"
+		val norm_params
 
 	output:
 		path "${prefix}*.npy", emit: matrix
@@ -55,7 +55,7 @@ process deseq2 {
 
 	script:
 	prefix = "deseq_normalized.only_autosomes.filtered"
-	normalization_params = norm_params ? "params/${norm_params}" : ""
+	normalization_params = norm_params ?: ""
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
 		${signal_matrix} \
@@ -119,7 +119,6 @@ workflow {
         | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy", checkIfExists: true)))
     
     samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
-    | view()
 
     out = normalizeMatrix(matrices, samples_order, Channel.empty())
 }
