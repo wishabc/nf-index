@@ -100,12 +100,12 @@ class DataNormalize:
         Returns row indices of selected peaks
         """
         reproducible_peaks = num_samples_per_peak >= self.min_peak_replication * log_cpm.shape[1]
-    
-        repr_log_means = ma.masked_array(mean_log_cpm, ~reproducible_peaks)
+
+        repr_log_means = ma.masked_where(~reproducible_peaks, mean_log_cpm)
 
         max_value = self.outlier_limit(repr_log_means)
         masked_log_means = ma.masked_where(
-            ~repr_log_means.mask & (repr_log_means < max_value), 
+            ~repr_log_means.mask & (repr_log_means > max_value), 
             repr_log_means
         )
 
