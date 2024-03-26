@@ -27,7 +27,6 @@ class DataNormalize:
                  delta_fraction=0.001,
                  correlation_limit=0.8,
                  seed=42,
-                 bottom_variable_frac=0.1,
                  bin_number=100,
                  min_peak_replication=0.25,
                  sample_method='log',
@@ -38,7 +37,6 @@ class DataNormalize:
         self.cv_number = cv_number
         self.min_peak_replication = min_peak_replication
         self.seed_number = seed
-        self.bottom_variable_frac = bottom_variable_frac
         self.bin_number = bin_number
         self.peak_outlier_threshold = peak_outlier_threshold
         self.delta_fraction = delta_fraction
@@ -87,7 +85,7 @@ class DataNormalize:
     def masked_ranks(a):
         ranks = np.ma.array(np.empty_like(a, dtype=int), mask=a.mask)
         ranks[~a.mask] = np.argsort(np.argsort(a[~a.mask]))
-        return ranks
+        return ranks / a.count()
 
     @staticmethod
     def weighted_variance(x, w):
@@ -131,13 +129,14 @@ class DataNormalize:
 
         #self.check_argsort_thresholds(per_bin_argsorts, bin_size)
     
-        top_by_variance_thresholds = np.linspace(0, bin_size, 10)[::-1]
+        # top_by_variance_thresholds = np.linspace(0, bin_size, 10)[::-1]
+        bottom_by_variance_thresholds = np.linspace(0, 1, 20)[1:][::-1]
         sampled_peaks_indicies = self.choose_best_score_by_correlation(
-            mean_log_cpm=masked_log_means, 
+            mean_log_cpm=masked_log_means,
             log_cpm=log_cpm,
             peak_scores=-per_bin_ranks, # - to choose "top" peaks
-            score_thresholds=-top_by_variance_thresholds,
-            weights=weights
+            score_thresholds=-bottom_by_variance_thresholds,
+            weights=weights,
         )
         return sampled_peaks_indicies
 
