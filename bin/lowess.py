@@ -113,7 +113,7 @@ class DataNormalize:
         
         sampled_peaks_indicies = np.zeros(mean_log_cpm.shape, dtype=bool)
         
-        peak_variance = self.weighted_variance(log_cpm)
+        peak_variance = self.weighted_variance(log_cpm, weights)
         
         per_bin_ranks = np.full_like(masked_log_means, np.nan)
         per_bin_ranks = np.ma.masked_array(per_bin_ranks, masked_log_means.mask)
