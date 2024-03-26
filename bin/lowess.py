@@ -28,6 +28,7 @@ class DataNormalize:
                  correlation_limit=0.8,
                  seed=42,
                  bin_number=100,
+                 bin_count_quantile=0.15,
                  min_peak_replication=0.25,
                  sample_method='log',
                  cv_number=30,
@@ -39,6 +40,7 @@ class DataNormalize:
         self.seed_number = seed
         self.bin_number = bin_number
         self.peak_outlier_threshold = peak_outlier_threshold
+        self.bin_count_quantile = bin_count_quantile
         self.delta_fraction = delta_fraction
         self.correlation_limit = correlation_limit
         self.cv_fraction = None
@@ -85,7 +87,7 @@ class DataNormalize:
     def masked_ranks(a):
         ranks = np.ma.array(np.empty_like(a, dtype=int), mask=a.mask)
         ranks[~a.mask] = np.argsort(np.argsort(a[~a.mask]))
-        return ranks / a.count()
+        return ranks# / a.count()
 
     @staticmethod
     def weighted_variance(x, w):
@@ -110,7 +112,7 @@ class DataNormalize:
         )
 
         bin_edges = np.linspace(masked_log_means.min(), masked_log_means.max(), self.bin_number + 1)
-        
+
         sampled_peaks_indicies = np.zeros(mean_log_cpm.shape, dtype=bool)
         
         peak_variance = self.weighted_variance(log_cpm, weights)
@@ -127,10 +129,13 @@ class DataNormalize:
             peak_variance_window = ma.masked_where(~new_mask, peak_variance)
             per_bin_ranks[new_mask] = self.masked_ranks(peak_variance_window)[new_mask]
 
+        counts, _ = np.histogram(masked_log_means.compressed(), bins=bin_edges)
+        bin_size = np.quantile(counts, self.bin_count_quantile)
+
         #self.check_argsort_thresholds(per_bin_argsorts, bin_size)
     
-        # top_by_variance_thresholds = np.linspace(0, bin_size, 10)[::-1]
-        bottom_by_variance_thresholds = np.linspace(0, 1, 20)[1:][::-1]
+        bottom_by_variance_thresholds = np.linspace(0, bin_size, 20)[::-1]
+        # bottom_by_variance_thresholds = np.linspace(0, 1, 20)[1:][::-1] # for percentiles
         sampled_peaks_indicies = self.choose_best_score_by_correlation(
             mean_log_cpm=masked_log_means,
             log_cpm=log_cpm,
