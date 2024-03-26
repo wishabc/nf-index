@@ -416,8 +416,7 @@ if __name__ == '__main__':
     base_path = os.path.join(p_args.output, p_args.prefix)
     
     cpm_matrix_outpath = f'{base_path}.density.npy'
-    lowess_outpath = f'{base_path}.lowess.npy'
-    
+
     model_save_params_path = f'{base_path}.lowess_params'
 
     logger.info('Reading matrices')
@@ -446,6 +445,7 @@ if __name__ == '__main__':
     cpm_matrix = counts_matrix * scale_factors
     np.save(cpm_matrix_outpath, cpm_matrix)
     log_cpm_matrix = np.log(cpm_matrix + pseudocount * scale_factors)
+    np.save(f'{base_path}.logcpm.npy', log_cpm_matrix)
 
     num_samples_per_peak = data_norm.get_num_samples_per_peak(peaks_matrix)
     del scale_factors
@@ -485,7 +485,7 @@ if __name__ == '__main__':
 
     del log_differences
     gc.collect()
-    np.save(lowess_outpath, lowess_norm)
+    np.save(f'{base_path}.lowess.npy', lowess_norm)
 
     logger.info('Reconstructing normed matrix')
     cpm_matrix = np.load(cpm_matrix_outpath)
