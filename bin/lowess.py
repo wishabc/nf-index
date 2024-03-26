@@ -70,19 +70,6 @@ class DataNormalize:
         fitted = expon.fit(values_to_fit, floc=values_to_fit.min())
         return np.log(expon(*fitted).isf(1 - (self.peak_outlier_threshold - fit_q) / (1 - fit_q)))
 
-    def sample_masked_array(self, arr, size):
-        p = ~arr.mask
-        return self.seed.choice(np.arange(arr.size)[p], size=int(size), replace=False)
-
-    @staticmethod
-    def check_argsort_thresholds(argsorts, bin_size):
-        unique_elements, counts = np.unique(argsorts, return_counts=True)
-        max_elems_in_bin = unique_elements[counts == counts.max()].max()
-
-        if max_elems_in_bin < bin_size:
-            logger.warning(f'Not enough peaks to sample in one of the bins: {max_elems_in_bin} < {bin_size}')
-            #bin_size = (max_elems_in_bin + bin_size) / 2
-
     @staticmethod
     def masked_ranks(a):
         ranks = np.ma.array(np.empty_like(a, dtype=int), mask=a.mask)
@@ -448,7 +435,13 @@ if __name__ == '__main__':
 
     pseudocount = 1
     weights = weights / weights.sum()
-    data_norm = DataNormalize(jobs=p_args.jobs)
+    data_norm = DataNormalize(
+        jobs=p_args.jobs,
+        peak_outlier_threshold=1,
+        bin_count_quantile=0.15,
+        min_peak_replication=0,
+        bin_number=20,
+    )
     scale_factors = data_norm.get_scale_factors(counts_matrix)
     cpm_matrix = counts_matrix * scale_factors
     np.save(cpm_matrix_outpath, cpm_matrix)
