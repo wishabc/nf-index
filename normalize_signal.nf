@@ -1,3 +1,4 @@
+params.sample_weights = ""
 
 def non_required_arg(value, key) {
     return value ? "${key} ${value}": ""
