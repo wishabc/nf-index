@@ -116,7 +116,7 @@ workflow normalizeUsingExistingModel {
 // De-novo normalization
 workflow {
     matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
-        | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy")))
+        | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy", checkIfExists: true)))
     
     samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
 
