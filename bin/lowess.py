@@ -56,15 +56,19 @@ class DataNormalize:
     
     def outlier_limit(self, x):
         """
+        Returns the outlier limit for the data by fitting an exponential distribution to the right tail
+        of the data (99% quantile)
         """
-        if x.count() > self.sample_number:
-            subset = x[self.sample_masked_array(x, size=self.sample_number)]
-        else:
-            subset = x
-        subset = subset[~subset.mask]
-        fitted = expon.fit(subset)
-
-        return expon(fitted[0], fitted[1]).isf((1 - self.peak_outlier_threshold) / x.count())
+        fit_q = 0.99
+        x = x[~x.mask]
+        if self.peak_outlier_threshold < fit_q:
+            return np.quantile(x, self.peak_outlier_threshold)
+        elif self.peak_outlier_threshold == 1:
+            return np.inf
+        fit_q_val = np.quantile(x, fit_q)
+        values_to_fit = np.exp(x)[x >= fit_q_val]
+        fitted = expon.fit(values_to_fit, floc=values_to_fit.min())
+        return np.log(expon(*fitted).isf(1 - (self.peak_outlier_threshold - fit_q) / (1 - fit_q)))
 
     def sample_masked_array(self, arr, size):
         p = ~arr.mask
@@ -103,14 +107,14 @@ class DataNormalize:
             logger.warning(f'Number of peaks is less than the sample number ({size} < {self.sample_number})')
         peaks_to_sample = min(self.sample_number, size)
         
-        bin_edges = np.linspace(trimmed_log_means.min(), trimmed_log_means.max(), self.bin_number + 1)
+        bin_edges = np.linspace(masked_log_means.min(), masked_log_means.max(), self.bin_number + 1)
         bin_size = np.ceil(peaks_to_sample / self.bin_number)
         sampled_peaks_indicies = np.zeros(mean_log_cpm.shape, dtype=bool)
 
         peak_variance = log_cpm.var(axis=1) # TODO: weighted variance
         
-        per_bin_argsorts = np.full_like(masked_log_means, np.nan)
-        per_bin_argsorts = np.ma.masked_array(per_bin_argsorts, masked_log_means.mask)
+        per_bin_ranks = np.full_like(masked_log_means, np.nan)
+        per_bin_ranks = np.ma.masked_array(per_bin_ranks, masked_log_means.mask)
         for i in range(self.bin_number):
             window_min = bin_edges[i]
             window_max = bin_edges[i + 1]
@@ -119,7 +123,7 @@ class DataNormalize:
             if i == self.bin_number - 1:
                 new_mask |= (trimmed_log_means == window_max)
             peak_variance_window = ma.masked_where(~new_mask, peak_variance)
-            per_bin_argsorts[new_mask] = self.masked_ranks(peak_variance_window)[new_mask]
+            per_bin_ranks[new_mask] = self.masked_ranks(peak_variance_window)[new_mask]
 
         #self.check_argsort_thresholds(per_bin_argsorts, bin_size)
     
@@ -127,7 +131,7 @@ class DataNormalize:
         sampled_peaks_indicies = self.choose_best_score_by_correlation(
             mean_log_cpm=masked_log_means, 
             log_cpm=log_cpm,
-            peak_scores=-per_bin_argsorts, # - to choose "top" peaks
+            peak_scores=-per_bin_ranks, # - to choose "top" peaks
             score_thresholds=-top_by_variance_thresholds,
             weights=weights
         )
@@ -188,7 +192,7 @@ class DataNormalize:
         best_frac = 0
 
         if delta is None:
-            delta = self.delta_fraction * np.percentile(x, 99)
+            delta = self.delta_fraction * (np.percentile(x, 99) - np.percentile(x, 1))
 
         for frac in np.arange(start, end + step, step):
             interpolated = self.fit_and_extrapolate(y, x, sampled, frac, delta)
