@@ -59,7 +59,7 @@ class DataNormalize:
         Returns the outlier limit for the data by fitting an exponential distribution to the right tail
         of the data (99% quantile)
         """
-        fit_q = 0.99
+        fit_q = 0.8
         x = x[~x.mask]
         if self.peak_outlier_threshold < fit_q:
             return np.quantile(x, self.peak_outlier_threshold)
@@ -89,18 +89,27 @@ class DataNormalize:
         ranks[~a.mask] = np.argsort(np.argsort(a[~a.mask]))
         return ranks
 
+    @staticmethod
+    def weighted_variance(x, w):
+        """
+        Returns weighted variance
+        """
+        mean = np.average(x, weights=w, axis=1)
+        return np.average((x - mean) ** 2, weights=w, axis=1)
 
     def select_peaks_uniform(self, log_cpm, mean_log_cpm, weights, num_samples_per_peak):
         """
         Returns row indices of selected peaks
         """
-        # max_value = self.outlier_limit(masked_log_means)
-        # new_mask = ~masked_log_means.mask & (masked_log_means < max_value)
-        # vls = ma.masked_where(~new_mask, masked_log_means)
-        trimmed_log_means = mean_log_cpm
         reproducible_peaks = num_samples_per_peak >= self.min_peak_replication * log_cpm.shape[1]
     
-        masked_log_means = ma.masked_array(trimmed_log_means, ~reproducible_peaks)
+        repr_log_means = ma.masked_array(mean_log_cpm, ~reproducible_peaks)
+
+        max_value = self.outlier_limit(repr_log_means)
+        masked_log_means = ma.masked_where(
+            ~repr_log_means.mask & (repr_log_means < max_value), 
+            repr_log_means
+        )
         
         size = masked_log_means.count()
         if size < self.sample_number:
@@ -110,8 +119,8 @@ class DataNormalize:
         bin_edges = np.linspace(masked_log_means.min(), masked_log_means.max(), self.bin_number + 1)
         bin_size = np.ceil(peaks_to_sample / self.bin_number)
         sampled_peaks_indicies = np.zeros(mean_log_cpm.shape, dtype=bool)
-
-        peak_variance = log_cpm.var(axis=1) # TODO: weighted variance
+        
+        peak_variance = self.weighted_variance(log_cpm)
         
         per_bin_ranks = np.full_like(masked_log_means, np.nan)
         per_bin_ranks = np.ma.masked_array(per_bin_ranks, masked_log_means.mask)
@@ -119,9 +128,9 @@ class DataNormalize:
             window_min = bin_edges[i]
             window_max = bin_edges[i + 1]
 
-            new_mask = ~masked_log_means.mask & (trimmed_log_means >= window_min) & (trimmed_log_means < window_max)
+            new_mask = ~masked_log_means.mask & (masked_log_means >= window_min) & (masked_log_means < window_max)
             if i == self.bin_number - 1:
-                new_mask |= (trimmed_log_means == window_max)
+                new_mask |= (masked_log_means == window_max)
             peak_variance_window = ma.masked_where(~new_mask, peak_variance)
             per_bin_ranks[new_mask] = self.masked_ranks(peak_variance_window)[new_mask]
 
