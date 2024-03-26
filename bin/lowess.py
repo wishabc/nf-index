@@ -26,8 +26,8 @@ class DataNormalize:
                  peak_outlier_threshold=0.999,
                  delta_fraction=0.001,
                  correlation_limit=0.8,
-                 seed_number=1832245,
-                 sample_number=75_000,
+                 seed=42,
+                 bottom_variable_frac=0.1,
                  bin_number=100,
                  min_peak_replication=0.25,
                  sample_method='log',
@@ -37,8 +37,8 @@ class DataNormalize:
                  ):
         self.cv_number = cv_number
         self.min_peak_replication = min_peak_replication
-        self.seed_number = seed_number
-        self.sample_number = sample_number
+        self.seed_number = seed
+        self.bottom_variable_frac = bottom_variable_frac
         self.bin_number = bin_number
         self.peak_outlier_threshold = peak_outlier_threshold
         self.delta_fraction = delta_fraction
@@ -110,14 +110,9 @@ class DataNormalize:
             ~repr_log_means.mask & (repr_log_means < max_value), 
             repr_log_means
         )
-        
-        size = masked_log_means.count()
-        if size < self.sample_number:
-            logger.warning(f'Number of peaks is less than the sample number ({size} < {self.sample_number})')
-        peaks_to_sample = min(self.sample_number, size)
-        
+
         bin_edges = np.linspace(masked_log_means.min(), masked_log_means.max(), self.bin_number + 1)
-        bin_size = np.ceil(peaks_to_sample / self.bin_number)
+        
         sampled_peaks_indicies = np.zeros(mean_log_cpm.shape, dtype=bool)
         
         peak_variance = self.weighted_variance(log_cpm)
@@ -517,4 +512,10 @@ if __name__ == '__main__':
         calculated_mean=deseq2_mean_sf,
         weights=weights
     )
-    data_norm.save_params(model_save_params_path, xvals, sampled_mask, deseq2_mean_sf, weights)
+    data_norm.save_params(
+        model_save_params_path, 
+        mean_log_cpm,
+        sampled_mask,
+        deseq2_mean_sf,
+        weights
+    )
