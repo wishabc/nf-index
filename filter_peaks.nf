@@ -94,7 +94,7 @@ workflow {
     params.base_dir = params.outdir
 
     matrices = Channel.of('binary', 'counts')
-        | map(it -> tuple("${it}.only_autosomes", file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
+        | map(it -> tuple(it, file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
 
     filterAndConvertToNumpy(
         Channel.fromPath(params.index_file),
