@@ -421,7 +421,7 @@ def main(count_matrix, peak_matrix, weights=None):
         )
         deseq2_mean_sf = None
     else:
-        mean_log_cpm, sampled_mask, deseq2_mean_sf, weights = data_norm.load_params(model_params)
+        mean_log_cpm, sampled_mask, deseq2_mean_sf, _ = data_norm.load_params(model_params)
         log_differences = log_cpm_matrix - mean_log_cpm[:, None]
 
     lowess_normalized = data_norm.lowess_normalize(
@@ -443,7 +443,7 @@ def main(count_matrix, peak_matrix, weights=None):
         sf_geometric_mean = np.exp(np.average(np.log(sf), axis=1, weights=weights))
     sf /= sf_geometric_mean[:, None]
 
-    return data_norm, sf, log_differences, (mean_log_cpm, sf_geometric_mean, sampled_mask)
+    return data_norm, sf, log_differences, (mean_log_cpm, sf_geometric_mean, sampled_mask, weights)
 
 
 if __name__ == '__main__':
@@ -478,17 +478,17 @@ if __name__ == '__main__':
 
     data_normalize, deseq_scale_factors, log_diffs, params = main(counts_matrix, peaks_matrix, weights=sample_weights)
     
-    mean_log_cpms, sf_geometric_mean, sampled_peaks_mask = params
+    mean_log_cpms, sf_geometric_mean, sampled_peaks_mask, s_weights = params
     np.save(f'{base_path}.log_difference.npy', log_diffs)
     del log_diffs
     gc.collect()
     
     data_normalize.save_params(
         f'{base_path}.lowess_params',
-        mean_log_cpms,
-        sampled_peaks_mask,
-        sf_geometric_mean,
-        sample_weights
+        xvals=mean_log_cpms,
+        sampled_mask=sampled_peaks_mask,
+        deseq2_mean_sf=sf_geometric_mean,
+        weights=s_weights
     )
 
     np.save(f'{base_path}.scale_factors.npy', deseq_scale_factors)
