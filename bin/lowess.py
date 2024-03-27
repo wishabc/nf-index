@@ -380,18 +380,6 @@ def check_and_open_matrix_file(path, outpath):
         return np_arr
 
 
-# def get_deseq2_scale_factors(raw_count_matrix, lowess_normed_matrix, calculated_mean, weights):
-#     logger.info('Calculating scale factors...')
-#     sf = raw_count_matrix / lowess_normed_matrix
-#     i = (raw_count_matrix == 0) | (lowess_normed_matrix == 0)
-#     sf[i] = 1
-#
-#     sf[np.isnan(sf)] = 1
-#     sf[~np.isfinite(sf)] = 1
-#
-#     return sf_geomean
-
-
 def main(count_matrix, peak_matrix, weights=None):
     N, S = count_matrix.shape
     assert count_matrix.shape == peak_matrix.shape
