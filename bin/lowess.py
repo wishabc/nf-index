@@ -33,6 +33,7 @@ class DataNormalize:
                  sample_method='log',
                  cv_number=30,
                  common_scale=50_000,
+                 delta=0,
                  jobs=1,
                  ):
         self.cv_number = cv_number
@@ -44,7 +45,7 @@ class DataNormalize:
         self.delta_fraction = delta_fraction
         self.correlation_limit = correlation_limit
         self.cv_fraction = self.seed = None
-        self.delta = 0
+        self.delta = delta
         self.sample_method = sample_method
         self.jobs = mp.cpu_count() if jobs == 0 else jobs
         self.common_scale = common_scale
