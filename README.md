@@ -11,6 +11,8 @@ Nextflow pipelines to construct a chromatin accessibility peak index and do foll
 - normalize_signal.nf - Normalize filtered count matrix by running lowess normalization followed by DEseq2 variance-stabilizing transformation (VST). It can also be used to normalize new samples using existing parameters.
 - nmf.nf - DEFUNC, Run NMF using normalized matrix
 - variance_partition.nf - Run variance partition using normalized matrix
+<br><br>
+- main.nf - Annotate index and run `build_masterlist, generate_matrices, filter_peaks and normalize_signal` pipelines.
 
 # Input data
 TODO:
