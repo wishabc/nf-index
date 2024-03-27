@@ -394,7 +394,7 @@ def main(count_matrix, peak_matrix, weights=None):
         peak_outlier_threshold=1,
         bin_count_quantile=0.15,
         min_peak_replication=0,
-        bin_number=20,
+        bin_number=50,
     )
     scale_factors = data_norm.get_scale_factors(count_matrix)
     log_cpm_matrix = np.log((count_matrix + pseudocount) * scale_factors)
