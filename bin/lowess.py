@@ -335,15 +335,13 @@ class DataNormalize:
         return np.exp(norm)
 
     def load_params(self, model_params_path):
-        # TODO: remove deseq2_mean_sf
         with open(f'{model_params_path}.json') as f:
             class_params = json.load(f)
         for key, value in class_params.items():
             setattr(self, key, value)
         self.set_randomizer()
         arrays = np.load(f'{model_params_path}.npz')
-        #arrays['deseq2_mean_sf']
-        return arrays['xvalues'], arrays['sampled_mask'], None, arrays['weights']
+        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf'], arrays['weights']
 
     def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf, weights):
         for ext in '.npz', '.json':
@@ -359,7 +357,7 @@ class DataNormalize:
             f'{save_path}.npz',
             xvalues=xvals,
             sampled_mask=sampled_mask,
-            #deseq2_mean_sf=deseq2_mean_sf,
+            deseq2_mean_sf=deseq2_mean_sf,
             weights=weights
         )
 
@@ -433,9 +431,9 @@ def main(count_matrix, peak_matrix, weights=None):
             sampled_peaks_mask=sampled_mask,
             weights=weights
         )
-        #deseq2_mean_sf = None
+        deseq2_mean_sf = None
     else:
-        mean_log_cpm, sampled_mask, _, weights = data_norm.load_params(model_params)
+        mean_log_cpm, sampled_mask, deseq2_mean_sf, weights = data_norm.load_params(model_params)
         log_differences = log_cpm_matrix - mean_log_cpm[:, None]
 
     lowess_normalized = data_norm.lowess_normalize(
@@ -451,13 +449,13 @@ def main(count_matrix, peak_matrix, weights=None):
     sf[np.isnan(sf)] = 1
     sf[~np.isfinite(sf)] = 1
 
-    # if deseq2_mean_sf is not None:
-    #     sf_geometric_mean = deseq2_mean_sf
-    # else:
-    #     sf_geometric_mean = np.exp(np.average(np.log(sf), axis=1, weights=weights))
-    # sf /= sf_geometric_mean[:, None]
+    if deseq2_mean_sf is not None:
+        sf_geometric_mean = deseq2_mean_sf
+    else:
+        sf_geometric_mean = np.exp(np.average(np.log(sf), axis=1, weights=weights))
+    sf /= sf_geometric_mean[:, None]
 
-    return data_norm, sf, (log_differences, mean_log_cpm, sampled_mask)
+    return data_norm, sf, log_differences, (mean_log_cpm, sf_geometric_mean, sampled_mask)
 
 
 if __name__ == '__main__':
@@ -490,14 +488,12 @@ if __name__ == '__main__':
     else:
         sample_weights = None
 
-    data_normalize, deseq_scale_factors, params = main(counts_matrix, peaks_matrix, weights=sample_weights)
+    data_normalize, deseq_scale_factors, log_diffs, params = main(counts_matrix, peaks_matrix, weights=sample_weights)
     
-    log_diffs, mean_log_cpms, sampled_peaks_mask = params
+    mean_log_cpms, sf_geometric_mean, sampled_peaks_mask = params
     np.save(f'{base_path}.log_difference.npy', log_diffs)
     del log_diffs
     gc.collect()
-
-    sf_geometric_mean = None
     
     data_normalize.save_params(
         f'{base_path}.lowess_params',
