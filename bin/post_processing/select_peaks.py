@@ -34,7 +34,7 @@ def add_peaks(binary_matrix, gini_argsort, num_peaks=0, min_peaks_per_sample=0):
     return sorted_binary.any(axis=1)[inv_argsort]
 
 
-def add_sample_labels(adata, by='extended_annotation', fallback='core_ontology_term'):
+def add_sample_labels(adata, by='sample_label', fallback='core_ontology_term'):
     adata.obs['group'] = np.unique(
         np.where(
             adata.obs[by].notna(),
@@ -148,7 +148,7 @@ class FeatureSelection:
         if self.params['Variance_metric'] in ['var', 'binned_var']:
             variance = np.var(self.signal, axis=1)
         elif self.params['Variance_metric'] == 'explained_var':
-            variance = np.var(self.signal, axis=1) * self.filtered_adata.var['extended_annotation']
+            variance = np.var(self.signal, axis=1) * self.filtered_adata.var['sample_label']
         else:
             raise ValueError
 
