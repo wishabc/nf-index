@@ -443,7 +443,7 @@ def main(count_matrix, peak_matrix, weights=None):
         norm_factor_geometric_mean = np.exp(np.average(np.log(norm_factors), axis=1, weights=weights))
     norm_factors /= norm_factor_geometric_mean[:, None]
 
-    return data_norm, norm_factors, log_differences, (mean_log_cpm, sf_geometric_mean, sampled_mask, weights)
+    return data_norm, norm_factors, log_differences, (mean_log_cpm, norm_factor_geometric_mean, sampled_mask, weights)
 
 
 if __name__ == '__main__':
