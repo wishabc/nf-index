@@ -343,7 +343,7 @@ class DataNormalize:
         arrays = np.load(f'{model_params_path}.npz')
         return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_norm_factors'], arrays['weights']
 
-    def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf, weights):
+    def save_params(self, save_path, xvals, sampled_mask, norm_factors_geometric_mean, weights):
         for ext in '.npz', '.json':
             if os.path.exists(f'{save_path}{ext}'):
                 logger.warning(f'File {save_path}{ext} exists, model params were not saved')
@@ -357,7 +357,7 @@ class DataNormalize:
             f'{save_path}.npz',
             xvalues=xvals,
             sampled_mask=sampled_mask,
-            deseq2_mean_norm_factors=deseq2_mean_sf,
+            deseq2_mean_norm_factors=norm_factors_geometric_mean,
             weights=weights
         )
 
@@ -478,7 +478,7 @@ if __name__ == '__main__':
 
     data_normalize, deseq_norm_factors, log_diffs, params = main(counts_matrix, peaks_matrix, weights=sample_weights)
     
-    mean_log_cpms, sf_geometric_mean, sampled_peaks_mask, s_weights = params
+    mean_log_cpms, deseq_norm_factors_geometric_mean, sampled_peaks_mask, s_weights = params
     np.save(f'{base_path}.log_difference.npy', log_diffs)
     del log_diffs
     gc.collect()
@@ -487,7 +487,7 @@ if __name__ == '__main__':
         f'{base_path}.lowess_params',
         xvals=mean_log_cpms,
         sampled_mask=sampled_peaks_mask,
-        deseq2_mean_sf=sf_geometric_mean,
+        norm_factors_geometric_mean=deseq_norm_factors_geometric_mean,
         weights=s_weights
     )
 
