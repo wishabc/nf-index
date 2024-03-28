@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import json
-from lowess import DataNormalize
+from ..lowess import DataNormalize
 import h5py 
 
 def get_interpolation_for_gini(x, lowess_est, sampled):

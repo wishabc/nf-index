@@ -220,6 +220,6 @@ workflow peaksSelection {
             file(row.peaks_meta),
             file(row.samples_meta)))
         | select_peaks
-        | visualize_results
+        //| visualize_results
 }
 

@@ -255,33 +255,6 @@ def accumulate_counts(sorted_labels, p_values, n):
     return label_count
 
 
-def get_entropy_same_num(samples_meta):
-    same = [{'Epithelial (Eye)', 'Epithelial'},
-        {'Epithelial', 'Kidney'},
-        {'Fetal brain', 'Neurovascular', 'Neuroblastoma/Retinoblastoma'},
-        {'Heart', 'Fetal muscle'},
-        {'Lung', 'Lung cancer cell line'},
-        {'Fetal brain', 'Brain (Cerebellar)', 'Brain'},
-        {'Pluripotent/Pluripotent-derived', 'Neuroblastoma/Retinoblastoma', 'Lung cancer cell line'},
-        {'Myeloid progenitor', 'Myeloid leukemia', 'Myeloid leukemia (K562)'},
-       {'T47D', 'MCF-7'},
-       {'Kidney', 'Fetal kidney'},
-       {'Lymphoblastoid cell line', 'T-cell', 'B-cell', 'NK cell'},
-       {'M1 macrophage', 'M2 macrophage'}]
-    entropy_same = dict()
-    for s in same:
-        for x in s:
-            if x in entropy_same:
-                entropy_same[x] += list(s - {x})
-            else:
-                entropy_same[x] = list(s - {x})
-
-    validation_idx = samples_meta['core_annotation'].notna()
-
-    labels_alphabetical = list(np.unique(samples_meta.loc[validation_idx, 'core_annotation'].to_numpy()))
-    return {labels_alphabetical.index(k): [labels_alphabetical.index(x) for x in v] for k, v in entropy_same.items()}
-
-
 def get_cumul_fraction(array, normalize=True):
     x = np.sort(array)[::-1]
     y = np.arange(len(x)) / (float(len(x)) if normalize else 1_000)
