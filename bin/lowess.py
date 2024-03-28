@@ -341,7 +341,7 @@ class DataNormalize:
             setattr(self, key, value)
         self.set_randomizer()
         arrays = np.load(f'{model_params_path}.npz')
-        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_sf'], arrays['weights']
+        return arrays['xvalues'], arrays['sampled_mask'], arrays['deseq2_mean_norm_factors'], arrays['weights']
 
     def save_params(self, save_path, xvals, sampled_mask, deseq2_mean_sf, weights):
         for ext in '.npz', '.json':
@@ -357,7 +357,7 @@ class DataNormalize:
             f'{save_path}.npz',
             xvalues=xvals,
             sampled_mask=sampled_mask,
-            deseq2_mean_sf=deseq2_mean_sf,
+            deseq2_mean_norm_factors=deseq2_mean_sf,
             weights=weights
         )
 
@@ -419,9 +419,9 @@ def main(count_matrix, peak_matrix, weights=None):
             sampled_peaks_mask=sampled_mask,
             weights=weights
         )
-        deseq2_mean_sf = None
+        norm_factor_geometric_mean = None
     else:
-        mean_log_cpm, sampled_mask, deseq2_mean_sf, _ = data_norm.load_params(model_params)
+        mean_log_cpm, sampled_mask, norm_factor_geometric_mean, _ = data_norm.load_params(model_params)
         log_differences = log_cpm_matrix - mean_log_cpm[:, None]
 
     lowess_normalized = data_norm.lowess_normalize(
@@ -429,22 +429,21 @@ def main(count_matrix, peak_matrix, weights=None):
         xvalues=mean_log_cpm,
         sampled_peaks_mask=sampled_mask
     )
-    normalized = ((pseudocount + count_matrix) / lowess_normalized - pseudocount) * data_norm.common_scale
-    sf = count_matrix / normalized
+    norm_factors = lowess_normalized / scale_factors
 
-    i = (count_matrix <= 0) | (normalized <= 0) | np.isnan(sf) | ~np.isfinite(sf)
-    logger.info(f'Zero values in count or normalized matrix: {i.sum()}. Normalized = 0: {(normalized <= 0).sum()}, Count = 0: {(count_matrix <= 0).sum()}')
+    i = (count_matrix <= 0) | np.isnan(norm_factors) | ~np.isfinite(norm_factors)
+    logger.info(f'Zero values in count or normalized matrix: {i.sum()}, Count = 0: {(count_matrix <= 0).sum()}')
+    
+    # fill_value = np.exp(mean_log_cpm[:, None]) / scale_factors[None, :]
+    # norm_factors[i] = fill_value[i]
 
-    if deseq2_mean_sf is not None:
-        sf_geometric_mean = deseq2_mean_sf
+    if norm_factor_geometric_mean is not None:
+        norm_factor_geometric_mean = norm_factor_geometric_mean
     else:
-        masked_sf = np.ma.masked_array(sf, mask=i)
-        sf_geometric_mean = np.exp(np.ma.average(np.ma.log(masked_sf), axis=1, weights=weights))
-    sf /= sf_geometric_mean[:, None]
+        norm_factor_geometric_mean = np.exp(np.average(np.log(norm_factors), axis=1, weights=weights))
+    norm_factors /= norm_factor_geometric_mean[:, None]
 
-    sf[i] = 1
-
-    return data_norm, sf, log_differences, (mean_log_cpm, sf_geometric_mean, sampled_mask, weights)
+    return data_norm, norm_factors, log_differences, (mean_log_cpm, sf_geometric_mean, sampled_mask, weights)
 
 
 if __name__ == '__main__':
@@ -477,7 +476,7 @@ if __name__ == '__main__':
     else:
         sample_weights = None
 
-    data_normalize, deseq_scale_factors, log_diffs, params = main(counts_matrix, peaks_matrix, weights=sample_weights)
+    data_normalize, deseq_norm_factors, log_diffs, params = main(counts_matrix, peaks_matrix, weights=sample_weights)
     
     mean_log_cpms, sf_geometric_mean, sampled_peaks_mask, s_weights = params
     np.save(f'{base_path}.log_difference.npy', log_diffs)
@@ -492,6 +491,6 @@ if __name__ == '__main__':
         weights=s_weights
     )
 
-    np.save(f'{base_path}.scale_factors.npy', deseq_scale_factors)
+    np.save(f'{base_path}.scale_factors.npy', deseq_norm_factors)
 
 
