@@ -6,9 +6,32 @@ from numba import jit
 import perform_NMF as pNMF
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import pdist, squareform
-import subset_peaks
 from sklearn.decomposition import PCA
 import anndata as ad
+
+
+def average_matrices(normalized_matrix, binary_matrix, meta_labels, reprod=1):
+    unique_labels = np.unique(meta_labels)
+    new_norm_matrix = np.zeros(shape=(normalized_matrix.shape[0], unique_labels.shape[0]),
+                                dtype=normalized_matrix.dtype)
+    new_binary_matrix = np.zeros(shape=(binary_matrix.shape[0], unique_labels.shape[0]),
+                                dtype=bool)
+    for label in unique_labels:
+        new_norm_matrix[:, label] = normalized_matrix[:, meta_labels == label].mean(axis=1)
+        new_binary_matrix[:, label] = binary_matrix[:, meta_labels == label].sum(axis=1) >= np.minimum(reprod, (meta_labels == label).sum())
+
+    return new_norm_matrix, new_binary_matrix
+
+
+def add_peaks(binary_matrix, gini_argsort, num_peaks=0, min_peaks_per_sample=0):
+    sorted_binary = binary_matrix[gini_argsort, :]
+    sorted_binary = np.where(sorted_binary.cumsum(axis=0) > min_peaks_per_sample, False, sorted_binary)
+    sorted_binary[:num_peaks, :] = True
+
+    inv_argsort = np.zeros_like(gini_argsort)
+    inv_argsort[gini_argsort] = np.arange(len(gini_argsort))
+
+    return sorted_binary.any(axis=1)[inv_argsort]
 
 
 def add_sample_labels(adata, by='extended_annotation', fallback='core_ontology_term'):
@@ -21,7 +44,7 @@ def add_sample_labels(adata, by='extended_annotation', fallback='core_ontology_t
     )[1]
 
 def calc_mean_matrices(adata, rep):
-    adata.varm['averaged_signal_matrix'], adata.varm['averaged_binary_matrix'] = subset_peaks.average_matrices(
+    adata.varm['averaged_signal_matrix'], adata.varm['averaged_binary_matrix'] = average_matrices(
         adata.X.T,
         adata.layers['binary'].T,
         adata.obs['group'],
@@ -122,12 +145,7 @@ class FeatureSelection:
 
     def calculate_variance(self):
         print('Calculating variance')
-        if self.params['Variance_metric'] == 'gini_index':
-            means, gini, smoothed_gini_final, \
-                gini_argsort, top_gini_mask = subset_peaks.get_gini_index_for_peaks(
-                    self.signal, 1000)
-            variance = gini - smoothed_gini_final
-        elif self.params['Variance_metric'] in ['var', 'binned_var']:
+        if self.params['Variance_metric'] in ['var', 'binned_var']:
             variance = np.var(self.signal, axis=1)
         elif self.params['Variance_metric'] == 'explained_var':
             variance = np.var(self.signal, axis=1) * self.filtered_adata.var['extended_annotation']
@@ -158,7 +176,7 @@ class FeatureSelection:
     def add_peaks(self):
         print('Adding peaks')
         num_peaks_to_leave = int(self.params['Add_peaks_mv'] * len(self.peak_ranks))
-        new_mask_sub = subset_peaks.add_peaks(self.binary, self.peak_ranks, num_peaks_to_leave,
+        new_mask_sub = add_peaks(self.binary, self.peak_ranks, num_peaks_to_leave,
                                               self.params['Add_peaks_per_group'])
         mask = np.zeros(self.adata.shape[1], dtype=bool)
         mask[self.adata.var['confounders_mask']] = new_mask_sub
