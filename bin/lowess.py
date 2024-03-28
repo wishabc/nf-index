@@ -434,16 +434,15 @@ def main(count_matrix, peak_matrix, weights=None):
 
     i = (count_matrix <= 0) | (normalized <= 0) | np.isnan(sf) | ~np.isfinite(sf)
     logger.info(f'Zero values in count or normalized matrix: {i.sum()}. Normalized = 0:{(normalized <= 0).sum()}, Count = 0: {(count_matrix <= 0).sum()}')
-    
-    fill_value = np.exp(mean_log_cpm[:, None]) / scale_factors[None, :]
-    sf[i] = fill_value[i]
-
 
     if deseq2_mean_sf is not None:
         sf_geometric_mean = deseq2_mean_sf
     else:
-        sf_geometric_mean = np.exp(np.average(np.log(sf), axis=1, weights=weights))
+        masked_sf = np.ma.masked_array(sf, mask=i)
+        sf_geometric_mean = np.exp(np.ma.average(np.ma.log(masked_sf), axis=1, weights=weights))
     sf /= sf_geometric_mean[:, None]
+
+    sf[i] = 1
 
     return data_norm, sf, log_differences, (mean_log_cpm, sf_geometric_mean, sampled_mask, weights)
 
