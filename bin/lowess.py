@@ -433,7 +433,7 @@ def main(count_matrix, peak_matrix, weights=None):
     sf = count_matrix / normalized
 
     i = (count_matrix <= 0) | (normalized <= 0) | np.isnan(sf) | ~np.isfinite(sf)
-    logger.info(f'Zero values in count or normalized matrix: {i.sum()}. Normalized = 0:{(normalized <= 0).sum()}, Count = 0: {(count_matrix <= 0).sum()}')
+    logger.info(f'Zero values in count or normalized matrix: {i.sum()}. Normalized = 0: {(normalized <= 0).sum()}, Count = 0: {(count_matrix <= 0).sum()}')
 
     if deseq2_mean_sf is not None:
         sf_geometric_mean = deseq2_mean_sf
