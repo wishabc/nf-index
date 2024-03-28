@@ -429,13 +429,15 @@ def main(count_matrix, peak_matrix, weights=None):
         xvalues=mean_log_cpm,
         sampled_peaks_mask=sampled_mask
     )
-    normalized = ((1 + count_matrix) / lowess_normalized - 1)
+    normalized = ((pseudocount + count_matrix) / lowess_normalized - pseudocount) * data_norm.common_scale
     sf = count_matrix / normalized
 
-    i = (count_matrix <= 0) | (normalized <= 0)
-    sf[i] = 1
-    sf[np.isnan(sf)] = 1
-    sf[~np.isfinite(sf)] = 1
+    i = (count_matrix <= 0) | (normalized <= 0) | np.isnan(sf) | ~np.isfinite(sf)
+    logger.info(f'Zero values in count or normalized matrix: {i.sum()}. Normalized = 0:{(normalized <= 0).sum()}, Count = 0: {(count_matrix <= 0).sum()}')
+    
+    fill_value = np.exp(mean_log_cpm[:, None]) / scale_factors[None, :]
+    sf[i] = fill_value[i]
+
 
     if deseq2_mean_sf is not None:
         sf_geometric_mean = deseq2_mean_sf
