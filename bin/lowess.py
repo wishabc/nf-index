@@ -431,7 +431,7 @@ def main(count_matrix, peak_matrix, weights=None):
     )
     norm_factors = lowess_normalized / scale_factors[None, :]
 
-    i = (count_matrix <= 0) | norm_factors <= 0 | np.isnan(norm_factors) | ~np.isfinite(norm_factors)
+    i = (count_matrix <= 0) | (norm_factors <= 0) | np.isnan(norm_factors) | ~np.isfinite(norm_factors)
     logger.info(f'Zero values in count or normalized matrix: {i.sum()}, Count = 0: {(count_matrix <= 0).sum()}')
     
     # fill_value = np.exp(mean_log_cpm[:, None]) / scale_factors[None, :]
