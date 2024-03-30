@@ -98,17 +98,17 @@ workflow normalizeMatrix {
 }
 
 // Re-use existing model from other run (e.g. different samples)
-workflow normalizeUsingExistingModel {
-    params.template_dir = "/path/to/previous/run"
-    if (!file(params.template_dir).exists()) {
-        error "Template directory ${params.template_dir} does not exist!"
+workflow useExistingModel {
+    params.template_run_dir = "/path/to/previous/run"
+    if (!file(params.template_run_dir).exists()) {
+        error "Template directory ${params.template_run_dir} does not exist!"
     }
     matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
         | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy")))
     
     samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
 
-    existing_params = Channel.fromPath("${params.template_dir}/params/*")
+    existing_params = Channel.fromPath("${params.template_run_dir}/params/*")
 
     out = normalizeMatrix(matrices, samples_order, existing_params)
 }
