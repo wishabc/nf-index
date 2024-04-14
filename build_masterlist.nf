@@ -6,7 +6,7 @@ process collate_and_chunk {
     label "highmem"
     
     input:
-        path "peaks/peaks*.ext"
+        path "peaks/peaks*.starch"
     
     output:
         path "chunk*.bed"
