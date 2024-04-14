@@ -45,7 +45,7 @@ process process_chunk {
     """
     Rscript $moduleDir/bin/index_scripts/code_build.R \
         ${prefix} \
-        $moduleDir/bin \
+        $moduleDir/bin/index_scripts \
         ./
     """
 }
@@ -70,7 +70,7 @@ process resolve_overlaps {
     """
     Rscript $moduleDir/bin/index_scripts/code_overlap.R \
         ${prefix} \
-        $moduleDir/bin
+        $moduleDir/bin/index_scripts
     """
 }
 
