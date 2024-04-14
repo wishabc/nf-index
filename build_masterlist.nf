@@ -129,14 +129,14 @@ workflow buildIndex {
             | process_chunk
             | resolve_overlaps
  
-        masterlist = merge_chunks(
+        index = merge_chunks(
             // workaround
             chunks[0].map(it -> it.toString()).collectFile(name: 'all.paths.txt', newLine: true), 
             chunks[1].map(it -> it.toString()).collectFile(name: 'no_core.paths.txt', newLine: true), 
             chunks[2].map(it -> it.toString()).collectFile(name: 'no_any.paths.txt', newLine: true)
         ).non_merged
     emit:
-        masterlist
+        index
         process_chunk.out[1]
 }
 
