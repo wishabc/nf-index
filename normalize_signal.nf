@@ -7,9 +7,11 @@ def non_required_arg(value, key) {
 process normalize_matrix {
 	conda params.conda
 	label "bigmem"
-	publishDir "${params.outdir}/norm", pattern: "${prefix}.scale_factors.npy"
-    publishDir "${params.outdir}/norm", pattern: "${prefix}.log_difference.npy"
-	publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.*"
+	publishDir "${params.outdir}" //, pattern: "${prefix}.scale_factors.npy"
+    // publishDir "${params.outdir}", pattern: "${prefix}.log_difference.npy"
+	// publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.npy", saveAs: "${pref}.lowess_params.npy"
+    // publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.json", saveAs: "${pref}.lowess_params.json"
+    // publishDir "${params.outdir}/qc", pattern: "${prefix}.*.pdf"
 
 	input:
         path peaks_matrix
@@ -20,21 +22,27 @@ process normalize_matrix {
 		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
         path "${prefix}.log_difference.npy", emit: log_diffs
 		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
+        path "${prefix}.*.pdf", emit: normalization_qc
 		
-
 	script:
-	prefix = 'normalized.only_autosomes.filtered'
+    pref = 'normalized.only_autosomes.filtered'
+    save_dir = 'normalization'
+	prefix = "${save_dir}/${pref}"
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
 	normalization_params = n ? "--model_params params/${n.baseName}" : ""
 	"""
-	python3 $moduleDir/bin/lowess.py \
-		${peaks_matrix} \
-		${signal_matrix} \
-		./ \
+	normalize-matrix ${signal_matrix} \
+        ${save_dir} \
+        --prefix ${pref} \
 		--jobs ${task.cpus} \
-		--prefix ${prefix} \
+        --normalization_type quantile_lowess \
 		${non_required_arg(params.sample_weights, '--weights')} \
 		${normalization_params}
+
+    qc-normalization ${save_dir} \
+        --prefix ${pref} \
+        --n_samples 10 \
+        --peak_matrix ${peaks_matrix}
 	"""
 }
 
