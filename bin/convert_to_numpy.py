@@ -20,7 +20,7 @@ def read_matrix(input_file, dtype=int):
     # Make sure to say there is NO header in this file. Otherwise will be off by 1
     df = dt.fread(input_file, header=False)
     logger.info('Converting to numpy array')
-    return df.to_numpy().filled(fill_value=0).astype(dtype)
+    return df.to_numpy().astype(dtype)
 
 
 if __name__ == '__main__':
