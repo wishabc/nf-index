@@ -12,7 +12,7 @@ percentile = sys.argv[2]
 blacklist_rows = pd.read_table(sys.argv[3], header=None, names=["row_id"])["row_id"]
 non_zero_rows = pd.read_table(sys.argv[4], header=None, names=["row_id"])["row_id"]
 
-blacklist_rows = blacklist_rows | ~non_zero_rows
+valid_rows = ~blacklist_rows & non_zero_rows
 #Read in masterlist file for calculating average score
 print("Reading Masterlist")
 masterlist = pd.read_table(sys.argv[5], header=None, names=['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end'])
@@ -21,7 +21,7 @@ m_size = masterlist.shape[0]
 
 #Remove blacklist rows from dataframe but keep index
 
-blacklist_filtered = masterlist[~blacklist_rows]
+blacklist_filtered = masterlist[valid_rows]
 blacklist_filtered = blacklist_filtered[['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end']]
 blacklist_filtered['mean_signal'] = blacklist_filtered['total_signal'] / blacklist_filtered['num_samples']
 blacklist_filtered.to_csv(str(masterlist_prefix) + '.blacklistfiltered.bed', index=False, header=False, sep="\t")
