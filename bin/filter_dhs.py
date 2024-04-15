@@ -10,11 +10,11 @@ percentile = sys.argv[2]
 
 #Read in Rows to Remove for Encode Blacklist
 blacklist_rows = pd.read_table(sys.argv[3], header=None, names=["row_id"])
-non_zero_rows = pd.read_table(sys.argv[3], header=None, names=["row_id"])
+non_zero_rows = pd.read_table(sys.argv[4], header=None, names=["row_id"])
 blacklist_rows = blacklist_rows * non_zero_rows
 #Read in masterlist file for calculating average score
 print("Reading Masterlist")
-masterlist = pd.read_table(sys.argv[4], header=None, names=['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end'])
+masterlist = pd.read_table(sys.argv[5], header=None, names=['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end'])
 print(masterlist.shape[0])
 m_size = masterlist.shape[0]
 
@@ -44,7 +44,7 @@ k = index_subset.index
 masterlist_filtered = masterlist.loc[k]
 masterlist_filtered['mean_signal'] = masterlist_filtered['total_signal'] / masterlist_filtered['num_samples']
 new_masterlist = masterlist_filtered[['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end', 'mean_signal']]
-new_masterlist.to_csv(sys.argv[5], index=False, header=False, sep="\t")
+new_masterlist.to_csv(sys.argv[6], index=False, header=False, sep="\t")
 
 #filtered_binary = binary.loc[binary['index_column'].isin(new_masterlist.index)]
 #filtered_binary = filtered_binary.reset_index(drop=True)
@@ -54,4 +54,4 @@ s = pd.DataFrame(k, columns=['row'])
 d = pd.DataFrame(np.zeros((m_size, 1)), columns=['all'])
 d.loc[s['row'], 'all'] = 1
 d['all'] = d['all'].astype(int)
-d.to_csv(sys.argv[6], index=False, header=False, sep="\t")
+d.to_csv(sys.argv[7], index=False, header=False, sep="\t")
