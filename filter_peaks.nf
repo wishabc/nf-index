@@ -39,7 +39,7 @@ process filter_masterlist {
 
     script:
     prefix = "masterlist"
-    non_zero_rows = "${prefix}.non_zero_rows.txt"
+    non_zero_rows = "${prefix}.non_zero_rows.mask.txt"
     name = "${prefix}_DHSs.blacklistfiltered.bed"
     mask = "${prefix}.bad_dhs.mask.txt"
     autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
