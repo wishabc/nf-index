@@ -32,18 +32,20 @@ process filter_masterlist {
     publishDir "${params.outdir}/masks", pattern: "*.mask.txt"
 
     input:
-        path masterlist
+        tuple path(binary_matrix), path(masterlist)
     
     output:
-	    tuple path(name), path(mask), path(filtered_masterlist), path(autosomes_mask)
+	    tuple path(name), path(mask), path(filtered_masterlist), path(autosomes_mask), path(non_zero_rows)
 
     script:
     prefix = "masterlist"
+    non_zero_rows = "${prefix}.non_zero_rows.txt"
     name = "${prefix}_DHSs.blacklistfiltered.bed"
     mask = "${prefix}.bad_dhs.mask.txt"
     autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
     filtered_masterlist = "${prefix}.only_autosomes.filtered.bed"
     """
+    awk '{ if (/1/) print 1; else print 0; }' ${binary_matrix} > ${non_zero_rows}
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
         > blacklist_rows.txt
@@ -52,6 +54,7 @@ process filter_masterlist {
         ${prefix} \
         .5 \
         blacklist_rows.txt \
+        ${non_zero_rows} \
         ${masterlist} \
         ${name} \
         ${mask}
@@ -73,7 +76,11 @@ workflow filterAndConvertToNumpy {
         masterlist
         raw_matrices
     main:
-        masterlist_and_mask = filter_masterlist(masterlist) // filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
+        masterlist_and_mask = raw_matrices 
+            | filter { it[0] == 'binary'}
+            | map(it -> it[1])
+            | combine(masterlist)
+            | filter_masterlist
 
         w_autosomes_matrices = raw_matrices 
             | combine(masterlist_and_mask.map(it -> it[1]))
