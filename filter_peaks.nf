@@ -47,7 +47,7 @@ process filter_masterlist {
     """
     awk '{ if (/1/) print 1; else print 0; }' ${binary_matrix} > ${non_zero_rows}
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
-        |  awk -F'\t' '{ if(\$1 > 0) print (NR-1)}' \
+        |  awk -F'\t' '{ if(\$1 > 0) print 1; else print 0}' \
         > blacklist_rows.txt
 
     python3 $moduleDir/bin/filter_dhs.py \
