@@ -1,7 +1,6 @@
 #!/bin/usr/python
 
 import sys
-from scipy.sparse import coo_matrix, csr_matrix, save_npz
 import logging
 import datatable as dt
 import argparse
@@ -21,16 +20,8 @@ def read_matrix(input_file, dtype=int):
     # Make sure to say there is NO header in this file. Otherwise will be off by 1
     df = dt.fread(input_file, header=False)
     logger.info('Converting to numpy array')
-    return df.to_numpy().astype(dtype)
-
-
-def convert_to_sparse(matrix, outpath):
-    logger.info('Converting to coo matrix')
-    matrix_coo = coo_matrix(matrix)
-    logger.info('Converting to csr matrix')
-    matrix_csr = csr_matrix(matrix_coo)
-    logger.info('Saving...')
-    save_npz(outpath, matrix_csr)
+    print(df.to_numpy().size, df.to_numpy().count())
+    return df.to_numpy().filled(fill_value=0).astype(dtype)
 
 
 if __name__ == '__main__':
