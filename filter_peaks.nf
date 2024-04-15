@@ -45,7 +45,7 @@ process filter_masterlist {
     autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
     filtered_masterlist = "${prefix}.only_autosomes.filtered.bed"
     """
-    awk '{ if (/1/) print 1; else print 0; }' ${binary_matrix} > ${non_zero_rows}
+    zcat ${binary_matrix} | awk '{ if (/1/) print 1; else print 0; }' > ${non_zero_rows}
     bedmap --bases ${masterlist} ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print 1; else print 0}' \
         > blacklist_rows.txt
