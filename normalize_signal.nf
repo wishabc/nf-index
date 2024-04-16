@@ -19,7 +19,7 @@ process normalize_matrix {
 		path norm_params, stageAs: "params/*"
 
 	output:
-		tuple path(signal_matrix), path("${prefix}.scale_factors.npy"), emit: scale_factors
+		tuple path(signal_matrix), path("${prefix}.scale_factors.mean_normalized.npy"), emit: scale_factors
         path "${prefix}.log_difference.npy", emit: log_diffs
 		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
         path "${prefix}.*.pdf", emit: normalization_qc
