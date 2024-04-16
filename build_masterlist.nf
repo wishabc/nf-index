@@ -143,6 +143,6 @@ workflow buildIndex {
 workflow {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> file(row.hotspot_peaks_point1per))
+        | map(row -> file(row.peaks_file))
         | buildIndex
 }

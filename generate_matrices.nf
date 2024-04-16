@@ -235,9 +235,9 @@ workflow {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id,
-            file(row.filtered_alignments_bam),
-            file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"),
-            file(row.hotspot_peaks_point1per)
+            file(row.cram_file),
+            file(row?.cram_index ?: "${row.cram_file}.crai"),
+            file(row.peaks_file)
         ))
     
     if (params.method == 'chunks') {
