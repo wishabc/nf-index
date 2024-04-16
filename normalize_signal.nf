@@ -19,7 +19,7 @@ process normalize_matrix {
 		path norm_params, stageAs: "params/*"
 
 	output:
-		tuple path(signal_matrix), path("${prefix}.scale_factors.mean_normalized.npy"), emit: scale_factors
+		path "${prefix}.scale_factors.mean_normalized.npy", emit: scale_factors
         path "${prefix}.log_difference.npy", emit: log_diffs
 		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
         path "${prefix}.*.pdf", emit: normalization_qc
@@ -53,13 +53,13 @@ process deseq2 {
 	label "bigmem"
 
 	input:
-		tuple path(signal_matrix), path(scale_factors)
+		tuple path(scale_factors), path(signal_matrix)
 		path samples_order
 		path norm_params, stageAs: "params/*"
 
 	output:
 		path "${prefix}*.npy", emit: matrix
-		path "${prefix}*.RDS", emit: params
+		path "${prefix}*.RDS", emit: model_params
 
 	script:
 	prefix = "deseq_normalized.only_autosomes.filtered"
@@ -94,6 +94,8 @@ workflow normalizeMatrix {
 			| collect(sort: true)
 
 		sf = normalize_matrix(binary_matrix, count_matrix, lowess_params).scale_factors
+            | combine(count_matrix)
+
 		deseq_params = normalization_params
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(file("empty.params"))
