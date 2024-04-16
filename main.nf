@@ -37,7 +37,7 @@ process annotate_masterlist {
         > chrom_sizes.bed
 
 
-     python $moduleDir/bin/annotations//spot1Annotations.py \
+     python $moduleDir/bin/annotations/spot1Annotations.py \
         ${binary_matrix} \
 	    ${mask} \
         ${params.samples_file}
@@ -97,14 +97,47 @@ workflow annotateMasterlist {
         | annotate_masterlist
 }
 
+workflow createAndFilterMatrices {
+    bams_hotspots = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id,
+            file(row.cram_file),
+            file(row?.cram_index ?: "${row.cram_file}.crai"),
+            file(row.peaks_file)
+        ))
+    
+    unfiltered_masterlist = Channel.fromPath(params.index_file)
+
+    samples_order = get_samples_order()
+
+    // Generate matrices
+    raw_matrices = generateMatrices(
+        unfiltered_masterlist,
+        samples_order,
+        Channel.empty(),
+        bams_hotspots
+    )
+
+    filters_and_matrices = filterAndConvertToNumpy(unfiltered_masterlist, raw_matrices)
+
+    filters_and_matrices[1]
+        | filter(it -> it[0] == "binary")
+		| map(it -> it[1])
+		| combine(
+	        filters_and_matrices[0].map(it -> tuple(it[0], it[1]))
+        )
+		| annotate_masterlist
+}
+
 workflow {
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id,
-            file(row.filtered_alignments_bam),
-            file(row?.bam_index ?: "${row.filtered_alignments_bam}.crai"),
-            file(row.hotspot_peaks_point1per)
+            file(row.cram_file),
+            file(row?.cram_index ?: "${row.cram_file}.crai"),
+            file(row.peaks_file)
         ))
     // Build index
 	index_data = bams_hotspots
@@ -124,7 +157,7 @@ workflow {
     out = normalizeMatrix(filters_and_matrices[1], samples_order, Channel.empty())
 
     // Annotate index
-    matrices
+    raw_matrices
         | filter(it -> it[0] == "binary")
 		| map(it -> it[1])
 		| combine(
