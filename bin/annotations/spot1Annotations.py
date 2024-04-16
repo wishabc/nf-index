@@ -27,7 +27,7 @@ samples_file = sys.argv[3]
 metadata = pd.read_table(samples_file)
 
 #Make sure the spot1 scores and matrix are matrix compatible
-spot1 = metadata['subsampled_hotspot1'].values.reshape(1, -1)
+spot1 = metadata['SPOT1'].values.reshape(1, -1)
 values = b_filtered * spot1
 
 #Replace 0's with nan's for computation
