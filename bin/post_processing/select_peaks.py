@@ -191,8 +191,8 @@ def minmax_norm(subset, minv=None, maxv=None):
     return (subset - minv) / (maxv - minv), minv, maxv
 
 
-def pairwise_distances(X, metric='euclidean'):
-    return squareform(pdist(X.T, metric))
+# def pairwise_distances(X, metric='euclidean'):
+#     return squareform(pdist(X.T, metric))
 
 
 # def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
@@ -287,13 +287,14 @@ def get_threshold(array, thr):
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     adata = matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta)
     add_sample_labels(adata, by='core_annotation')
-    calc_mean_matrices(adata, rep=1)   
+    calc_mean_matrices(adata, rep=1) 
+    print('Mean matrices calculated')  
     fs = FeatureSelection(
         params=params,
         adata=adata
     )
     mask = fs.select_peaks_for_clustering()
-
+    print('Peaks selected')
     filtered_adata = adata[:, mask]
     filtered_adata.layers['minmax'], minv, maxv = minmax_norm(filtered_adata.X)
     filtered_adata.uns['minv'] = minv
@@ -330,12 +331,12 @@ if __name__ == '__main__':
 
     assert len(peaks_meta) == signal_matrix.shape[0] == binary_matrix.shape[0]
     assert len(samples_meta) == signal_matrix.shape[1] == binary_matrix.shape[1]
-
+    print('Matrices loaded')
     adata, mask = main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix)
 
     adata.obs.drop(columns=adata.obs.columns, inplace=True)
     adata.var.drop(columns=adata.var.columns, inplace=True)
-    adata.write(f"{sys.argv[6]}.h5")
-
+    #adata.write(f"{sys.argv[6]}.h5")
+    print('Data saved')
     np.savetxt(f"{sys.argv[6]}.selected_peaks.mask.txt", mask)
     
