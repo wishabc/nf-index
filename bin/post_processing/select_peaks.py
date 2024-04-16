@@ -336,7 +336,7 @@ if __name__ == '__main__':
 
     adata.obs.drop(columns=adata.obs.columns, inplace=True)
     adata.var.drop(columns=adata.var.columns, inplace=True)
-    #adata.write(f"{sys.argv[6]}.h5")
+    adata.write(f"{sys.argv[6]}.h5")
     print('Data saved')
     np.savetxt(f"{sys.argv[6]}.selected_peaks.mask.txt", mask)
     
