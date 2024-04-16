@@ -20,7 +20,7 @@ process normalize_matrix {
 
 	output:
 		path "${prefix}.scale_factors.mean_normalized.npy", emit: scale_factors
-        path "${prefix}.log_difference.npy", emit: log_diffs
+        path "${prefix}.log_differences.npy", emit: log_diffs
 		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
         path "${prefix}.*.pdf", emit: normalization_qc
 		
