@@ -627,7 +627,7 @@ def perform_NMF(X, weights=None, n_components=16, model=None):
     return W, H, model
 
 def project_samples(data, model):
-    return model.transform(data)
+    return model.transform(data.T)
 
 
 if __name__ == '__main__':
