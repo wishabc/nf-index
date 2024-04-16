@@ -195,55 +195,55 @@ def pairwise_distances(X, metric='euclidean'):
     return squareform(pdist(X.T, metric))
 
 
-def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
-    validation_idx = samples_meta['core_annotation'].notna()
+# def calc_entropy(euclid_dist, samples_meta, entropy_same_num):
+#     validation_idx = samples_meta['core_annotation'].notna()
 
-    entropy = np.full(validation_idx.shape, np.nan)
-    entropy[validation_idx] = get_entropy_scores(
-        euclid_dist[validation_idx, :][:, validation_idx], 
-        np.unique(samples_meta.loc[validation_idx, 'core_annotation'], return_inverse=True)[1],
-        entropy_same_num
-    )
+#     entropy = np.full(validation_idx.shape, np.nan)
+#     entropy[validation_idx] = get_entropy_scores(
+#         euclid_dist[validation_idx, :][:, validation_idx], 
+#         np.unique(samples_meta.loc[validation_idx, 'core_annotation'], return_inverse=True)[1],
+#         entropy_same_num
+#     )
 
-    return entropy
-
-
-def get_entropy_scores(euclid, labels_array, same_num_dict=None):
-    annotation_entropy_scores = []
-    for i in range(len(labels_array)):
-        annotation_entropy_scores.append(get_metric(euclid[i, :], labels_array, same_num_dict=same_num_dict))
-    
-    annotation_entropy_scores = np.array(annotation_entropy_scores)
-    
-    return annotation_entropy_scores
+#     return entropy
 
 
-def get_metric(distances, labels, same_num_dict=None):
-    n = len(distances)
-    assert len(labels) == n
+# def get_entropy_scores(euclid, labels_array, same_num_dict=None):
+#     annotation_entropy_scores = []
+#     for i in range(len(labels_array)):
+#         annotation_entropy_scores.append(get_metric(euclid[i, :], labels_array, same_num_dict=same_num_dict))
     
-    sorted_indices = np.argsort(distances)
-    sorted_labels = labels[sorted_indices]
+#     annotation_entropy_scores = np.array(annotation_entropy_scores)
+    
+#     return annotation_entropy_scores
 
-    n_nearest = (sorted_labels == sorted_labels[0]).sum() * 0.5
-    p = np.power(0.1, 1/n_nearest)
-    
-    p_values = np.power(p, np.arange(n))
-    p_values /= p_values.sum()
 
-    # Ignore similar annotations in entropy score, consider them same as original
-    if same_num_dict is not None and sorted_labels[0] in same_num_dict.keys():
-        for v in same_num_dict[sorted_labels[0]]:
-            sorted_labels[sorted_labels == v] = sorted_labels[0]
+# def get_metric(distances, labels, same_num_dict=None):
+#     n = len(distances)
+#     assert len(labels) == n
+    
+#     sorted_indices = np.argsort(distances)
+#     sorted_labels = labels[sorted_indices]
+
+#     n_nearest = (sorted_labels == sorted_labels[0]).sum() * 0.5
+#     p = np.power(0.1, 1/n_nearest)
+    
+#     p_values = np.power(p, np.arange(n))
+#     p_values /= p_values.sum()
+
+#     # Ignore similar annotations in entropy score, consider them same as original
+#     if same_num_dict is not None and sorted_labels[0] in same_num_dict.keys():
+#         for v in same_num_dict[sorted_labels[0]]:
+#             sorted_labels[sorted_labels == v] = sorted_labels[0]
     
     
-    label_count = accumulate_counts(sorted_labels, p_values, n)
+#     label_count = accumulate_counts(sorted_labels, p_values, n)
     
-    values = np.array(list(label_count.values()))
-    values = values[values != 0]
-    entropy = -np.sum(values * np.log2(values))
+#     values = np.array(list(label_count.values()))
+#     values = values[values != 0]
+#     entropy = -np.sum(values * np.log2(values))
     
-    return entropy
+#     return entropy
 
 
 def matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta):
@@ -286,7 +286,7 @@ def get_threshold(array, thr):
 
 def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
     adata = matrices_to_adata(signal_matrix, binary_matrix, samples_meta, peaks_meta)
-    add_sample_labels(adata)
+    add_sample_labels(adata, by='core_annotation')
     calc_mean_matrices(adata, rep=1)   
     fs = FeatureSelection(
         params=params,
@@ -303,19 +303,19 @@ def main(params, samples_meta, peaks_meta, signal_matrix, binary_matrix):
         method='nmf',
         method_params={'n_components': params['N_components']})
     emb_handler.set_default_params()
-    emb_handler.calculate_embedding()
+    # emb_handler.calculate_embedding()
 
-    embedding = emb_handler.embedding
+    # embedding = emb_handler.embedding
 
-    filtered_adata.obsm['embedding'] = embedding.T
-    filtered_adata.obsm['normalized_embedding'] = (embedding / embedding.sum(axis=0)).T
+    # filtered_adata.obsm['embedding'] = embedding.T
+    # filtered_adata.obsm['normalized_embedding'] = (embedding / embedding.sum(axis=0)).T
 
-    filtered_adata.obsp['distance_matrix'] = pairwise_distances(
-        filtered_adata.obsm['normalized_embedding'].T,
-        metric='jensenshannon'
-    )
+    # filtered_adata.obsp['distance_matrix'] = pairwise_distances(
+    #     filtered_adata.obsm['normalized_embedding'].T,
+    #     metric='jensenshannon'
+    # )
     
-    filtered_adata.varm['basis'] = emb_handler.model_object.components_.T
+    # filtered_adata.varm['basis'] = emb_handler.model_object.components_.T
     return filtered_adata, mask
 
 
