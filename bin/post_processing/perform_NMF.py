@@ -648,7 +648,7 @@ if __name__ == '__main__':
         samples_m = np.ones(mat.shape[1], dtype=bool)
     
     if args.peaks_mask is not None:
-        peaks_m = np.load(args.peaks_mask)
+        peaks_m = np.loadtxt(args.peaks_mask).astype(bool)
     else:
         peaks_m = np.ones(mat.shape[0], dtype=bool)
     

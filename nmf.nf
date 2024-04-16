@@ -1,9 +1,11 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-include { non_required_arg } from "./main"
+include { non_required_arg } from "./normalize_signal"
+
+
+
+
 params.params_list = "/home/sboytsov/NMF/nmf_hyperparams.tsv"
-
-
 params.samples_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
 params.clustering_meta = "/home/sboytsov/poster_clustering/2902_cluster_meta_0303.tsv"
 
@@ -61,7 +63,7 @@ workflow runNMF {
     take:
         hyperparams 
     main:
-        out = fit_nmf(hyperparams) | visualize_nmf
+        out = fit_nmf(hyperparams) //| visualize_nmf
     emit:
         out
 }
