@@ -4,7 +4,7 @@ include { buildIndex } from "./build_masterlist"
 include { generateMatrices; get_samples_order } from "./generate_matrices"
 //include { convert_to_h5 } from "./variance_partition"
 include { normalizeMatrix } from "./normalize_signal"
-include { filterAndConvertToNumpy, filter_masterlist } from "./filter_peaks"
+include { filterAndConvertToNumpy; filter_masterlist } from "./filter_peaks"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
