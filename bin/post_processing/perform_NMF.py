@@ -659,8 +659,10 @@ if __name__ == '__main__':
         if args.samples_mask is not None:
             weights_vector = weights_vector[samples_m]
 
-    mat = mat[peaks_m, :]
-    matrix = mat[:, samples_m]
+    matrix = mat[peaks_m, :][:, samples_m]
+    non_zero_rows = matrix.sum(axis=1) > 0
+
+    matrix = matrix[non_zero_rows, :]
 
     W_np, H_np, model = perform_NMF(X=matrix, weights=weights_vector, n_components=args.n_components)
     if args.samples_mask is not None:
