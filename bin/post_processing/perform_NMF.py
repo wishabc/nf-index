@@ -617,10 +617,11 @@ def perform_NMF(X, weights=None, n_components=16, model=None):
     if model is None:
         model = NMF(n_components=n_components,
                     solver='mu', beta_loss='frobenius',
-                    random_state=0, init="custom",
+                    random_state=0, init="nndsvda",
                     max_iter=1000, tol=1e-4, verbose=True)
-        H, W = initialize_u_v(X, n_components)
-        W = model.fit_transform(X.T, W=W.T, H=H.T, weights=weights)
+        #H, W = initialize_u_v(X, n_components)
+        #W = model.fit_transform(X.T, W=W.T, H=H.T, weights=weights)
+        W = model.fit_transform(X.T, weights=weights)
     else:
         W = model.transform(X.T)
     H = model.components_
