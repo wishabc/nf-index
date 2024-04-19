@@ -34,8 +34,7 @@ def project_samples(data, model):
 def project_peaks(data, model, W):
     # data: peaks x samples
     # NMF: peaks x samples = peaks x components * components x samples
-    model.components_ = W.T # components x samples
-    return model.transform(data).T # components x peaks
+    return model._fit_transform(data, H=W, update_H=False) # components x peaks
 
 
 if __name__ == '__main__':
@@ -85,3 +84,4 @@ if __name__ == '__main__':
     np.save(f'{args.prefix}.W.npy', W_np) # samples x components
     np.save(f'{args.prefix}.H.npy', H_np) # components x peaks
     np.savetxt(f'{args.prefix}.non_zero_peaks_mask.txt', non_zero_rows, fmt="%d")
+    np.savetxt(f'{args.prefix}.samples_mask.txt', samples_m, fmt="%d")
