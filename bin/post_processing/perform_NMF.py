@@ -3,7 +3,7 @@ import pandas as pd
 import argparse
 
 from sklearn.decomposition import NMF
-from .weighted_NMF import NMF as weighted_NMF
+from weighted_NMF import NMF as weighted_NMF
 
 
 def perform_NMF(X, weights=None, n_components=16, model=None):
