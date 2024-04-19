@@ -14,7 +14,7 @@ params.clustering_meta = "/home/sboytsov/poster_clustering/2902_cluster_meta_030
 process fit_nmf {
 	tag "${prefix}"
 	conda "/home/sabramov/miniconda3/envs/jupyter2"
-    publishDir "${params.outdir}/nmf_results"
+    publishDir "${params.outdir}/nmf/${prefix}"
     memory { 400.GB * task.attempt }
 
 	input:
