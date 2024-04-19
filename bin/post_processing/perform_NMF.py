@@ -14,9 +14,10 @@ def perform_NMF(X, weights=None, n_components=16, model=None):
                         max_iter=1000, tol=1e-4, verbose=True)
         if weights is not None:
             model = weighted_NMF(**params)
+            W = model.fit_transform(X.T, weights=weights)
         else:
             model = NMF(**params)
-        W = model.fit_transform(X.T, weights=weights)
+            W = model.fit_transform(X.T)
     else:
         if weights is not None:
             W = model.fit_transform(X.T, weights=weights)
