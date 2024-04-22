@@ -67,25 +67,31 @@ if __name__ == '__main__':
         if args.samples_mask is not None:
             weights_vector = weights_vector[samples_m]
 
-    mat = mat[peaks_m, :].astype(float)
-    matrix = mat[:, samples_m]
-    non_zero_rows = matrix.sum(axis=1) > 0
+    matrix = mat[peaks_m, :].astype(float)
+    matrix_samples_slice = matrix[:, samples_m]
+    non_zero_rows = matrix_samples_slice.sum(axis=1) > 0
 
-    matrix = matrix[non_zero_rows, :]
+    matrix_samples_slice = matrix_samples_slice[non_zero_rows, :]
+
+    peaks_mask = peaks_m
+    peaks_mask[peaks_m] = non_zero_rows
 
     print('Fitting NMF model')
-    W_np, H_np, model = perform_NMF(X=matrix, weights=weights_vector, n_components=args.n_components)
+    W_np, H_np, model = perform_NMF(
+        X=matrix_samples_slice,
+        weights=weights_vector,
+        n_components=args.n_components
+    )
+
     if args.samples_mask is not None:
         print('Projecting samples')
-        W_np = project_samples(mat[non_zero_rows, :], model)
-        if non_zero_rows.sum() != mat.shape[0]:
-            print(mat.shape)
+        W_np = project_samples(matrix[non_zero_rows, :], model)
+        if peaks_mask.sum() != mat.shape[0]:
             H_np = project_peaks(mat, model, W_np)
-            print(H_np)
-            print(H_np.shape)
     
     print('Saving results')
+
     np.save(f'{args.prefix}.W.npy', W_np) # samples x components
     np.save(f'{args.prefix}.H.npy', H_np) # components x peaks
-    np.savetxt(f'{args.prefix}.non_zero_peaks_mask.txt', non_zero_rows, fmt="%d")
+    np.savetxt(f'{args.prefix}.non_zero_peaks_mask.txt', peaks_mask, fmt="%d")
     np.savetxt(f'{args.prefix}.samples_mask.txt', samples_m, fmt="%d")
