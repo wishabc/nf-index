@@ -48,7 +48,7 @@ if __name__ == '__main__':
     parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     args = parser.parse_args()
 
-    mat = np.load(args.matrix)
+    mat = np.load(args.matrix).astype(float)
     
     if args.samples_mask is not None:
         samples_m = np.load(args.samples_mask)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         if args.samples_mask is not None:
             weights_vector = weights_vector[samples_m]
 
-    matrix = mat[peaks_m, :].astype(float)
+    matrix = mat[peaks_m, :]
     matrix_samples_slice = matrix[:, samples_m]
     non_zero_rows = matrix_samples_slice.sum(axis=1) > 0
 
