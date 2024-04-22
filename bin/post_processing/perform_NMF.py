@@ -34,7 +34,8 @@ def project_samples(data, model):
 def project_peaks(data, model, W):
     # data: peaks x samples
     # NMF: peaks x samples = peaks x components * components x samples
-    return model._fit_transform(data, H=W.T, update_H=False) # components x peaks
+    projected_peaks, _, _ = model._fit_transform(data, H=W.T, update_H=False) # components x peaks
+    return projected_peaks
 
 
 if __name__ == '__main__':
