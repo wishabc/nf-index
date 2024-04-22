@@ -79,6 +79,8 @@ if __name__ == '__main__':
         W_np = project_samples(mat[non_zero_rows, :], model)
         if non_zero_rows.sum() != mat.shape[0]:
             H_np = project_peaks(mat, model, W_np)
+            print(H_np)
+            print(H_np.shape)
     
     print('Saving results')
     np.save(f'{args.prefix}.W.npy', W_np) # samples x components
