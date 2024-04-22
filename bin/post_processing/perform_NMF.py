@@ -79,6 +79,7 @@ if __name__ == '__main__':
         print('Projecting samples')
         W_np = project_samples(mat[non_zero_rows, :], model)
         if non_zero_rows.sum() != mat.shape[0]:
+            print(mat.shape)
             H_np = project_peaks(mat, model, W_np)
             print(H_np)
             print(H_np.shape)
