@@ -106,7 +106,7 @@ workflow convertToH5 {
 
 workflow {
     params.h5file = "${params.outdir}/matrices.h5"
-    params.formula = "~ (1 | core_annotation) + dup_rate_30M + subsampled_hotspot1 + I(subsampled_hotspot1^2)"
+    params.formula = "~ (1 | core_annotation) + dup_rate + SPOT1_score + I(SPOT1_score^2)"
     variancePartition(
         Channel.fromPath(params.masterlist),
         Channel.fromPath(params.h5file)
