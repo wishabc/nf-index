@@ -8,7 +8,7 @@ import sys
 import gc
 #Load in Binary Matrix and Metadata for subsampled SPOT score
 
-b = np.load(sys.argv[1]).astype(int)
+b = np.load(sys.argv[1]).astype(float)
 
 mask_file = sys.argv[2]
 mask_df = pd.read_table(mask_file, header=None)
