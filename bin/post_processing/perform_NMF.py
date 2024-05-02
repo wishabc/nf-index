@@ -37,6 +37,8 @@ def project_peaks(data, model, W):
     projected_peaks, _, _ = model._fit_transform(data, H=W.T, update_H=False) # components x peaks
     return projected_peaks
 
+def get_nonzero_mask(matrix):
+    return matrix.sum(axis=1) > 0
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
@@ -82,13 +84,15 @@ if __name__ == '__main__':
         weights=weights_vector,
         n_components=args.n_components
     )
-
+    first_round_projection = None
     if args.samples_mask is not None:
         print('Projecting samples')
         if non_zero_rows.sum() != matrix_samples_slice.shape[0]:
-            H_np = project_peaks(matrix_samples_slice, model, W_np)
+            m = matrix[:, samples_m]
+            first_round_projection = get_nonzero_mask(m)
+            H_np = project_peaks(m[first_round_projection, :], model, W_np)
             model.components_ = H_np
-        W_np = project_samples(matrix[non_zero_rows, :], model)
+        W_np = project_samples(matrix[first_round_projection, :], model)
         if peaks_mask.sum() != mat.shape[0]:
             H_np = project_peaks(mat, model, W_np)
     
