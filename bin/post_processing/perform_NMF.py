@@ -26,16 +26,19 @@ def perform_NMF(X, weights=None, n_components=16, model=None):
     H = model.components_ # components x peaks
     return W, H, model
 
-def project_samples(data, model):
-    # data: peaks x samples 
+def project_samples(data, model, H):
+    # data: peaks x samples
+    # H: components x peaks
     # NMF: samples x peaks = samples x components * components x peaks
-    return model.transform(data.T) # samples x components 
+    W, *_ = model._fit_transform(data.T, H=H, update_H=False)
+    return W # samples x components 
 
 def project_peaks(data, model, W):
     # data: peaks x samples
+    # W: samples x components
     # NMF: peaks x samples = peaks x components * components x samples
     projected_peaks, _, _ = model._fit_transform(data, H=W.T, update_H=False) # components x peaks
-    return projected_peaks
+    return projected_peaks.T
 
 def get_nonzero_mask(matrix):
     return matrix.sum(axis=1) > 0
@@ -91,14 +94,13 @@ if __name__ == '__main__':
             m = matrix[:, samples_m]
             first_round_projection = get_nonzero_mask(m)
             H_np = project_peaks(m[first_round_projection, :], model, W_np)
-            model.components_ = H_np
-        W_np = project_samples(matrix[first_round_projection, :], model)
+        W_np = project_samples(matrix[first_round_projection, :], model, H_np)
         if peaks_mask.sum() != mat.shape[0]:
             H_np = project_peaks(mat, model, W_np)
     
     print('Saving results')
 
     np.save(f'{args.prefix}.W.npy', W_np) # samples x components
-    np.save(f'{args.prefix}.H.npy', H_np) # components x peaks
+    np.save(f'{args.prefix}.H.npy', H_np.T) # components x peaks
     np.savetxt(f'{args.prefix}.non_zero_peaks_mask.txt', peaks_mask, fmt="%d")
     np.savetxt(f'{args.prefix}.samples_mask.txt', samples_m, fmt="%d")
