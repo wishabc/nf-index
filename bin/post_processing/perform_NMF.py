@@ -71,20 +71,23 @@ if __name__ == '__main__':
     matrix_samples_slice = matrix[:, samples_m]
     non_zero_rows = matrix_samples_slice.sum(axis=1) > 0
 
-    matrix_samples_slice = matrix_samples_slice[non_zero_rows, :]
+    matrix_samples_peaks_slice = matrix_samples_slice[non_zero_rows, :]
 
     peaks_mask = peaks_m
     peaks_mask[peaks_m] = non_zero_rows
 
     print('Fitting NMF model')
     W_np, H_np, model = perform_NMF(
-        X=matrix_samples_slice,
+        X=matrix_samples_peaks_slice,
         weights=weights_vector,
         n_components=args.n_components
     )
 
     if args.samples_mask is not None:
         print('Projecting samples')
+        if non_zero_rows.sum() != matrix_samples_slice.shape[0]:
+            H_np = project_peaks(matrix_samples_slice, model, W_np)
+            model.components_ = H_np
         W_np = project_samples(matrix[non_zero_rows, :], model)
         if peaks_mask.sum() != mat.shape[0]:
             H_np = project_peaks(mat, model, W_np)
