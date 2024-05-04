@@ -49,6 +49,7 @@ if __name__ == '__main__':
     parser.add_argument('prefix', help='Prefix for the output file')
     parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
     parser.add_argument('--samples_mask', help='Mask of used samples, numpy array', default=None)
+    parser.add_argument('--project_masked_peaks', action='store_true', help='Project peaks for all masked samples', default=False)
     parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array', default=None)
     parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     args = parser.parse_args()
@@ -72,14 +73,16 @@ if __name__ == '__main__':
         if args.samples_mask is not None:
             weights_vector = weights_vector[samples_m]
 
-    matrix = mat[peaks_m, :]
-    matrix_samples_slice = matrix[:, samples_m]
-    non_zero_rows = matrix_samples_slice.sum(axis=1) > 0
+    #peaks_masked_matrix = mat[peaks_m, :]
+    #peaks_and_samples_masked_matrix = peaks_masked_matrix[:, samples_m]
+    
+    samples_masked_matrix = mat[:, samples_m]
+    non_zero_rows = samples_masked_matrix.sum(axis=1) > 0
 
-    matrix_samples_peaks_slice = matrix_samples_slice[non_zero_rows, :]
+    peaks_mask = peaks_m | non_zero_rows
 
-    peaks_mask = peaks_m
-    peaks_mask[peaks_m] = non_zero_rows
+    matrix_samples_peaks_slice = mat[peaks_mask, :][:, samples_m]
+
 
     print('Fitting NMF model')
     W_np, H_np, model = perform_NMF(
@@ -87,14 +90,13 @@ if __name__ == '__main__':
         weights=weights_vector,
         n_components=args.n_components
     )
-    first_round_projection = None
     if args.samples_mask is not None:
         print('Projecting samples')
-        if non_zero_rows.sum() != matrix_samples_slice.shape[0]:
-            m = matrix[:, samples_m]
-            first_round_projection = get_nonzero_mask(m)
-            H_np = project_peaks(m[first_round_projection, :], model, W_np)
-        W_np = project_samples(matrix[first_round_projection, :], model, H_np)
+        if args.project_masked_peaks and (non_zero_rows.sum() != mat[:, samples_m].shape[0]):
+            H_np = project_peaks(mat[:, samples_m][non_zero_rows, :], model, W_np)
+            W_np = project_samples(mat[non_zero_rows, :], model, H_np)
+        else:
+            W_np = project_samples(mat[peaks_mask, :], model, H_np)
         if peaks_mask.sum() != mat.shape[0]:
             H_np = project_peaks(mat, model, W_np)
     
