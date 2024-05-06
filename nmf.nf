@@ -13,18 +13,17 @@ params.clustering_meta = "/home/sboytsov/poster_clustering/2902_cluster_meta_030
 
 process fit_nmf {
 	tag "${prefix}"
-	conda "/home/sabramov/miniconda3/envs/jupyter2"
+	conda "/home/sabramov/miniconda3/envs/jupyterlab"
     publishDir "${params.outdir}/nmf/${prefix}"
     memory { 400.GB * task.attempt }
 
 	input:
-		tuple val(n_components), val(fname), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
+		tuple val(prefix), val(n_components), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
 
 	output:
         tuple val(prefix), val(n_components), path(matrix_path), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
 
 	script:
-    prefix = "${fname}.${n_components}"
 	"""
     python3 $moduleDir/bin/post_processing/perform_NMF.py \
         ${matrix_path} \
@@ -79,8 +78,8 @@ workflow {
     Channel.fromPath(params.params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
+            "${row.prefix}.${row.n_components}",
             row.n_components,
-            row.prefix,
             file(row.matrix_path),
             row?.samples_weights,
             row?.peaks_mask,
