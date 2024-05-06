@@ -2,10 +2,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
-
+from tqdm import tqdm
 
 from order_by_template import get_component_data
-from perform_NMF import read_args
 
 def barplot_at_scale(matrix, metadata, order=None, component_data=None, tolerance=0.95, label_colors=None):
     assert len(metadata) == matrix.shape[1]
