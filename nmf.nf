@@ -21,7 +21,7 @@ process fit_nmf {
 		tuple val(n_components), val(fname), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
 
 	output:
-        tuple val(prefix), val(n_components), val(samples_mask), path("${prefix}*")
+        tuple val(prefix), val(n_components), path(matrix_path), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
 
 	script:
     prefix = "${fname}.${n_components}"
@@ -39,23 +39,25 @@ process fit_nmf {
 process visualize_nmf {
 	tag "${prefix}"
 	conda params.conda
-    errorStrategy 'ignore'
-    publishDir "${params.outdir}/figures"
+    publishDir "${params.outdir}/nmf/${prefix}"
 
 	input:
-		tuple val(prefix), val(n_components), val(samples_mask), path(nmf_results)
+        tuple val(prefix), val(n_components), path(binary_matrix), path(W), path(H), path(peaks_mask), path(samples_mask)
 
 	output:
-        tuple val(prefix), path("*.pdf")
+        tuple val(prefix), path("./*.pdf")
 
 	script:
 	"""
     python3 $moduleDir/bin/post_processing/visualize_nmf.py \
-        ${params.clustering_meta} \
-        ${params.samples_order_path} \
-        ${prefix} \
+        ${binary_matrix} \
+        ${W} \
+        ${H} \
+        ${params.samples_file} \
         ${n_components} \
-        ${samples_mask}
+        --peaks_mask ${peaks_mask} \
+        --samples_mask ${samples_mask} \
+        --outpath ./
 	"""
 }
 
@@ -63,7 +65,9 @@ workflow runNMF {
     take:
         hyperparams 
     main:
-        out = fit_nmf(hyperparams) //| visualize_nmf
+        out = hyperparams
+            | fit_nmf
+            | visualize_nmf
     emit:
         out
 }

@@ -1,250 +1,265 @@
-import os
-import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import umap
-
-import matplotlib.colors as mcolors
-import seaborn as sns
-
-sys.path.append('/home/sboytsov/Vocabulary')
-import OONMF
-import OONMFhelpers
-from OONMFhelpers import get_barsortorder
+import argparse
 
 
-def make_stacked_bar_plot_sorted(self, Nrelevant, BarMatrix, bargraph_out, names=[], barsortorder=[], plot_title='', figdim1=150, figdim2=40):
-    if len(barsortorder) < 1:
-        barsortorder = np.arange(Nrelevant)
+from order_by_template import get_component_data
+from perform_NMF import read_args
 
-    if len(names) < 1:
-        names = [str(i) for i in range(Nrelevant)]
-        names = np.array(names)
-
-    start = 0
-    end = Nrelevant
-    Xpositions = np.arange(Nrelevant)
-
-    self.define_colors()
-
-    plt.clf()
-    plt.figure(figsize=(figdim1, figdim2))
-
-    for column in range(Nrelevant):
-        ground_pSample = 0
-        bar_heights = BarMatrix[:, start:end].T[barsortorder][column]
-        indices = np.flip(np.argsort(bar_heights))
-        # indices = np.arange(self.Ncomps)
-        sorted_heights = bar_heights[indices]
-        colours = [self.Comp_colors[i] for i in indices]
-
-        for component in range(self.Ncomps):
-            plt.bar(Xpositions[column], sorted_heights[component], bottom=ground_pSample, color=colours[component], alpha=1)
-            ground_pSample = np.sum(sorted_heights[0:component + 1])
-
-    OONMFhelpers.increase_axis_fontsize()
-
-    plt.ylabel('sum of signal in matrix', fontsize=70)
-    if (len(plot_title) > 0):
-        plt.title(plot_title)
-
-    samplenamesize = (1 / Nrelevant)**0.5 * 300
-    thebottom = min([(1 / Nrelevant)**0.3 * 1.2, 0.3])
-
-    plt.xticks(Xpositions, names[barsortorder], rotation='vertical', fontsize=samplenamesize)
-    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=thebottom)
-
-    plt.savefig(bargraph_out)
-    plt.show()
-    plt.close()
-
-
-OONMF.NMFobject.make_stacked_bar_plot_sorted = make_stacked_bar_plot_sorted
-
-
-def get_colors_order(n_components):
-    # code from Wouter's library, to have the similar colors as in barplot
-    colors_order = ['#FFE500', '#FE8102', '#FF0000', '#07AF00', '#4C7D14', '#414613', '#05C1D9', '#0467FD', '#009588', '#BB2DD4', '#7A00FF', '#4A6876', '#08245B', '#B9461D', '#692108', '#C3C3C3']
-    neworder = np.array([16,10,7,11,2,12,1,8,4,15,14,5,9,6,3,13]).astype(int) - 1
-    colors_order = list(np.array(colors_order)[neworder])
-
-    if (n_components>len(colors_order)):
-        colornames = np.sort(list(mcolors.CSS4_COLORS.keys()))
-        count = len(colors_order)
-        np.random.seed(10)
-        myrandint = np.random.randint(len(colornames))
-        while (count < n_components):
-            myrandint =    np.random.randint(len(colornames))
-            newcolor = colornames[myrandint]
-            trialcount = 0
-            while ((newcolor in colors_order) and (trialcount < 100)):
-                newcolor = colornames[np.random.randint(0,len(colornames))]
-                trialcount+=1
-            #print('new color ',count,newcolor)
-            colors_order.append(newcolor)
-            count+=1
-    return colors_order
-
-
-def load_meta(sample_order_path, cluster_meta_path):
-    # Sample order matrix to metadata 
-    samples_order = np.loadtxt(sample_order_path, delimiter='\t', dtype=str)
-    # metadata with cluster names
-    metadata = pd.read_table(cluster_meta_path).set_index('id').loc[samples_order]
-    # Here in column 'VA_cluster' I load Sasha's clustering labels
-    metadata.rename(columns={'cluster': 'VA_cluster'}, inplace=True)
-    metadata.reset_index(inplace=True)
-    return metadata
-
-
-
-# TODO: use samples_mask to distiguish between projected and initial data
-def visualize_nmf(metadata, prefix, n_components, samples_mask=None):
-    colors_order = get_colors_order(n_components)
-    # Data loading
-    allnames = metadata['taxonomy_name'].to_list()
-
-    decomp = OONMF.NMFobject(n_components)
-    decomp.matrix_input_name(
-        f'{prefix}.W.npy',
-        f'{prefix}.H.npy',
-    )
-    decomp.read_matrix_input(compressed=False)
-    print(decomp.Basis.shape, decomp.Mixture.shape, "matrices loaded for n_components", n_components)
-    bar_graph_sort_order = get_barsortorder(decomp.Basis)
-    decomp.normalize_matrices()
+def barplot_at_scale(matrix, metadata, order=None, component_data=None, tolerance=0.95, label_colors=None):
+    assert len(metadata) == matrix.shape[1]
+    if component_data is None:
+        raise NotImplementedError
+    else:
+        color_list = component_data['color']
+        matrix = matrix[component_data['index'], :]
     
-    # heatmap
-    decomp.make_standard_heatmap_plot(decomp.Basis.shape[0], 
-                                decomp.Basis, 
-                                f'{prefix}.heatmap.pdf', 
-                                names=np.array(allnames), 
-                                barsortorder= bar_graph_sort_order)
+    agst = np.argsort(matrix / matrix.sum(axis=0), axis=0)[::-1, :]
+    sorted_W = np.sort(matrix / matrix.sum(axis=0), axis=0)[::-1, :]
     
-    # Stacked barplot
-    decomp.make_stacked_bar_plot_sorted(decomp.Basis.shape[0], 
-                        decomp.Basis.T, 
-                        f'{prefix}.stacked_bar_plot.pdf', 
-                        names=np.array(allnames), 
-                        barsortorder=bar_graph_sort_order)
+    sep = np.max(agst) + np.max(sorted_W) + 1
+    if order is None:
+        # order = np.argsort(agst[0, :] * sep**2 +  agst[1, :] * sep + sorted_W[0])[::-1]
+        order = np.argsort(agst[0, :] * sep + sorted_W[0] / sorted_W.sum(axis=0))[::-1]
+    
+    colors = np.array(color_list)[agst[:, order]]
+    
+    heights = sorted_W[:, order]
+    
+    per_bar = 100
+    chunks = matrix.shape[1] // per_bar + 1
+    
+    fig, axes = plt.subplots(chunks, 1, figsize=(20, 4*chunks))
+    if chunks == 1:
+        axes = [axes]
+    fig.subplots_adjust(hspace=1.5)
+    
+    maxv = 0
+    for k in tqdm(np.arange(chunks)):
+        ax = axes[k]
+        sl = slice(per_bar*k, per_bar*(k+1), 1)
+        for j in np.arange(matrix.shape[1])[sl]:
+            cumul_h = 0
+            for i in np.arange(matrix.shape[0]):
+                ax.bar(x=j, height=heights[i, j], bottom=cumul_h, color=colors[i, j])
+                cumul_h += heights[i, j]
+                maxv = max(maxv, cumul_h)
+                if cumul_h >= tolerance:
+                    break
+        ax.set_xticks(np.arange(matrix.shape[1])[sl])
+        ax.set_xticklabels(metadata.iloc[order, :][sl].apply(lambda row:
+                                                             f"{row['core_ontology_term']} {row['SPOT1_score']:.1f}",
+                                                             axis=1), rotation=90, )
+        if label_colors is not None:
+            assert len(label_colors) == matrix.shape[1]
+            for xtick, col in zip(ax.get_xticklabels(), label_colors[sl]):
+                xtick.set_color(col)
+        ax.set_xlim(np.arange(matrix.shape[1])[sl].min(), np.arange(matrix.shape[1])[sl].min() + per_bar)
+        # break
+    
+    for ax in axes:
+        ax.set_ylim(0, maxv*1.05)
 
-    # Normolized stcked barplot
-    decomp.make_stacked_bar_plot_sorted(decomp.Basis.shape[0], 
-                            decomp.NormedBasis.T, 
-                            f'{prefix}.stacked_bar_plot.normed.sorted.pdf', 
-                            names=np.array(allnames), 
-                            barsortorder=bar_graph_sort_order)
-    
-    
-    # UMAP 
-    majcomp = np.argmax(decomp.Basis, axis=1)
-    
-    reducer = umap.UMAP(min_dist=0.5, n_neighbors=200, random_state=20)
-    embedding = reducer.fit_transform(decomp.Basis)
+    return order, fig
 
-    plt.clf()
-    fig = plt.figure(figsize=(10,10))
-    decomp.define_colors()
-    plt.scatter(embedding[:,0], embedding[:,1], color=np.array(decomp.Comp_colors)[majcomp], alpha=1, marker='.')
-    plt.ylabel('UMAP axis 2')
-    plt.xlabel('UMAP axis 1')
-    plt.title(f'VST data, Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
-    plt.savefig(f'{prefix}.umap.pdf', bbox_inches='tight')
+def get_barsortorder(matrix):
+    # assumes rows are the data, columns are NMF components
+    max_component_idx = np.argmax(matrix, axis=1)
+    barsortorder = []
+    for i in range(matrix.shape[1]):
+        desired_order = np.argsort(-matrix[:,i])
+        relevant_cut = max_component_idx[desired_order] == i
+        barsortorder.append(desired_order[relevant_cut])
+    matrix = matrix.astype(int)
+    return np.concatenate(barsortorder)
+
+
+def plot_component(data, labels, color, ax=None, top_count=15):
+    n_samples = data.shape[0]
+    top_count = min(top_count, n_samples)  # Adjust to plot up to 15 samples, or fewer if less are available
+
+    sorted_indices = np.argsort(data)[-top_count:]
+    sorted_data = data[sorted_indices]
+    sorted_names = labels[sorted_indices]
+
+    ax.barh(np.arange(top_count), sorted_data, color=color)
+    ax.set_yticks(np.arange(top_count))
+    ax.set_yticklabels(sorted_names, ha='right', va='center', fontsize=20, color='k')
+    ax.set_xlim(0, 1.1 * sorted_data.max())
+    return ax
+    
+
+def plot_nmf(basis, annotations, top_count=15, component_data=None):
+    n_components = basis.shape[0]
+
+    #bar_graph_sort_order = get_barsortorder(basis)
+
+    ncols = int(np.ceil(np.sqrt(n_components)))
+    nrows = int(np.ceil(n_components / ncols))
+    
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(10 * ncols, 7 * nrows))
+    
+    axes = axes.flatten()
+    assert len(axes) >= n_components
+    
+    [fig.delaxes(ax) for ax in axes[n_components:]]
+
+
+    for ax, (_, row) in zip(axes[:n_components], component_data.iterrows()):
+        component_is_major = np.argmax(basis, axis=0) == row['index']
+        
+        ax = plot_component(
+            basis[row['index'], component_is_major],
+            annotations[component_is_major], 
+            color=row['color'], 
+            ax=ax,
+            top_count=top_count
+        )
+        ax.set_title(f'{row["name"]}')
+    plt.tight_layout()
+    return fig, axes
+
+
+def get_order(agst, sorted_matrix, by='primary'):
+    sep = np.max(agst) + np.max(sorted_matrix) + 1
+    if by == 'secondary':
+        order = np.argsort(agst[0, :] * sep**2 +  agst[1, :] * sep + sorted_matrix[0])[::-1]
+    elif by == 'primary':
+        order = np.argsort(agst[0, :] * sep + sorted_matrix[0])[::-1]
+    return order
+
+
+def get_tops_and_bottoms(agst, heights):
+    tops = heights.cumsum(axis=0)
+    bottoms = tops - heights
+    
+    idxs = np.argsort(agst, axis=0)
+    return np.take_along_axis(tops, idxs, axis=0), np.take_along_axis(bottoms, idxs, axis=0)
+
+
+def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', order=None, agst=None):
+    if lims is None:
+        lims = 0, matrix.shape[1]
+    matrix = matrix[:, lims[0]:lims[1]]
+    n_components, n_objects = matrix.shape
+
+    if agst is None:
+        agst = np.argsort(matrix, axis=0)[::-1, :]
+    heights = np.take_along_axis(matrix, agst, axis=0)
+
+    if order is None:
+        order = get_order(agst, heights, by=order_by)
+
+    tops, bottoms = get_tops_and_bottoms(agst[:, order], heights[:, order])
+
+    fb_tops = np.repeat(tops, 2, axis=1)
+    fb_bottoms = np.repeat(bottoms, 2, axis=1)
+    xvals = np.concatenate([[0], np.repeat(np.arange(1, matrix.shape[1]), 2), [matrix.shape[1]]])
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(matrix.shape[1]/100, 2))
+    for i, color in enumerate(colors):
+        ax.fill_between(xvals, fb_bottoms[i], fb_tops[i], lw=0, color=color)
+    ax.set_xlim(-0.5, matrix.shape[1] + 0.5)
+
+    return ax, agst, order
+
+
+def plot_barplots(matrix, component_data=None, n=10_000, order_by='primary', order=None, agst=None, normalize=True, ax=None):
+    if matrix.shape[1] > n:
+        np.random.seed(0)
+        H_dsp = matrix[:, np.random.choice(np.arange(matrix.shape[1]), n)]
+    else:
+        H_dsp = matrix
+
+    if component_data is None:
+        raise ValueError
+    else:
+        H_dsp = H_dsp[component_data['index'], :]
+        colors = component_data['color']
+
+    if normalize:
+        H_dsp = H_dsp / H_dsp.sum(axis=0)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(20, 2))
+
+    return plot_stacked(H_dsp, colors, ax=ax, order_by=order_by, order=order, agst=agst)
+    
+
+def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, vis_path):
+    component_data = get_component_data(W)
+
+    # Plot samples
+    print('All samples')
+    ax, _, _ = plot_barplots(W, component_data)
+    plt.savefig(f'{vis_path}/Barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.close(ax.get_figure())
+
+    print('Train stratified samples set')
+    ax, _, _ = plot_barplots(W[:, samples_mask], component_data)
+    plt.savefig(f'{vis_path}/Barplot_stratified_train_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.close(ax.get_figure())
+
+    # Plot peaks
+    print('Reference peaks')
+    ax, _, _ = plot_barplots(H[:, peaks_mask], component_data, normalize=True)
+    plt.savefig(f'{vis_path}/Barplot_reference_train_DHSs.pdf', transparent=True, bbox_inches='tight')
+    plt.close(ax.get_figure())
+
+    print('All peaks')
+    ax, _, _ = plot_barplots(H, component_data)
+    plt.savefig(f'{vis_path}/Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
+    plt.close(ax.get_figure())
+
+    #Only reproduced DHSs
+    print('>3 peaks supproting a DHS')
+    reproduced_peaks = binary_matrix.sum(axis=1) > 3
+    ax, _, _ = plot_barplots(H[:, reproduced_peaks], component_data, normalize=True)
+    plt.savefig(f'{vis_path}/Barplot_DHS_supported_by_4+samples.pdf', transparent=True, bbox_inches='tight')
+    plt.close(ax.get_figure())
+
+    print('Detailed barplot all samples')
+    s_order, fig = barplot_at_scale(W, metadata, component_data=component_data)
+    if samples_mask.sum() < samples_mask.shape[0]:
+        plt.close(fig)
+        s_mask = samples_mask[s_order]
+        barplot_at_scale(
+            W,
+            metadata,
+            s_order,
+            component_data=component_data,
+            label_colors=[
+                'r' if s else 'k' for s in s_mask
+            ]
+        )
+    plt.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
-    
-    # UMAP, comparing with VA and meta
-    color_columns = ['VA_cluster', 'system']
-    fig, axes = plt.subplots(1, 3, figsize=(30, 10))
-    for idx, color_column in enumerate(color_columns):
-        cluster_colors = sns.color_palette("tab10", len(metadata[color_column].unique()))
-        color_dict = dict(zip(metadata[color_column].unique(), cluster_colors))
-        metadata['cluster_color'] = metadata[color_column].map(color_dict)
-        ax = axes[idx]
-        for cluster, color in color_dict.items():
-            mask = metadata[color_column] == cluster
-            ax.scatter(embedding[mask, 0], embedding[mask, 1], color=color, label=cluster)
-        ax.set_xlabel('UMAP axis 1')
-        ax.set_ylabel('UMAP axis 2')
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0)
-    ax = axes[2]
-    decomp.define_colors()
-    ax.scatter(embedding[:, 0], embedding[:, 1], color=np.array(decomp.Comp_colors)[majcomp], alpha=1, marker='.')
-    ax.set_ylabel('UMAP axis 2')
-    ax.set_xlabel('UMAP axis 1')
-    ax.set_title(f'VST data, Frobenius norm, {decomp.Mixture.shape[1]} DHSs')
 
-    plt.savefig(f'{prefix}.umap.comparing.pdf', bbox_inches='tight')
+    print('Top 20 samples per component')
+    annotations = metadata["taxonomy_name"].values
+    fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data)
+    plt.savefig(f'{vis_path}/Top20_all_samples_barplot.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
-
-    ### Iterpretation part
-    # Determine the number of rows and columns for the subplots
-    nrows = int(np.ceil(np.sqrt(n_components)))
-    ncols =int(np.ceil(n_components / nrows))
-
-    # Create a figure with subplots
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 10 * nrows))
-    axes = axes.flatten()  # Flatten the axes array to easily loop through
-
-    for i_component in range(n_components):
-        # Plot i_component major
-        green_cut = np.argmax(decomp.Basis, axis=1) == i_component
-        print("Number of samples in this category ", len(green_cut[green_cut]))
-
-        if len(green_cut[green_cut]) >= 1: # if not, there are too few samples to count 10% top
-            # Plot top 10% of this major as described:
-            colors = colors_order
-            decomp_NormedBasis = decomp.NormedBasis[green_cut] 
-
-            # Get the top 10% of samples
-            #top_percentage = 0.1
-            top_count = 10 #int(decomp_NormedBasis.shape[0] * top_percentage)
-
-            # Sort the samples by the value of the i_component
-            sorted_indices = np.argsort(decomp_NormedBasis[:, i_component])[-top_count:]
-            sorted_matrix = decomp_NormedBasis[sorted_indices, :]
-            sorted_names = np.array(allnames)[green_cut][sorted_indices]
-
-            # Create a horizontal stacked bar plot on the subplot
-            ax = axes[i_component]
-            ax.barh(np.arange(sorted_indices.shape[0]), sorted_matrix[:, i_component], color=colors[i_component % len(colors)], label=f'Component {i_component}')
-
-            # Add labels to the plot
-            for i, name in enumerate(sorted_names):
-                ax.text(sorted_matrix[i, i_component] / 2, i, name, ha='center', va='center', color='white', fontsize=20)
-
-            # Customize the plot
-            ax.set_yticks(np.arange(top_count))
-            ax.set_yticklabels([])
-            ax.legend(loc='upper right')
-            ax.set_xlabel('Component values')
-            #ax.set_ylabel('Top 10% samples')
-            #ax.set_title(f'Horizontal bar plot for top 10% samples (Component {i_component})')
-
-        else:
-            continue
-
-    # Remove unused subplots
-    for i in range(i_component + 1, len(axes)):
-        fig.delaxes(axes[i])
-
-    # Adjust layout and show the figure
-    #fig.tight_layout()
-    plt.savefig(f'{prefix}.iterpretation.10barplot.pdf', bbox_inches='tight')
-    plt.close(fig)
-
-
-def main(cluster_meta_path, sample_order_path, prefix, n_components, samples_mask=None):
-    metadata = load_meta(sample_order_path, cluster_meta_path)
-    if samples_mask is not None:
-        samples_mask = np.load(samples_mask)
-    visualize_nmf(
-        metadata,
-        prefix,
-        int(n_components),
-        samples_mask
-    )
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser('Matrix normalization using lowess')
+    parser.add_argument('matrix', help='Path to matrix to run NMF on')
+    parser.add_argument('W', help='W matrix of perform NMF decomposition', default=None)
+    parser.add_argument('H', help='H matrix of perform NMF decomposition')
+    parser.add_argument('metadata', help='Path to metadata file')
+    parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
+    parser.add_argument('--samples_mask', help='Mask of used samples, numpy array', default=None)
+    parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array', default=None)
+    parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
+    parser.add_argument('--outpath', help='Path to save visualizations', default='./')
+    args = parser.parse_args()
+    mat, samples_m, peaks_m, weights_vector = read_args(args)
+
+    metadata = pd.read_table(args.metadata)
+    W = np.load(args.W)
+    H = np.load(args.H)
+    main(mat, W, H, metadata, samples_m, peaks_m, args.outpath)
+
