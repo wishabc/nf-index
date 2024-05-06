@@ -8,6 +8,7 @@ W_old_path = '/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/embedd
 
 
 def reorder_components(W1, W2):
+    print(W1.shape, W2.shape)
     cosine_similarity = 1 - cdist(W1, W2, 'cosine')
     _, col_ind = linear_sum_assignment(-cosine_similarity)
     return col_ind
