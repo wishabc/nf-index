@@ -45,6 +45,7 @@ def get_nonzero_mask(matrix):
 
 
 def read_args(args):
+    print('Reading matrix')
     mat = np.load(args.matrix).astype(float)
     
     if args.samples_mask is not None:

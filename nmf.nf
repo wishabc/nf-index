@@ -40,6 +40,7 @@ process visualize_nmf {
 	tag "${prefix}"
 	conda params.conda
     publishDir "${params.outdir}/nmf/${prefix}"
+    memory { 300.GB * task.attempt }
 
 	input:
         tuple val(prefix), val(n_components), path(binary_matrix), path(W), path(H), path(peaks_mask), path(samples_mask)
