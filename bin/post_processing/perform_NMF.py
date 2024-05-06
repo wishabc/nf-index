@@ -69,7 +69,7 @@ if __name__ == '__main__':
     weights_vector = None
     if args.samples_weights:
         weights_df = pd.read_table(args.samples_weights)
-        weights_vector = weights_df.set_index("id").to_numpy().squeeze()
+        weights_vector = weights_df.set_index("ag_id").to_numpy().squeeze()
         if args.samples_mask is not None:
             weights_vector = weights_vector[samples_m]
 
