@@ -38,7 +38,7 @@ process fit_nmf {
 
 process visualize_nmf {
 	tag "${prefix}"
-	conda params.conda
+	conda "/home/sabramov/miniconda3/envs/jupyterlab"
     publishDir "${params.outdir}/nmf/${prefix}"
     memory { 300.GB * task.attempt }
 
