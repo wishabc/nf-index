@@ -50,6 +50,7 @@ process visualize_nmf {
 
 	script:
 	"""
+    echo 1
     python3 $moduleDir/bin/post_processing/visualize_nmf.py \
         ${binary_matrix} \
         ${W} \
