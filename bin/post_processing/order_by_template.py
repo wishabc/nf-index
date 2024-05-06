@@ -15,7 +15,7 @@ def reorder_components(W1, W2):
 
 def get_component_data(W, W_old=None):
     if W_old is None:
-        W_old = np.load(W_old_path)
+        W_old = np.load(W_old_path).T
     reorder = reorder_components(W, W_old)
     component_order = [
         27,

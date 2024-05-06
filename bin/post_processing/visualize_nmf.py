@@ -261,7 +261,7 @@ if __name__ == '__main__':
     peaks_m = np.loadtxt(args.peaks_mask).astype(bool)
 
     metadata = pd.read_table(args.metadata)
-    W = np.load(args.W)
-    H = np.load(args.H)
+    W = np.load(args.W).T
+    H = np.load(args.H).T
     main(mat, W, H, metadata, samples_m, peaks_m, args.outpath)
 
