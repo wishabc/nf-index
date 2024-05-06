@@ -46,7 +46,7 @@ process visualize_nmf {
         tuple val(prefix), val(n_components), path(binary_matrix), path(W), path(H), path(peaks_mask), path(samples_mask)
 
 	output:
-        tuple val(prefix), path("./*.pdf")
+        tuple val(prefix), path("*.pdf")
 
 	script:
 	"""
