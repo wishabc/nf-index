@@ -14,14 +14,14 @@ params.clustering_meta = "/home/sboytsov/poster_clustering/2902_cluster_meta_030
 process fit_nmf {
 	tag "${prefix}"
 	conda "/home/sabramov/miniconda3/envs/jupyterlab"
-    publishDir "${params.outdir}/nmf/${prefix}"
+    publishDir "${params.outdir}/nmf/${prefix}", pattern: "${prefix}.*"
     memory { 400.GB * task.attempt }
 
 	input:
-		tuple val(prefix), val(n_components), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights)
+		tuple val(prefix), val(n_components), path(matrix_path), path(index), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights)
 
 	output:
-        tuple val(prefix), val(n_components), path(matrix_path), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
+        tuple val(prefix), val(n_components), path(matrix_path), path(index), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
 
 	script:
 	"""
@@ -84,6 +84,7 @@ workflow {
             "${row.prefix}.${row.n_components}",
             row.n_components,
             file(row.matrix_path),
+            file(row.dhs_meta),
             row?.samples_weights,
             row?.peaks_mask,
             row?.samples_mask,
@@ -101,13 +102,11 @@ workflow visualize {
             "${row.prefix}.${row.n_components}",
             row.n_components,
             file(row.matrix_path),
+            file(row.dhs_meta)
             ))
         | map( 
             it -> tuple(
-                it[0], 
-                it[1],
-                it[2],
-                file("/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_no_cancer/output/masterlist.only_autosomes.filtered.bed"),
+                *it[0..(it.size()-1)],
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.W.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.H.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.non_zero_peaks_mask.txt"),
