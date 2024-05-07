@@ -52,11 +52,12 @@ def read_weights(weights_path, shape, ext=None):
     weights_vector = np.ones(shape, dtype=float)
     if weights_path:
         if ext == 'npy':
-            weights_vector = np.load(weights_path)
+            weights_vector = np.load(weights_path)  
         else:
             weights_df = pd.read_table(weights_path)
             weights_vector = weights_df.set_index("ag_id").to_numpy().squeeze()
-    return weights_vector
+    
+    return weights_vector / weights_vector.sum() * weights_vector.shape[0]
 
 def read_args(args):
     print('Reading matrix')
