@@ -101,7 +101,7 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
         H_weights=H_weights,
         n_components=args.n_components
     )
-    if samples_m.sum() != samples_m.shape[0]:
+    if samples_m.shape[0] > samples_m.sum():
         print('Projecting samples')
         if args.project_masked_peaks and (non_zero_rows.sum() != mat[:, samples_m].shape[0]):
             H_np = project_peaks(mat[:, samples_m][non_zero_rows, :], model, W_np)
@@ -109,7 +109,7 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
         else:
             W_np = project_samples(mat[peaks_mask, :], model, H_np)
 
-    if peaks_mask.sum() != peaks_mask.shape[0]:
+    if peaks_mask.shape[0] > peaks_mask.sum():
         H_np = project_peaks(mat, model, W_np, W_weights, H_weights)
 
     return W_np, H_np, peaks_mask

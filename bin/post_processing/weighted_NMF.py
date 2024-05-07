@@ -93,7 +93,7 @@ class NMF(_BaseNMF):
         if W_weights is not None and self.beta_loss != 'frobenius':
             raise NotImplementedError
         with config_context(assume_finite=True):
-            W, H, n_iter = self._fit_transform(X, W=W, H=H, W_weights=W_weights)
+            W, H, n_iter = self._fit_transform(X, W=W, H=H, W_weights=W_weights, H_weights=H_weights)
 
         self.reconstruction_err_ = _beta_divergence(
             X, W, H, self._beta_loss, square_root=True, 
