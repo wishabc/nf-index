@@ -264,7 +264,8 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
             component_data=component_data,
             order=np.argsort(-relative_W[row['index'], :]),
         )
-        fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{row["name"].replace('/', '_')}.pdf', transparent=True, bbox_inches='tight')
+        comp_name = row["name"].replace("/", "_")
+        fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
 
     if dhs_annotations is not None:
