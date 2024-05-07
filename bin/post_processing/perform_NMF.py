@@ -74,12 +74,6 @@ def read_args(args):
     if args.samples_weights or args.peaks_weights:
         W_weights_vector = read_weights(args.samples_weights, mat.shape[1])
         H_weights_vector = read_weights(args.peaks_weights, mat.shape[0])
-
-        if samples_m.shape[0] > samples_m.sum():
-            W_weights_vector = W_weights_vector[samples_m]
-        
-        if peaks_m.shape[0] > peaks_m.sum():
-            H_weights_vector = H_weights_vector[peaks_m]
     else:
         H_weights_vector = W_weights_vector = None
 
@@ -95,13 +89,24 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
     matrix_samples_peaks_slice = mat[peaks_mask, :][:, samples_m]
 
     print('Fitting NMF model')
+    if W_weights is not None or H_weights is not None:
+        print('Using weighted NMF')
+        if samples_m.shape[0] > samples_m.sum():
+            W_weights_slice = W_weights[samples_m]
+        
+        if peaks_m.shape[0] > peaks_m.sum():
+            H_weights_slice = H_weights[peaks_m]
+    else:
+        W_weights_slice = H_weights_slice = None
+
     W_np, H_np, model = perform_NMF(
         X=matrix_samples_peaks_slice,
-        W_weights=W_weights,
-        H_weights=H_weights,
+        W_weights=W_weights_slice,
+        H_weights=H_weights_slice,
         n_components=args.n_components
     )
     if samples_m.shape[0] > samples_m.sum():
+        assert W_weights is None
         print('Projecting samples')
         if args.project_masked_peaks and (non_zero_rows.sum() != mat[:, samples_m].shape[0]):
             H_np = project_peaks(mat[:, samples_m][non_zero_rows, :], model, W_np)
