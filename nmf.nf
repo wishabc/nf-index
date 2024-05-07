@@ -60,7 +60,7 @@ process visualize_nmf {
         ${n_components} \
         --peaks_mask ${peaks_mask} \
         --samples_mask ${samples_mask} \
-        --outpath ./
+        --outpath ./ \
         --dhs_annotations ${params.dhs_annotations}
 	"""
 }
@@ -107,7 +107,7 @@ workflow visualize {
                 it[0], 
                 it[1],
                 it[2],
-                file("/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_no_cancer/output/masterlist.only_autosomes.filtered.bed")
+                file("/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_no_cancer/output/masterlist.only_autosomes.filtered.bed"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.W.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.H.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.non_zero_peaks_mask.txt"),
