@@ -33,11 +33,11 @@ def project_samples(data, model, H):
     W, *_ = model._fit_transform(data.T, H=H, update_H=False)
     return W # samples x components 
 
-def project_peaks(data, model, W):
+def project_peaks(data, model, W, weights=None):
     # data: peaks x samples
     # W: samples x components
     # NMF: peaks x samples = peaks x components * components x samples
-    projected_peaks, _, _ = model._fit_transform(data, H=W.T, update_H=False) # components x peaks
+    projected_peaks, _, _ = model._fit_transform(data, H=W.T, update_H=False, weights=weights) # components x peaks
     return projected_peaks.T
 
 def get_nonzero_mask(matrix):
@@ -91,7 +91,7 @@ def main(mat, samples_m, peaks_m, weights_vector):
             W_np = project_samples(mat[peaks_mask, :], model, H_np)
 
     if peaks_mask.sum() != peaks_mask.shape[0]:
-        H_np = project_peaks(mat, model, W_np)
+        H_np = project_peaks(mat, model, W_np, weights=weights_vector)
 
     return W_np, H_np, peaks_mask
 

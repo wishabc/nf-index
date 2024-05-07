@@ -589,7 +589,7 @@ def _beta_divergence(X, W, H, beta, square_root=False, weights=None):
         return res
 
 
-def initialize_u_v(X, n_components,random_state = 0):
+def random_initialize_u_v(X, n_components,random_state = 0):
     n_features, n_samples = X.shape
     mean = np.mean(X)
     random_number_generator = np.random.RandomState(random_state)
