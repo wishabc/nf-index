@@ -267,9 +267,9 @@ def plot_dist_tss(H, index, component_data, ax=None):
     if ax is None:
         fig, ax = plt.subplots(figsize=(2, 2))
     for i, row in component_data.iterrows():
-        data = index['dist_tss'][max_component == row['index']]
+        data = np.abs(index['dist_tss'][max_component == row['index']])
         ax.plot(np.sort(data), np.linspace(0, 1, len(data)), color=row['color'])
-    ax.set_xlim(-5000, 5000)
+    ax.set_xlim(-50, 5000)
     ax.set_xlabel('Distance to TSS')
     ax.set_ylabel('Cumulative proportion of DHSs')
     return ax
@@ -297,5 +297,12 @@ if __name__ == '__main__':
     metadata = pd.read_table(args.metadata)
     W = np.load(args.W).T
     H = np.load(args.H).T
-    main(mat, W, H, metadata, samples_m, peaks_m, args.dhs_annotations, args.outpath)
+    dhs_meta = pd.read_table(args.dhs_meta, header=None)[3].to_numpy()
+    if args.dhs_annotations is not None:
+        dhs_annotations = pd.read_table(args.dhs_annotations)
+        dhs_annotations = dhs_annotations[dhs_annotations['dhs_id'].isin(dhs_meta)]
+    else:
+        dhs_annotations = None
+
+    main(mat, W, H, metadata, samples_m, peaks_m, dhs_annotations, args.outpath)
 
