@@ -89,7 +89,7 @@ def plot_component(data, labels, color, ax=None, top_count=15):
     return ax
     
 
-def plot_nmf(basis, annotations, top_count=15, component_data=None):
+def plot_nmf(basis, annotations, top_count=15, component_data=None, common_scale=False):
     n_components = basis.shape[0]
 
     #bar_graph_sort_order = get_barsortorder(basis)
@@ -104,7 +104,7 @@ def plot_nmf(basis, annotations, top_count=15, component_data=None):
     
     [fig.delaxes(ax) for ax in axes[n_components:]]
 
-
+    xlims = []
     for ax, (_, row) in zip(axes[:n_components], component_data.iterrows()):
         component_is_major = np.argmax(basis, axis=0) == row['index']
         
@@ -116,6 +116,10 @@ def plot_nmf(basis, annotations, top_count=15, component_data=None):
             top_count=top_count
         )
         ax.set_title(f'{row["name"]}')
+        xlims.append(ax.get_xlim())
+    if common_scale:
+        for ax in axes:
+            ax.set_xlim(0, max(xlims, key=lambda x: x[1])[1])
     plt.tight_layout()
     return fig, axes
 
@@ -212,6 +216,11 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, vis_path):
     plt.savefig(f'{vis_path}/Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
+    print('All peaks not normalized')
+    ax, _, _ = plot_barplots(H, component_data, normalize=False)
+    plt.savefig(f'{vis_path}/Barplot_all_DHSs.not_norm.pdf', transparent=True, bbox_inches='tight')
+    plt.close(ax.get_figure())
+
     #Only reproduced DHSs
     print('>3 peaks supproting a DHS')
     reproduced_peaks = binary_matrix.sum(axis=1) > 3
@@ -240,6 +249,10 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, vis_path):
     annotations = metadata["taxonomy_name"].values
     fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data)
     plt.savefig(f'{vis_path}/Top20_all_samples_barplot.pdf', bbox_inches='tight', transparent=True)
+    plt.close(fig)
+
+    fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data, common_scale=True)
+    plt.savefig(f'{vis_path}/Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
 
 
