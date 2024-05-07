@@ -171,6 +171,7 @@ class NMF(_BaseNMF):
 
         return W, H, n_iter
 
+    # TODO: fix transform method to accept weights
     def transform(self, X):
         check_is_fitted(self)
         X = self._validate_data(
