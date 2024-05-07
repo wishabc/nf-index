@@ -91,11 +91,9 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
     print('Fitting NMF model')
     if W_weights is not None or H_weights is not None:
         print('Using weighted NMF')
-        if samples_m.shape[0] > samples_m.sum():
-            W_weights_slice = W_weights[samples_m]
-        
-        if peaks_m.shape[0] > peaks_m.sum():
-            H_weights_slice = H_weights[peaks_m]
+        W_weights_slice = W_weights[samples_m]
+        H_weights_slice = H_weights[peaks_m]
+
     else:
         W_weights_slice = H_weights_slice = None
 
