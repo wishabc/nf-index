@@ -85,7 +85,7 @@ workflow {
             row?.samples_weights,
             row?.peaks_mask,
             row?.samples_mask,
-            row?,peaks_weights
+            row?.peaks_weights
             ))
         | runNMF
 }
