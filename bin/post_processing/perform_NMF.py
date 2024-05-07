@@ -20,7 +20,7 @@ def perform_NMF(X, weights=None, n_components=16, model=None):
             W = model.fit_transform(X.T)
     else:
         if weights is not None:
-            W = model.fit_transform(X.T, weights=weights)
+            W = model.fit_transform(X.T, weights=weights[:, None])
         else:
             W = model.transform(X.T)
     H = model.components_ # components x peaks
