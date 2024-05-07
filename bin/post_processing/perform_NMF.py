@@ -37,7 +37,11 @@ def project_peaks(data, model, W, weights=None):
     # data: peaks x samples
     # W: samples x components
     # NMF: peaks x samples = peaks x components * components x samples
-    projected_peaks, _, _ = model._fit_transform(data, H=W.T, update_H=False, weights=weights) # components x peaks
+    params = dict(X=data, H=W.T, update_H=False)
+    if weights is not None:
+        projected_peaks, _, _ = model._fit_transform(**params, weights=weights) # components x peaks
+    else:
+        projected_peaks, _, _ = model._fit_transform(**params)
     return projected_peaks.T
 
 def get_nonzero_mask(matrix):
