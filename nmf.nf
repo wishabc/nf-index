@@ -18,7 +18,7 @@ process fit_nmf {
     memory { 400.GB * task.attempt }
 
 	input:
-		tuple val(prefix), val(n_components), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask)
+		tuple val(prefix), val(n_components), path(matrix_path), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights)
 
 	output:
         tuple val(prefix), val(n_components), path(matrix_path), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
@@ -31,7 +31,8 @@ process fit_nmf {
         ${n_components} \
         ${non_required_arg(weights_path, '--samples_weights')} \
         ${non_required_arg(samples_mask, '--samples_mask')} \
-        ${non_required_arg(peaks_mask, '--peaks_mask')}
+        ${non_required_arg(peaks_mask, '--peaks_mask')} \
+        ${non_required_arg(peaks_weights, '--peaks_weights')}
 	"""
 }
 
@@ -83,7 +84,8 @@ workflow {
             file(row.matrix_path),
             row?.samples_weights,
             row?.peaks_mask,
-            row?.samples_mask
+            row?.samples_mask,
+            row?,peaks_weights
             ))
         | runNMF
 }
