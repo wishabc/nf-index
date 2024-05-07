@@ -48,11 +48,14 @@ def project_peaks(data, model, W, W_weights=None, H_weights=None):
 def get_nonzero_mask(matrix):
     return matrix.sum(axis=1) > 0
 
-def read_weights(weights_path, shape):
+def read_weights(weights_path, shape, ext=None):
     weights_vector = np.ones(shape, dtype=float)
     if weights_path:
-        weights_df = pd.read_table(weights_path)
-        weights_vector = weights_df.set_index("ag_id").to_numpy().squeeze()
+        if ext == 'npy':
+            weights_vector = np.load(weights_path)
+        else:
+            weights_df = pd.read_table(weights_path)
+            weights_vector = weights_df.set_index("ag_id").to_numpy().squeeze()
     return weights_vector
 
 def read_args(args):
@@ -73,7 +76,7 @@ def read_args(args):
 
     if args.samples_weights or args.peaks_weights:
         W_weights_vector = read_weights(args.samples_weights, mat.shape[1])
-        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0])
+        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0], 'npy')
     else:
         H_weights_vector = W_weights_vector = None
 
