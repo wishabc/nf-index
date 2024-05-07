@@ -61,7 +61,7 @@ process visualize_nmf {
         --peaks_mask ${peaks_mask} \
         --samples_mask ${samples_mask} \
         --outpath ./ \
-        --dhs_annotations ${params.dhs_annotations}
+        ${non_required_arg(params.dhs_annotations, '--dhs_annotations')}
 	"""
 }
 
