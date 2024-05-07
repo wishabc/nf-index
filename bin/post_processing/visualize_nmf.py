@@ -255,6 +255,18 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     plt.savefig(f'{vis_path}/Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
 
+    print('Order samples by component contribution')
+    relative_W = W / W.sum(axis=0)
+    for _, row in component_data.iterrows():
+        _, fig = barplot_at_scale(
+            W,
+            metadata,
+            component_data=component_data,
+            order=np.argsort(-relative_W[row['index'], :]),
+        )
+        fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{row["name"].replace('/', '_')}.pdf', transparent=True, bbox_inches='tight')
+        plt.close(fig)
+
     if dhs_annotations is not None:
         ax = plot_dist_tss(H, dhs_annotations, component_data)
         plt.savefig(f'{vis_path}/Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
