@@ -43,7 +43,7 @@ process visualize_nmf {
     memory { 300.GB * task.attempt }
 
 	input:
-        tuple val(prefix), val(n_components), path(binary_matrix), path(W), path(H), path(peaks_mask), path(samples_mask)
+        tuple val(prefix), val(n_components), path(binary_matrix), path(masterlist), path(W), path(H), path(peaks_mask), path(samples_mask)
 
 	output:
         tuple val(prefix), path("*.pdf")
@@ -56,10 +56,12 @@ process visualize_nmf {
         ${W} \
         ${H} \
         ${params.samples_file} \
+        ${masterlist} \
         ${n_components} \
         --peaks_mask ${peaks_mask} \
         --samples_mask ${samples_mask} \
         --outpath ./
+        --dhs_annotations ${params.dhs_annotations}
 	"""
 }
 
@@ -104,7 +106,8 @@ workflow visualize {
             it -> tuple(
                 it[0], 
                 it[1],
-                it[2]
+                it[2],
+                file("/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_no_cancer/output/masterlist.only_autosomes.filtered.bed")
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.W.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.H.npy"),
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.non_zero_peaks_mask.txt"),
