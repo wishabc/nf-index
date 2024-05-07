@@ -191,7 +191,7 @@ def plot_barplots(matrix, component_data=None, n=10_000, order_by='primary', ord
     return plot_stacked(H_dsp, colors, ax=ax, order_by=order_by, order=order, agst=agst)
     
 
-def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, vis_path):
+def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path):
     component_data = get_component_data(W)
 
     # Plot samples
@@ -255,19 +255,41 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, vis_path):
     plt.savefig(f'{vis_path}/Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
 
+    if dhs_annotations is not None:
+        ax = plot_dist_tss(H, dhs_annotations, component_data)
+        plt.savefig(f'{vis_path}/Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
+        plt.close(fig)
+
+
+
+def plot_dist_tss(H, index, component_data, ax=None):
+    max_component = np.argmax(H, axis=0)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(2, 2))
+    for i, row in component_data.iterrows():
+        data = index['dist_tss'][max_component == row['index']]
+        ax.plot(np.sort(data), np.linspace(0, 1, len(data)), color=row['color'])
+    ax.set_xlim(-5000, 5000)
+    ax.set_xlabel('Distance to TSS')
+    ax.set_ylabel('Cumulative proportion of DHSs')
+    return ax
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
-    parser.add_argument('W', help='W matrix of perform NMF decomposition', default=None)
+    parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('H', help='H matrix of perform NMF decomposition')
     parser.add_argument('metadata', help='Path to metadata file')
+    parser.add_argument('dhs_meta', help='Path to DHS index')
     parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
     parser.add_argument('--samples_mask', help='Mask of used samples, numpy array')
     parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array')
     #parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
+    parser.add_argument('--dhs_annotations', help='Path to DHS annotations', default=None)
     args = parser.parse_args()
+
     mat = np.load(args.matrix).astype(float)
     samples_m = np.loadtxt(args.samples_mask).astype(bool)
     peaks_m = np.loadtxt(args.peaks_mask).astype(bool)
@@ -275,5 +297,5 @@ if __name__ == '__main__':
     metadata = pd.read_table(args.metadata)
     W = np.load(args.W).T
     H = np.load(args.H).T
-    main(mat, W, H, metadata, samples_m, peaks_m, args.outpath)
+    main(mat, W, H, metadata, samples_m, peaks_m, args.dhs_annotations, args.outpath)
 

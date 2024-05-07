@@ -92,15 +92,24 @@ workflow {
 
 // Entry for visuzizations only
 workflow visualize {
-    params.nmf_results_path = "/net/seq/data2/projects/sabramov/SuperIndex/NMF0508/output/nmf_results/"
+    params.nmf_results_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_no_cancer/output/nmf/"
     Channel.fromPath(params.params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
-            row.prefix,
+            "${row.prefix}.${row.n_components}",
             row.n_components,
-            row?.samples_mask,
-            file("${params.nmf_results_path}/${row.prefix}.${row.n_components}*")
+            file(row.matrix_path),
             ))
-        | groupTuple(by:[0,1])
+        | map( 
+            it -> tuple(
+                it[0], 
+                it[1],
+                it[2]
+                file("${params.nmf_results_path}/${it[0]}/${it[0]}.W.npy"),
+                file("${params.nmf_results_path}/${it[0]}/${it[0]}.H.npy"),
+                file("${params.nmf_results_path}/${it[0]}/${it[0]}.non_zero_peaks_mask.txt"),
+                file("${params.nmf_results_path}/${it[0]}/${it[0]}.samples_mask.txt"),
+            )
+        )
         | visualize_nmf
 }
