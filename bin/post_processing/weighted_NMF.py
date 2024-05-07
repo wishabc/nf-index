@@ -83,20 +83,21 @@ class NMF(_BaseNMF):
 
         return self
 
-    def fit_transform(self, X, y=None, W=None, H=None, weights=None):
+    def fit_transform(self, X, y=None, W=None, H=None, W_weights=None, H_weights=None):
 
         self._validate_params()
 
         X = self._validate_data(
             X, accept_sparse=("csr", "csc"), dtype=[np.float64, np.float32]
         )
-        if weights is not None and self.beta_loss != 'frobenius':
+        if W_weights is not None and self.beta_loss != 'frobenius':
             raise NotImplementedError
         with config_context(assume_finite=True):
-            W, H, n_iter = self._fit_transform(X, W=W, H=H, weights=weights)
+            W, H, n_iter = self._fit_transform(X, W=W, H=H, W_weights=W_weights)
 
         self.reconstruction_err_ = _beta_divergence(
-            X, W, H, self._beta_loss, square_root=True, weights=weights
+            X, W, H, self._beta_loss, square_root=True, 
+            W_weights=W_weights, H_weights=H_weights
         )
 
         self.n_components_ = H.shape[0]
@@ -105,7 +106,7 @@ class NMF(_BaseNMF):
 
         return W
 
-    def _fit_transform(self, X, y=None, W=None, H=None, update_H=True, weights=None):
+    def _fit_transform(self, X, y=None, W=None, H=None, update_H=True, W_weights=None, H_weights=None):
         check_non_negative(X, "NMF (input X)")
 
         # check parameters
@@ -153,7 +154,9 @@ class NMF(_BaseNMF):
                 l2_reg_H,
                 update_H,
                 self.verbose,
-                weights=weights
+                W_weights=W_weights,
+                H_weights=H_weights
+
             )
         else:
             raise ValueError("Invalid solver parameter '%s'." % self.solver)
@@ -193,7 +196,8 @@ def _fit_multiplicative_update(
     l2_reg_H=0,
     update_H=True,
     verbose=0,
-    weights=None
+    W_weights=None,
+    H_weights=None
 ):
     start_time = time.time()
 
@@ -208,17 +212,20 @@ def _fit_multiplicative_update(
         gamma = 1.0
 
     # used for the convergence criterion
-    error_at_init = _beta_divergence(X, W, H, beta_loss, square_root=True, weights=weights)
+    error_at_init = _beta_divergence(
+        X, W, H, beta_loss, square_root=True, 
+        W_weights=W_weights, H_weights=H_weights
+    )
     previous_error = error_at_init
 
     H_sum, HHt, XHt = None, None, None
-    if weights is None:
+    if W_weights is None and H_weights is None:
         wX = X
     else:
         if sp.issparse(X):
-            wX = X.multiply(weights)
+            wX = X.multiply(W_weights)
         else:
-            wX = X * weights
+            wX = X * W_weights * H_weights
     for n_iter in range(1, max_iter + 1):
         # update W
         # H_sum, HHt and XHt are saved and reused if not update_H
@@ -234,7 +241,8 @@ def _fit_multiplicative_update(
             HHt=HHt,
             XHt=XHt,
             update_H=update_H,
-            weights=weights
+            W_weights=W_weights,
+            H_weights=H_weights
         )
 
         # necessary for stability with beta_loss < 1
@@ -251,7 +259,8 @@ def _fit_multiplicative_update(
                 l1_reg_H=l1_reg_H,
                 l2_reg_H=l2_reg_H,
                 gamma=gamma,
-                weights=weights
+                W_weights=W_weights,
+                H_weights=H_weights
             )
 
             # These values will be recomputed since H changed
@@ -263,7 +272,12 @@ def _fit_multiplicative_update(
 
         # test convergence criterion every 10 iterations
         if tol > 0 and n_iter % 10 == 0:
-            error = _beta_divergence(X, W, H, beta_loss, square_root=True, weights=weights)
+            error = _beta_divergence(
+                X, W, H, beta_loss,
+                square_root=True,
+                W_weights=W_weights,
+                H_weights=H_weights
+            )
 
             if verbose:
                 iter_time = time.time()
@@ -298,7 +312,8 @@ def _multiplicative_update_w(
     HHt=None,
     XHt=None,
     update_H=True,
-    weights=None
+    W_weights=None,
+    H_weights=None
 ):
     """Update W in Multiplicative Update NMF."""
     if beta_loss == 2:
@@ -314,14 +329,17 @@ def _multiplicative_update_w(
 
         # Denominator
         if HHt is None:
-            HHt = np.dot(H, H.T)
+            if H_weights is not None:
+                HHt = np.dot(H_weights * H, H.T)
+            else:
+                HHt = np.dot(H, H.T)
 
-        if weights is None:
+        if W_weights is None:
             denominator = np.dot(W, HHt)
         else:
-            denominator = np.dot(weights * W, HHt)
+            denominator = np.dot(W_weights * W, HHt)
     else:
-        if weights is not None:
+        if W_weights is not None:
             raise NotImplementedError
         # Numerator
         # if X is sparse, compute WH only where X is non zero
@@ -401,15 +419,16 @@ def _multiplicative_update_w(
 
 
 def _multiplicative_update_h(
-    X, W, H, beta_loss, l1_reg_H, l2_reg_H, gamma, A=None, B=None, rho=None, weights=None
+    X, W, H, beta_loss, l1_reg_H, l2_reg_H, gamma, A=None, B=None, rho=None,
+    W_weights=None, H_weights=None
 ):
     """update H in Multiplicative Update NMF."""
     if beta_loss == 2:
         numerator = safe_sparse_dot(W.T, X)
-        if weights is None:
+        if W_weights is None:
             denominator = np.linalg.multi_dot([W.T, W, H])
         else:
-            denominator = np.linalg.multi_dot([W.T, weights * W, H])
+            denominator = np.linalg.multi_dot([W.T, W_weights * W, H * H_weights])
 
     else:
         # Numerator
@@ -500,7 +519,7 @@ def _multiplicative_update_h(
     return H
 
 
-def _beta_divergence(X, W, H, beta, square_root=False, weights=None):
+def _beta_divergence(X, W, H, beta, square_root=False, W_weights=None, H_weights=None):
     beta = _beta_loss_to_float(beta)
 
     # The method can be called with scalars
@@ -513,25 +532,24 @@ def _beta_divergence(X, W, H, beta, square_root=False, weights=None):
     if beta == 2:
         # Avoid the creation of the dense np.dot(W, H) if X is sparse.
         if sp.issparse(X):
-            if weights is not None:
+            if W_weights is not None or H_weights is not None:
                 raise NotImplementedError()
             norm_X = np.dot(X.data, X.data)
             norm_WH = trace_dot(np.linalg.multi_dot([W.T, W, H]), H)
             cross_prod = trace_dot((X * H.T), W)
             res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
         else:
-            if weights is None:
+            if W_weights is None:
                 res = squared_norm(X - np.dot(W, H)) / 2.0
             else:
-               
-                K = np.ravel((X - np.dot(W, H)) * np.sqrt(weights))
+                K = np.ravel((X - np.dot(W, H)) * np.sqrt(W_weights) * np.sqrt(H_weights))
                 res = np.dot(K, K) / 2.0
 
         if square_root:
             return np.sqrt(res * 2)
         else:
             return res
-    if weights is not None:
+    if W_weights is not None:
         raise NotImplementedError()
     if sp.issparse(X):
         # compute np.dot(W, H) only where X is nonzero
