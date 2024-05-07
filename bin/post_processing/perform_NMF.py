@@ -14,7 +14,7 @@ def perform_NMF(X, weights=None, n_components=16, model=None):
                         max_iter=1000, tol=1e-4, verbose=True)
         if weights is not None:
             model = weighted_NMF(**params)
-            W = model.fit_transform(X.T, weights=weights)
+            W = model.fit_transform(X.T, weights=weights[:, None])
         else:
             model = NMF(**params)
             W = model.fit_transform(X.T)
@@ -39,7 +39,7 @@ def project_peaks(data, model, W, weights=None):
     # NMF: peaks x samples = peaks x components * components x samples
     params = dict(X=data, H=W.T, update_H=False)
     if weights is not None:
-        projected_peaks, _, _ = model._fit_transform(**params, weights=weights) # components x peaks
+        projected_peaks, _, _ = model._fit_transform(**params, weights=weights[None, :]) # components x peaks
     else:
         projected_peaks, _, _ = model._fit_transform(**params)
     return projected_peaks.T

@@ -216,9 +216,9 @@ def _fit_multiplicative_update(
         wX = X
     else:
         if sp.issparse(X):
-            wX = X.multiply(weights[:, None])
+            wX = X.multiply(weights)
         else:
-            wX = X * weights[:, None]
+            wX = X * weights
     for n_iter in range(1, max_iter + 1):
         # update W
         # H_sum, HHt and XHt are saved and reused if not update_H
@@ -319,7 +319,7 @@ def _multiplicative_update_w(
         if weights is None:
             denominator = np.dot(W, HHt)
         else:
-            denominator = np.dot(weights[:, None] * W, HHt)
+            denominator = np.dot(weights * W, HHt)
     else:
         if weights is not None:
             raise NotImplementedError
@@ -409,7 +409,7 @@ def _multiplicative_update_h(
         if weights is None:
             denominator = np.linalg.multi_dot([W.T, W, H])
         else:
-            denominator = np.linalg.multi_dot([W.T, weights[:, None] * W, H])
+            denominator = np.linalg.multi_dot([W.T, weights * W, H])
 
     else:
         # Numerator
@@ -524,7 +524,7 @@ def _beta_divergence(X, W, H, beta, square_root=False, weights=None):
                 res = squared_norm(X - np.dot(W, H)) / 2.0
             else:
                
-                K = np.ravel((X - np.dot(W, H)) * np.sqrt(weights[:, None]))
+                K = np.ravel((X - np.dot(W, H)) * np.sqrt(weights))
                 res = np.dot(K, K) / 2.0
 
         if square_root:
