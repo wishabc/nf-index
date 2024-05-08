@@ -12,9 +12,9 @@ def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colo
     if agst is None:
         agst = np.argsort(matrix, axis=0)[::-1, :]
     if order is None:
-            sep = np.max(agst) + np.max(matrix) + 1
-            max_r = matrix.max(axis=0)
-            order = np.argsort(agst[0, :] * sep + max_r / matrix.sum(axis=0))[::-1]
+        sep = np.max(agst) + np.max(matrix) + 1
+        max_r = matrix.max(axis=0)
+        order = np.argsort(agst[0, :] * sep + max_r / matrix.sum(axis=0))[::-1]
 
     ordered_matrix = matrix[:, order]
     
