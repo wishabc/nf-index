@@ -206,7 +206,25 @@ def adjust_agst(agst, i):
 def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path):
     component_data = get_component_data(W)
 
-    # Plot samples
+    print('Order samples by component contribution')
+    relative_W = W / W.sum(axis=0)
+    comp_arange = np.argsort(relative_W, axis=0)[::-1, :]
+    for i, row in component_data.iterrows():
+
+        agst = adjust_agst(comp_arange, i)
+    
+        _, fig = barplot_at_scale(
+            W,
+            metadata,
+            component_data=component_data,
+            order=np.argsort(-relative_W[row['index'], :]),
+            agst=agst
+        )
+        comp_name = row["name"].replace("/", "_")
+        fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
+        plt.close(fig)
+    
+       # Plot samples
     print('All samples')
     ax, _, _ = plot_barplots(W, component_data)
     plt.savefig(f'{vis_path}/Barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
@@ -267,23 +285,6 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     plt.savefig(f'{vis_path}/Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
 
-    print('Order samples by component contribution')
-    relative_W = W / W.sum(axis=0)
-    comp_arange = np.argsort(relative_W, axis=0)[::-1, :]
-    for i, row in component_data.iterrows():
-
-        agst = adjust_agst(comp_arange, i)
-    
-        _, fig = barplot_at_scale(
-            W,
-            metadata,
-            component_data=component_data,
-            order=np.argsort(-relative_W[row['index'], :]),
-            agst=agst
-        )
-        comp_name = row["name"].replace("/", "_")
-        fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
-        plt.close(fig)
 
     if dhs_annotations is not None:
         ax = plot_dist_tss(H, dhs_annotations, component_data)
