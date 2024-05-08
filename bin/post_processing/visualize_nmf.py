@@ -202,14 +202,15 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
 
     print('Order samples by component contribution')
     relative_W = W / W.sum(axis=0)
-    relative_W = W / W.sum(axis=0)
     relative_W = relative_W[component_data['index'], :]
+
+
     for i, row in component_data.iterrows():
         weights = np.ones(W.shape[0])
         weights[i] = W.shape[0]
 
         agst = np.argsort(relative_W + weights[:, None], axis=0)[::-1, :]
-        print((agst[0] == row['index']).all())
+        print((agst[0] == i).all())
 
         _, fig = barplot_at_scale(
             relative_W,
@@ -257,15 +258,15 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     plt.close(ax.get_figure())
 
     print('Detailed barplot all samples')
-    s_order, fig = barplot_at_scale(W, metadata, component_data=component_data)
+    s_order, fig = barplot_at_scale(W, metadata, colors=component_data['color'])
     if samples_mask.sum() < samples_mask.shape[0]:
         plt.close(fig)
         s_mask = samples_mask[s_order]
         barplot_at_scale(
-            W,
+            relative_W,
             metadata,
-            s_order,
-            component_data=component_data,
+            colors=component_data['color'],
+            order=s_order,
             label_colors=[
                 'r' if s else 'k' for s in s_mask
             ]
