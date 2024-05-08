@@ -193,14 +193,23 @@ def plot_barplots(matrix, component_data=None, n=10_000, order_by='primary', ord
 
 
 def adjust_agst(agst, i):
-    num_cols = agst.shape[1]
-    for col in range(num_cols):
-        row_of_zero = np.where(agst[:, col] == i)[0][0]  # Find where 0 is located in this column
-        # Swap this position with the topmost (first row)
-        if row_of_zero != 0:
-            # Swapping positions in the column
-            agst[[0, row_of_zero], col] = agst[[row_of_zero, 0], col]
-    return agst
+    n_rows, n_cols = agst.shape
+    # Create a new array that will hold the adjusted indices
+    new_agst = np.empty_like(agst)
+    
+    # For each column, find the position of the zero index
+    zero_positions = (agst == i)
+    
+    # Iterate through each column to set the zero at the top and reorder the remaining elements
+    for col in range(n_cols):
+        col_indices = agst[:, col]
+        zero_pos = np.where(col_indices == i)[0][0]
+        # Place the zero at the top of the new column
+        new_agst[0, col] = col_indices[zero_pos]
+        # Fill the rest of the column with the remaining indices, excluding the original zero position
+        new_agst[1:, col] = np.concatenate([col_indices[:zero_pos], col_indices[zero_pos + 1:]])
+        
+    return new_agst
 
 
 def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path):
