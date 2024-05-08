@@ -217,13 +217,11 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
 
     print('Order samples by component contribution')
     relative_W = W / W.sum(axis=0)
-    # comp_arange = np.argsort(relative_W, axis=0)[::-1, :]
-    comp_arange = np.arange(relative_W.shape[0])
     for i, row in component_data.iterrows():
-        comp_arange_i = np.delete(comp_arange, i)
-        comp_arange_i = np.insert(comp_arange_i, 0, i)
+        weights = np.ones(W.shape[0])
+        weights[i] *= W.shape[0] * 2
 
-        agst = np.tile(comp_arange_i, (relative_W.shape[1], 1)).T
+        agst = np.argsort(relative_W * weights[:, None], axis=0)[::-1, :]
     
         _, fig = barplot_at_scale(
             W,
