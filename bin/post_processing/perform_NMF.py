@@ -76,7 +76,7 @@ def read_args(args):
     
     if args.samples_weights or args.peaks_weights:
         W_weights_vector = read_weights(args.samples_weights, mat.shape[1])
-        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0], 'npy')
+        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0])
     else:
         H_weights_vector = W_weights_vector = None
 
