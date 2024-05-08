@@ -6,48 +6,34 @@ from tqdm import tqdm
 
 from order_by_template import get_component_data
 
-def barplot_at_scale(matrix, metadata, order=None, component_data=None, tolerance=0.95, label_colors=None, agst=None):
+def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colors=None):
     assert len(metadata) == matrix.shape[1]
-    if component_data is None:
-        raise NotImplementedError
-    else:
-        color_list = component_data['color']
-        matrix = matrix[component_data['index'], :]
-    matrix = matrix / matrix.sum(axis=0)
+    
     if agst is None:
         agst = np.argsort(matrix, axis=0)[::-1, :]
-    sorted_W = np.take_along_axis(matrix, agst, axis=0)
-    
-    sep = np.max(agst) + np.max(sorted_W) + 1
     if order is None:
-        # order = np.argsort(agst[0, :] * sep**2 +  agst[1, :] * sep + sorted_W[0])[::-1]
-        order = np.argsort(agst[0, :] * sep + sorted_W[0] / sorted_W.sum(axis=0))[::-1]
-    
-    colors = np.array(color_list)[agst[:, order]]
-    
-    heights = sorted_W[:, order]
+        sep = np.max(agst) + np.max(matrix) + 1
+        order = np.argsort(agst[0, :] * sep + matrix[0] / matrix.sum(axis=0))[::-1]
+
+    ordered_matrix = matrix[:, order]
     
     per_bar = 100
-    chunks = matrix.shape[1] // per_bar + 1
+    chunks = np.ceil(matrix.shape[1] / per_bar).astype(int)
     
     fig, axes = plt.subplots(chunks, 1, figsize=(20, 4*chunks))
     if chunks == 1:
         axes = [axes]
     fig.subplots_adjust(hspace=1.5)
     
-    maxv = 0
+    maxv = np.max(matrix)
     for k in tqdm(np.arange(chunks)):
         ax = axes[k]
         sl = slice(per_bar*k, per_bar*(k+1), 1)
-        for j in np.arange(matrix.shape[1])[sl]:
-            cumul_h = 0
-            for i in np.arange(matrix.shape[0]):
-                ax.bar(x=j, height=heights[i, j], bottom=cumul_h, color=colors[i, j])
-                cumul_h += heights[i, j]
-                maxv = max(maxv, cumul_h)
-                if cumul_h >= tolerance:
-                    break
-        ax.set_xticks(np.arange(matrix.shape[1])[sl])
+        num_elements = order[sl].shape[0]
+        plot_stacked(ordered_matrix[:, sl], colors, ax=ax,
+                     order=np.arange(num_elements),
+                     agst=agst[:, order[sl]])
+        ax.set_xticks(np.arange(num_elements) + 0.5)
         ax.set_xticklabels(metadata.iloc[order, :][sl].apply(lambda row:
                                                              f"{row['core_ontology_term']} {row['SPOT1_score']:.1f}",
                                                              axis=1), rotation=90, )
@@ -55,8 +41,7 @@ def barplot_at_scale(matrix, metadata, order=None, component_data=None, toleranc
             assert len(label_colors) == matrix.shape[1]
             for xtick, col in zip(ax.get_xticklabels(), label_colors[sl]):
                 xtick.set_color(col)
-        ax.set_xlim(np.arange(matrix.shape[1])[sl].min(), np.arange(matrix.shape[1])[sl].min() + per_bar)
-        # break
+        ax.set_xlim(0, per_bar)
     
     for ax in axes:
         ax.set_ylim(0, maxv*1.05)
@@ -217,24 +202,27 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
 
     print('Order samples by component contribution')
     relative_W = W / W.sum(axis=0)
+    relative_W = W / W.sum(axis=0)
+    relative_W = relative_W[component_data['index'], :]
     for i, row in component_data.iterrows():
         weights = np.ones(W.shape[0])
-        weights[i] *= W.shape[0] * 2
+        weights[i] = W.shape[0]
 
-        agst = np.argsort(relative_W * weights[:, None], axis=0)[::-1, :]
-    
+        agst = np.argsort(relative_W + weights[:, None], axis=0)[::-1, :]
+        print((agst[0] == row['index']).all())
+
         _, fig = barplot_at_scale(
-            W,
-            metadata,
-            component_data=component_data,
-            order=np.argsort(-relative_W[row['index'], :]),
+            relative_W,
+            metadata.iloc[:, :],
+            colors=component_data['color'],
+            order=np.argsort(relative_W[i, :])[::-1],
             agst=agst
         )
         comp_name = row["name"].replace("/", "_")
         fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
-    
-       # Plot samples
+
+    # Plot samples
     print('All samples')
     ax, _, _ = plot_barplots(W, component_data)
     plt.savefig(f'{vis_path}/Barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
