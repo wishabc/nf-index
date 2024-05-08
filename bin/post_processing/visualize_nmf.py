@@ -258,7 +258,7 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     plt.close(ax.get_figure())
 
     print('Detailed barplot all samples')
-    s_order, fig = barplot_at_scale(W, metadata, colors=component_data['color'])
+    s_order, fig = barplot_at_scale(relative_W, metadata, colors=component_data['color'])
     if samples_mask.sum() < samples_mask.shape[0]:
         plt.close(fig)
         s_mask = samples_mask[s_order]
