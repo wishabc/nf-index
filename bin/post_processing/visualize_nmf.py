@@ -190,7 +190,18 @@ def plot_barplots(matrix, component_data=None, n=10_000, order_by='primary', ord
         fig, ax = plt.subplots(figsize=(20, 2))
 
     return plot_stacked(H_dsp, colors, ax=ax, order_by=order_by, order=order, agst=agst)
-    
+
+
+def adjust_agst(agst, i):
+    num_cols = agst.shape[1]
+    for col in range(num_cols):
+        row_of_zero = np.where(agst[:, col] == i)[0][0]  # Find where 0 is located in this column
+        # Swap this position with the topmost (first row)
+        if row_of_zero != 0:
+            # Swapping positions in the column
+            agst[[0, row_of_zero], col] = agst[[row_of_zero, 0], col]
+    return agst
+
 
 def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path):
     component_data = get_component_data(W)
@@ -261,8 +272,7 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     comp_arange = np.argsort(relative_W, axis=0)[::-1, :]
     for i, row in component_data.iterrows():
 
-        comp_arange_i = np.delete(comp_arange, i, axis=0)
-        agst = np.insert(comp_arange_i, 0, i, axis=0)
+        agst = adjust_agst(comp_arange, i)
     
         _, fig = barplot_at_scale(
             W,
