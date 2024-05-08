@@ -6,16 +6,17 @@ from tqdm import tqdm
 
 from order_by_template import get_component_data
 
-def barplot_at_scale(matrix, metadata, order=None, component_data=None, tolerance=0.95, label_colors=None):
+def barplot_at_scale(matrix, metadata, order=None, component_data=None, tolerance=0.95, label_colors=None, agst=None):
     assert len(metadata) == matrix.shape[1]
     if component_data is None:
         raise NotImplementedError
     else:
         color_list = component_data['color']
         matrix = matrix[component_data['index'], :]
-    
-    agst = np.argsort(matrix / matrix.sum(axis=0), axis=0)[::-1, :]
-    sorted_W = np.sort(matrix / matrix.sum(axis=0), axis=0)[::-1, :]
+    matrix = matrix / matrix.sum(axis=0)
+    if agst is None:
+        agst = np.argsort(matrix, axis=0)[::-1, :]
+    sorted_W = np.take_along_axis(matrix, agst, axis=0)
     
     sep = np.max(agst) + np.max(sorted_W) + 1
     if order is None:
@@ -257,12 +258,18 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
 
     print('Order samples by component contribution')
     relative_W = W / W.sum(axis=0)
-    for _, row in component_data.iterrows():
+    comp_arange = np.argsort(relative_W, axis=0)[::-1, :]
+    for i, row in component_data.iterrows():
+
+        comp_arange_i = np.delete(comp_arange, i, axis=0)
+        agst = np.insert(comp_arange_i, 0, i, axis=0)
+    
         _, fig = barplot_at_scale(
             W,
             metadata,
             component_data=component_data,
             order=np.argsort(-relative_W[row['index'], :]),
+            agst=agst
         )
         comp_name = row["name"].replace("/", "_")
         fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
