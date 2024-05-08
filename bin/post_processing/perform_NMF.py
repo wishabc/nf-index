@@ -55,7 +55,7 @@ def read_weights(weights_path, shape, ext=None):
             weights_vector = np.load(weights_path)  
         else:
             weights_df = pd.read_table(weights_path)
-            weights_vector = weights_df.set_index("ag_id").to_numpy().squeeze()
+            weights_vector = weights_df['weight'].to_numpy()
     
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
 
