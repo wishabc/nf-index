@@ -72,7 +72,7 @@ process top_samples_track {
     publishDir "${params.outdir}/top_samples"
 
     input:
-        tuple val(component), path("input/**.bw")
+        tuple val(component), path(density_bw, stageAs: "?/*")
     
     output:
         tuple path(name), path("${component}.top_samples.bg")
@@ -81,7 +81,7 @@ process top_samples_track {
     name = "${component}.top_samples.bw"
     bg = "${component}.top_samples.bg"
     """
-    wiggletools write_bg ${bg} mean "input/*.bw"
+    wiggletools write_bg ${bg} mean ${density_bw}
     bedGraphToBigWig "${bg}" "${params.chrom_sizes}" "${name}"
     """
 }
