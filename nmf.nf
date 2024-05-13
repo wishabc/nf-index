@@ -139,7 +139,6 @@ workflow visualize {
 }
 
 
-// DEFUNC
 workflow topSamples {
     meta = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
