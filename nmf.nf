@@ -69,6 +69,7 @@ process top_samples_track {
     scratch true
     conda params.conda
     tag "${component}"
+    publishDir "${params.outdir}/top_samples"
 
     input:
         tuple val(component), path(density_bw)
