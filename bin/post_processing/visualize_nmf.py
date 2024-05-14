@@ -26,7 +26,7 @@ def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colo
         axes = [axes]
     fig.subplots_adjust(hspace=1.5)
     
-    maxv = np.max(matrix)
+    maxv = np.max(matrix.sum(axis=0))
     for k in tqdm(np.arange(chunks)):
         ax = axes[k]
         sl = slice(per_bar*k, per_bar*(k+1), 1)
