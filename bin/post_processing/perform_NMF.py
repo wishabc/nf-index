@@ -22,11 +22,18 @@ def perform_NMF(X, W_weights=None, H_weights=None, n_components=16):
     H = model.components_ # components x peaks
     return W, H, model
 
-def project_samples(data, model, H):
+def project_samples(data, model, H, W_weights=None, H_weights=None):
     # data: peaks x samples
     # H: components x peaks
     # NMF: samples x peaks = samples x components * components x peaks
-    W, *_ = model._fit_transform(data.T, H=H, update_H=False)
+    params = dict(X=data.T, H=H, update_H=False)
+    if W_weights is not None:
+        assert H_weights is not None
+        params = {**params,
+            'H_weights': H_weights[None, :],
+            'W_weights': W_weights[:, None]
+        }
+    W, *_ = model._fit_transform(**params)
     return W # samples x components 
 
 def project_peaks(data, model, W, W_weights=None, H_weights=None):
@@ -36,13 +43,11 @@ def project_peaks(data, model, W, W_weights=None, H_weights=None):
     params = dict(X=data, H=W.T, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
-        projected_peaks, _, _ = model._fit_transform(
-            **params,
-            H_weights=W_weights[None, :],
-            W_weights=H_weights[:, None]
-        ) # components x peaks
-    else:
-        projected_peaks, _, _ = model._fit_transform(**params)
+        params = {**params,
+            'H_weights': H_weights[None, :],
+            'W_weights': W_weights[:, None]
+        }
+    projected_peaks, _, _ = model._fit_transform(**params)
     return projected_peaks.T
 
 def get_nonzero_mask(matrix):
