@@ -63,14 +63,14 @@ def get_barsortorder(matrix):
 
 def plot_component(data, labels, color, ax=None, top_count=15):
     n_samples = data.shape[0]
-    top_count = min(top_count, n_samples)  # Adjust to plot up to 15 samples, or fewer if less are available
+    top_count_actual = min(top_count, n_samples)
 
-    sorted_indices = np.argsort(data)[-top_count:]
+    sorted_indices = np.argsort(data)[-top_count_actual:]
     sorted_data = data[sorted_indices]
     sorted_names = labels[sorted_indices]
 
-    ax.barh(np.arange(top_count), sorted_data, color=color)
-    ax.set_yticks(np.arange(top_count))
+    ax.barh(np.arange(top_count_actual), sorted_data, color=color)
+    ax.set_yticks(np.arange(top_count_actual))
     ax.set_ylim(-0.5, top_count - 0.5)
     ax.set_yticklabels(sorted_names, ha='right', va='center', fontsize=20, color='k')
     if len(sorted_data) > 0:
