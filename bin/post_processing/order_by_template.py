@@ -138,3 +138,60 @@ def get_component_data(W, W_old=None):
     )
 
     return component_data
+
+
+def define_colors(n_components):
+    # comp_colors = ['#FFE500', '#FE8102', '#FF0000', '#07AF00', '#4C7D14', '#414613', '#05C1D9', '#0467FD', '#009588', '#BB2DD4', '#7A00FF', '#4A6876', '#08245B', '#B9461D', '#692108', '#C3C3C3']
+    comp_colors = ["#ffe500",
+                    "#fe8102",
+                    "#ff0000",
+                    "#07af00",
+                    "#4c7d14",
+                    "#414613",
+                    "#05c1d9",
+                    "#0467fd",
+                    "#009588",
+                    "#bb2dd4",
+                    "#7a00ff",
+                    "#4a6876",
+                    "#08245b",
+                    "#b9461d",
+                    "#692108",
+                    "#c3c3c3",
+                    "#6630a6",
+                    "#ffc26a",
+                    "#fc197e",
+                    "#759cd5",
+                    "#a6da57",
+                    "#343331",
+                    "#d04299",
+                    "#a1efff",
+                    "#ffadf1",
+                    "#fef3bb",
+                    "#61567b",
+                    "#ffc9c6",
+                    "#d0d2f8"]
+    neworder = np.array([16,10,7,11,2,12,1,8,4,15,14,5,9,6,3,13]).astype(int) - 1
+    
+    component_colors = list(np.array(comp_colors)[neworder]) + comp_colors[16:]
+
+    maxassigned = len(component_colors)
+    
+    if (n_components > maxassigned):
+        # somewhat defunct but whatever. Adds extra "random" colors if you use more than 16 
+        colornames = np.sort(list(mcolors.CSS4_COLORS.values()))
+        colornames = list(set(colornames) - set(comp_colors))
+        count = maxassigned
+        np.random.seed(100)
+        myrandint = np.random.randint(len(colornames))
+        while (count < n_components):
+            new_color = colornames[np.random.randint(len(colornames))]
+            trialcount = 0
+            while ((new_color in component_colors) and (trialcount < 100)):
+                #print('what am i doing here')
+                newcolor = colornames[np.random.randint(0,len(colornames))]
+                trialcount += 1
+            #print('new color', count, new_color)
+            component_colors.append(new_color)
+            count += 1
+    return component_colors[:n_components]

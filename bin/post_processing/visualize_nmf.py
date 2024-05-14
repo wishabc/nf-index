@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import argparse
 from tqdm import tqdm
 
-from order_by_template import get_component_data
+from order_by_template import get_component_data, define_colors
 
 def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colors=None):
     assert len(metadata) == matrix.shape[1]
@@ -164,7 +164,7 @@ def plot_barplots(matrix, component_data=None, n=10_000, order_by='primary', ord
         H_dsp = matrix
 
     if component_data is None:
-        raise ValueError
+        colors = define_colors(H_dsp.shape[0])
     else:
         H_dsp = H_dsp[component_data['index'], :]
         colors = component_data['color']
