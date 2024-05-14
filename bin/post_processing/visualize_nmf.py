@@ -71,8 +71,10 @@ def plot_component(data, labels, color, ax=None, top_count=15):
 
     ax.barh(np.arange(top_count), sorted_data, color=color)
     ax.set_yticks(np.arange(top_count))
+    ax.set_ylim(-0.5, top_count - 0.5)
     ax.set_yticklabels(sorted_names, ha='right', va='center', fontsize=20, color='k')
-    ax.set_xlim(0, 1.1 * sorted_data.max())
+    if len(sorted_data) > 0:
+        ax.set_xlim(0, 1.1 * sorted_data.max())
     return ax
     
 
