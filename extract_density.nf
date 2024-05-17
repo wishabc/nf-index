@@ -49,11 +49,21 @@ process collect_matrix {
 
 }
 
+workflow tmp {	
+    matrix = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.normalized_density_bw.replaceAll(".bw", ".starch"))))
+        | extract_max_density
+        | map(it -> it[1])
+        | collect(sort: true)
+        | collect_matrix
+    
+}
 
 workflow {	
     matrix = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(it -> tuple(it.ag_id, file(it.normalized_density_file)))
+        | map(row -> tuple(row.ag_id, file(row.normalized_density_file)))
         | extract_max_density
         | map(it -> it[1])
         | collect(sort: true)
