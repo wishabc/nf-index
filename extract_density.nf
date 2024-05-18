@@ -27,6 +27,7 @@ process collect_matrix {
     conda params.conda
     publishDir params.outdir
     label "bigmem"
+    scratch true
 
     input:
         path columns
@@ -38,7 +39,8 @@ process collect_matrix {
     script:
     matrix = "matrix.density.npy"
     """
-    echo "${columns}" | tr " " "\n"  \
+    echo "${columns}" \
+        | tr " " "\n"  \
 		| xargs -I file basename file \
 		| cut -d. -f1 \
 		| tr "\n" "\t" > samples_order.txt
@@ -63,7 +65,7 @@ workflow tmp {
 workflow {	
     matrix = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.normalized_density_file)))
+        | map(row -> tuple(row.ag_id, file(row.normalized_density_bw)))
         | extract_max_density
         | map(it -> it[1])
         | collect(sort: true)
