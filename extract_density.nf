@@ -6,6 +6,7 @@ process extract_max_density {
     conda params.conda
     publishDir "${params.outdir}/density"
     tag "${ag_id}"
+    scratch true
 
     input:
         tuple val(ag_id), path(peaks_file)
@@ -16,10 +17,10 @@ process extract_max_density {
     script:
     density = "${ag_id}.mean_max.tsv"
     """
-    bigWigToBedGraph ${peaks_file} \
-        | bedmap --sweep-all \
+    bigWigToBedGraph ${peaks_file} tmp.bg 
+    bedmap --sweep-all \
             --delim "\t" \
-            --max ${params.index_file} - \
+            --max ${params.index_file} tmp.bg \
         > ${density}
     """
 }
