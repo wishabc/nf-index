@@ -16,10 +16,11 @@ process extract_max_density {
     script:
     density = "${ag_id}.mean_max.tsv"
     """
-    bedmap --sweep-all \
-        --delim "\t" \
-        --max ${params.index_file} ${peaks_file} \
-    > ${density}
+    bigWigToBedGraph ${peaks_file} \
+        | bedmap --sweep-all \
+            --delim "\t" \
+            --max ${params.index_file} - \
+        > ${density}
     """
 }
 
