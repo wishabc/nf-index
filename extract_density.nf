@@ -22,7 +22,7 @@ process extract_max_density {
         | awk -v OFS='\t' '{print \$1,\$2,\$3,"${ag_id}",\$4}' \
         | bedmap --sweep-all \
             --delim "\t" \
-            --max ${params.index_file}  \
+            --max ${params.index_file} - \
         > ${density}
     """
 }
