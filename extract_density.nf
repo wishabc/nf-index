@@ -49,7 +49,7 @@ process collect_matrix {
 		| cut -d. -f1 \
 		| tr "\n" "\t" > samples_order.txt
 
-    paste ${columns} > matrix.txt
+    paste ${columns} | sed 's/\\<NAN\\>/0/g' > matrix.txt
     python3 $moduleDir/bin/convert_to_numpy.py matrix.txt ${matrix}
     """
 
