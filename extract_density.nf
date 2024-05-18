@@ -18,9 +18,11 @@ process extract_max_density {
     density = "${ag_id}.mean_max.tsv"
     """
     bigWigToBedGraph ${peaks_file} tmp.bg 
-    bedmap --sweep-all \
+    cat tmp.bg \
+        | awk -v OFS='\t' '{print \$1,\$2,\$3,"${ag_id}",\$4}' \
+        | bedmap --sweep-all \
             --delim "\t" \
-            --max ${params.index_file} tmp.bg \
+            --max ${params.index_file}  \
         > ${density}
     """
 }
