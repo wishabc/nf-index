@@ -130,7 +130,7 @@ def get_tops_and_bottoms(agst, heights):
     return np.take_along_axis(tops, idxs, axis=0), np.take_along_axis(bottoms, idxs, axis=0)
 
 
-def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', order=None, agst=None):
+def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', order=None, agst=None, orient='horizontal'):
     if lims is None:
         lims = 0, matrix.shape[1]
     matrix = matrix[:, lims[0]:lims[1]]
@@ -152,13 +152,19 @@ def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', order=N
     if ax is None:
         fig, ax = plt.subplots(figsize=(matrix.shape[1]/100, 2))
     for i, color in enumerate(colors):
-        ax.fill_between(xvals, fb_bottoms[i], fb_tops[i], lw=0, color=color)
-    ax.set_xlim(-0.5, matrix.shape[1] + 0.5)
+        if orient == 'horizontal':
+            ax.fill_between(xvals, fb_bottoms[i], fb_tops[i], lw=0, color=color)
+            ax.set_xlim(0, matrix.shape[1])
+            ax.set_ylim(0, None)
+        elif orient == 'vertical':
+            ax.fill_betweenx(xvals, fb_bottoms[i], fb_tops[i], lw=0, color=color)
+            ax.set_ylim(0, matrix.shape[1])
+            ax.set_xlim(0, None)
 
     return ax, agst, order
 
 
-def plot_barplots(matrix, component_data=None, n=10_000, order_by='primary', order=None, agst=None, normalize=True, ax=None):
+def plot_barplots(matrix, component_data=None, n=10_000, normalize=True, ax=None, **kwargs):
     if matrix.shape[1] > n:
         np.random.seed(0)
         H_dsp = matrix[:, np.random.choice(np.arange(matrix.shape[1]), n)]
@@ -177,7 +183,7 @@ def plot_barplots(matrix, component_data=None, n=10_000, order_by='primary', ord
     if ax is None:
         fig, ax = plt.subplots(figsize=(20, 2))
 
-    return plot_stacked(H_dsp, colors, ax=ax, order_by=order_by, order=order, agst=agst)
+    return plot_stacked(H_dsp, colors, ax=ax, **kwargs)
 
 
 def adjust_agst(agst, i):
