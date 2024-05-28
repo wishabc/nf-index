@@ -6,6 +6,13 @@ Nextflow pipelines to build an index of accessible elements and do follow-up ana
 - conda (https://conda.io/projects/conda/en/latest/index.html)
 
 
+# Quick start
+- Follow first steps according to [General usage](#general-usage) section.
+- Create files required by pipeline (e.g. `samples_meta`, `samples_order` e.t.c.)
+- Fill in params required by pipeline in [params.config](#params).
+- Run pipeline using the corresponding command as described in [Usage](#usage) section. 
+For example, to [run NMF](#nmfnf) use `nextflow run nmf.nf -profile Altius -resume`.
+
 # Description of pipelines:
 - build_masterlist.nf - Build an index of accessible elements using the approach described in [Meuleman et al](https://www.nature.com/articles/s41586-020-2559-3).
 - generate_matrices.nf - Using constructed index as a scaffold to generate count (# of reads overlapping DHS) and binary (absence/presence of a peak) matricies.
@@ -28,7 +35,7 @@ main.nf - run `build_masterlist, generate_matrices, filter_peaks and normalize_s
 
 ### NMF.nf
 The pipeline consists of two parts:
-- Perfroming NMF
+- Performing NMF
 - Running QC visualizations
 
 To run both stages of the pipeline use:
@@ -40,7 +47,9 @@ To run just the last, vizualization step (expected to run previous command first
 ```
 nextflow run nmf.nf -profile Altius -entry visualize --nmf_results_path <launchDir>/output/nmf>
 ```
-The `--nmf_results_path` param can be omitted if you are running the pipeline in the same folder as `nextflow run nmf.nf -profile Altius`. The output files are named according to provided `prefix`. No warning are made in case of name collisions.
+The `--nmf_results_path` option can be omitted if you are running the pipeline in the same folder as `nextflow run nmf.nf -profile Altius`. 
+
+Note that output files are named according to provided `prefix` and `n_components` in `nmf_params_list`. No warning are made in case of name collisions.
 ### TODO:
 Add other workflows description here
 
