@@ -28,7 +28,7 @@ main.nf - run `build_masterlist, generate_matrices, filter_peaks and normalize_s
 
 # Usage
 ### General usage
- 0) (Optional) Create conda environment from `environment.yml` file with ```conda env create -n super-index -f environment.yml```
+ 0) (Optional) Create conda environment from `environment.yml` file with ```mamba env create -n super-index -f environment.yml```
  1) Modify `nextflow.config` to computing enviroment specifications
  2) Fill in params paths in ```params.config```. You can also specify parameters in command line. Please find detailed explanation of the parameters in the [Config section](#config).
  3) Run the pipeline with `nextflow run <workflow.nf> -profile Altius -resume`
