@@ -14,7 +14,7 @@ Nextflow pipelines to build an index of accessible elements and do follow-up ana
   2) Low-signal singletons (low signal peaks identified in only one sample)
   3) Peaks located on non-autosomal chromosomes (for NMF analysis and normalization)
 - normalize_signal.nf - Normalize filtered count matrix by running lowess normalization followed by DEseq2 variance-stabilizing transformation (VST). There is a workflow to apply normalization with existing parameters to new samples.
-- nmf.nf - Run non-negative matrix factorization (NMF) for set of matrices. More details see below
+- nmf.nf - Run non-negative matrix factorization (NMF) for set of matrices. More details below
 - variance_partition.nf - Run variance partition using normalized matrix
 ### Main workflow
 main.nf - run `build_masterlist, generate_matrices, filter_peaks and normalize_signal` pipelines + annotate resulting index with genomic annotations.
