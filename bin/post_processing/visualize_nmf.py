@@ -36,7 +36,7 @@ def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colo
                      agst=agst[:, order[sl]])
         ax.set_xticks(np.arange(num_elements) + 0.5)
         ax.set_xticklabels(
-            metadata['sample_label'].iloc[order, :][sl],
+            metadata.iloc[order, :]['sample_label'][sl],
             rotation=90
         )
         if label_colors is not None:
