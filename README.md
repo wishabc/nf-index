@@ -24,7 +24,7 @@ main.nf - run `build_masterlist, generate_matrices, filter_peaks and normalize_s
     + (required) `n_components` - number of components for NMF. 
     + (required) `prefix`: prefix for all input files. n_components will be added to prefix.
     + (required) `matrix_path`: path to matrix to run NMF on. Expected shape: `DHSs x samples`
-    + (required) `sample_names`: one-column file without header that contains names of the samples. They should match with values in `id` column of samples metadata (`samples_file` option). Can contain subset of these samples.<br> File format: <br>
+    + (required) `sample_names`: one-column file without header that contains names of the samples. They should match with values in `id` column of samples metadata (`samples_file` option). Should be a subset of samples defined in `samples_file`.<br> File format: <br>
         <table>
         <tr>
             <td>sample1</td>
