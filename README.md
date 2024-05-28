@@ -51,20 +51,15 @@ There are two config files in the repository.
 
 Parameters for each process can be specified either in ```params.config``` file or with a command line. See below detailed description of parameters for each workflow
 ## Params
-<details open><summary>Common parameters</summary>
-<p>
+### Common params
 
 - **samples_file**: Samples metadata in tsv format. File should contain `id` (unique identifier of the sample) and `sample_label` columns. Other columns are permitted and ignored.
 
 - **outdir** - directory to save results into. Defaults to `output` folder in the launch directory
 - **conda** - (optional) path to installed conda (from environment.yml). If not present, nextflow creates environment from environment.yml (was not tested).
 
-</p>
-</details>
 
-<details ><summary>nmf.nf</summary>
-
-<p>
+### nmf.nf sparams
 
 - **nmf_params_list**: A tsv file with information required to run NMF. Should contain all required columns. NA values in optional columns are permitted. Other, non-specified columns are permitted and ignored. See columns description below:
     + (required) `n_components` - number of components for NMF. 
@@ -138,10 +133,10 @@ Parameters for each process can be specified either in ```params.config``` file 
         </tr>
         </table>
 
-- **dhs_annotations**: (optional, used only for visualizations) A tsv file with DHSs annotations. Should contain `dhs_id` and `dist_tss` columns. Other columns are permitted and ignored. If provided, plot cumulative distance to TSS for DHSs of each component. 
+- **dhs_annotations**: (optional)
+  (used only for visualizations) A tsv file with DHSs annotations. Should contain `dhs_id` and `dist_tss` columns. Other columns are permitted and ignored. If provided, plot cumulative distance to TSS for DHSs of each component. 
 
-</p>
-</details>
+
 TODO: add details about other workflows
 
 
