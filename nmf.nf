@@ -113,13 +113,13 @@ workflow {
 
 // Entry for visuzizations only
 workflow visualize {
-    params.nmf_results_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_no_cancer/output/nmf/"
     Channel.fromPath(params.nmf_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
             "${row.prefix}.${row.n_components}",
             row.n_components,
             file(row.matrix_path),
+            file(row.sample_names),
             file(row.dhs_meta)
             ))
         | map( 
