@@ -11,8 +11,7 @@ import gc
 b = np.load(sys.argv[1]).astype(float)
 
 mask_file = sys.argv[2]
-mask_df = pd.read_table(mask_file, header=None)
-mask_df.columns = ['mask']
+mask_df = pd.read_table(mask_file, header=None, names=['mask'])
 #b_filtered = b[mask_df['mask'] == 1]
 print(b.shape)
 
