@@ -65,7 +65,7 @@ Parameters for each process can be specified either in ```params.config``` file 
     + (required) `n_components` - number of components for NMF. 
     + (required) `prefix`: prefix for all input files. `n_components` will be added to prefix.
     + (required) `matrix_path`: path to matrix to run NMF on in `.npy` format. Expected shape: `DHSs x samples`. For fast conversion from txt format (using datatable package), you can use `python3 bin/convert_to_numpy.py <matrix> <converted-matrix.npy> --dtype <matrix-dtype>` script.
-    + (required) `sample_names`: one-column file without header that contains names of the samples. They should match with values in `id` column of samples metadata (`samples_file` option). Should be a subset of samples defined in `samples_file`.<br> File format: <br>
+    + (required) `sample_names`: one-column txt file without header that contains names of the samples. They should match with values in `id` column of samples metadata (`samples_file` option). Should be a subset of samples defined in `samples_file`.<br> File format: <br>
         <table>
         <tr>
             <td>sample1</td>
