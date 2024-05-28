@@ -59,7 +59,7 @@ Parameters for each process can be specified either in ```params.config``` file 
 - **conda** - (optional) path to installed conda (from environment.yml). If not present, nextflow creates environment from environment.yml (was not tested).
 
 
-### nmf.nf sparams
+### nmf.nf params
 
 - **nmf_params_list**: A tsv file with information required to run NMF. Should contain all required columns. NA values in optional columns are permitted. Other, non-specified columns are permitted and ignored. See columns description below:
     + (required) `n_components` - number of components for NMF. 
@@ -137,7 +137,7 @@ Parameters for each process can be specified either in ```params.config``` file 
   (used only for visualizations) A tsv file with DHSs annotations. Should contain `dhs_id` and `dist_tss` columns. Other columns are permitted and ignored. If provided, plot cumulative distance to TSS for DHSs of each component. 
 
 
-TODO: add details about other workflows
+### TODO: add details about other workflows
 
 
 
