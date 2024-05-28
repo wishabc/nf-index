@@ -53,13 +53,15 @@ def project_peaks(data, model, W, W_weights=None, H_weights=None):
 def get_nonzero_mask(matrix):
     return matrix.sum(axis=1) > 0
 
-def read_weights(weights_path, shape, sample_names, ext=None):
+def read_weights(weights_path, shape, sample_names=None, ext=None):
     weights_vector = np.ones(shape, dtype=float)
     if weights_path:
         if ext == 'npy':
             weights_vector = np.load(weights_path)  
         else:
-            weights_df = pd.read_table(weights_path).set_index('id').loc[sample_names]
+            weights_df = pd.read_table(weights_path).set_index('id')
+            if sample_names is not None:
+                weights_df = weights_df.loc[sample_names]
             weights_vector = weights_df['weight'].to_numpy()
     
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
@@ -83,7 +85,7 @@ def read_args(args):
     
     if args.samples_weights or args.peaks_weights:
         W_weights_vector = read_weights(args.samples_weights, mat.shape[1], sample_names)
-        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0], sample_names)
+        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0])
     else:
         H_weights_vector = W_weights_vector = None
 
