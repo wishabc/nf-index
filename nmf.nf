@@ -3,22 +3,14 @@ nextflow.enable.dsl = 2
 include { non_required_arg } from "./normalize_signal"
 
 
-
-
-params.params_list = "/home/sboytsov/NMF/nmf_hyperparams.tsv"
-params.samples_order_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-0209/output/indivs_order.txt"
-params.clustering_meta = "/home/sboytsov/poster_clustering/2902_cluster_meta_0303.tsv"
-
-
-
 process fit_nmf {
 	tag "${prefix}"
 	conda "/home/sabramov/miniconda3/envs/jupyterlab"
     publishDir "${params.outdir}/nmf/${prefix}", pattern: "${prefix}.*"
-    memory { 400.GB * task.attempt }
+    label "highmem"
 
 	input:
-		tuple val(prefix), val(n_components), path(matrix_path), path(index), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights)
+		tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(index), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights)
 
 	output:
         tuple val(prefix), val(n_components), path(matrix_path), path(index), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
@@ -27,6 +19,7 @@ process fit_nmf {
 	"""
     python3 $moduleDir/bin/post_processing/perform_NMF.py \
         ${matrix_path} \
+        ${sample_names} \
         ${prefix} \
         ${n_components} \
         ${non_required_arg(weights_path, '--samples_weights')} \
@@ -40,7 +33,7 @@ process visualize_nmf {
 	tag "${prefix}"
 	conda "/home/sabramov/miniconda3/envs/jupyterlab"
     publishDir "${params.outdir}/nmf/${prefix}"
-    memory { 300.GB * task.attempt }
+    label "highmem"
 
 	input:
         tuple val(prefix), val(n_components), path(binary_matrix), path(masterlist), path(W), path(H), path(peaks_mask), path(samples_mask)
@@ -100,12 +93,13 @@ workflow runNMF {
 
 // nextflow run ~/projects/SuperIndex/nf-index/nmf.nf -profile Altius -resume
 workflow {
-    Channel.fromPath(params.params_list)
+    Channel.fromPath(params.nmf_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
             "${row.prefix}.${row.n_components}",
             row.n_components,
             file(row.matrix_path),
+            file(row.sample_names),
             file(row.dhs_meta),
             row?.samples_weights,
             row?.peaks_mask,
@@ -118,7 +112,7 @@ workflow {
 // Entry for visuzizations only
 workflow visualize {
     params.nmf_results_path = "/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/matrices/downsampled_no_cancer/output/nmf/"
-    Channel.fromPath(params.params_list)
+    Channel.fromPath(params.nmf_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
             "${row.prefix}.${row.n_components}",

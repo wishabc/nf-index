@@ -53,13 +53,13 @@ def project_peaks(data, model, W, W_weights=None, H_weights=None):
 def get_nonzero_mask(matrix):
     return matrix.sum(axis=1) > 0
 
-def read_weights(weights_path, shape, ext=None):
+def read_weights(weights_path, shape, sample_names, ext=None):
     weights_vector = np.ones(shape, dtype=float)
     if weights_path:
         if ext == 'npy':
             weights_vector = np.load(weights_path)  
         else:
-            weights_df = pd.read_table(weights_path)
+            weights_df = pd.read_table(weights_path).set_index('ag_id').loc[sample_names]
             weights_vector = weights_df['weight'].to_numpy()
     
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
@@ -67,6 +67,8 @@ def read_weights(weights_path, shape, ext=None):
 def read_args(args):
     print('Reading matrix')
     mat = np.load(args.matrix).astype(float)
+
+    sample_names = np.loadtxt(args.sample_names, dtype=str)
     
     if args.samples_mask is not None:
         samples_m = np.load(args.samples_mask)
@@ -80,8 +82,8 @@ def read_args(args):
     
     
     if args.samples_weights or args.peaks_weights:
-        W_weights_vector = read_weights(args.samples_weights, mat.shape[1])
-        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0])
+        W_weights_vector = read_weights(args.samples_weights, mat.shape[1], sample_names)
+        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0], sample_names)
     else:
         H_weights_vector = W_weights_vector = None
 
@@ -128,6 +130,7 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
+    parser.add_argument('sample_names', help='Path to txt file with sample names')
     parser.add_argument('prefix', help='Prefix for the output file')
     parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
     parser.add_argument('--samples_mask', help='Mask of used samples, numpy array', default=None)
