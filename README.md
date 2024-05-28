@@ -63,8 +63,8 @@ Parameters for each process can be specified either in ```params.config``` file 
 
 - **nmf_params_list**: A tsv file with information required to run NMF. Should contain all required columns. NA values in optional columns are permitted. Other, non-specified columns are permitted and ignored. See columns description below:
     + (required) `n_components` - number of components for NMF. 
-    + (required) `prefix`: prefix for all input files. n_components will be added to prefix.
-    + (required) `matrix_path`: path to matrix to run NMF on. Expected shape: `DHSs x samples`
+    + (required) `prefix`: prefix for all input files. `n_components` will be added to prefix.
+    + (required) `matrix_path`: path to matrix to run NMF on in `.npy` format. Expected shape: `DHSs x samples`. To do a fast convertion (using datatable package) from txt format, you can use `python3 bin/convert_to_numpy.py <matrix> <converted-matrix.npy> --dtype <matrix-dtype>` script.
     + (required) `sample_names`: one-column file without header that contains names of the samples. They should match with values in `id` column of samples metadata (`samples_file` option). Should be a subset of samples defined in `samples_file`.<br> File format: <br>
         <table>
         <tr>
