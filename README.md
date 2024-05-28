@@ -39,8 +39,8 @@ main.nf - run `build_masterlist, generate_matrices, filter_peaks and normalize_s
             <td>sampleX</td>
         </tr>
         </table>
-    + (required) `dhs_meta`: metadata for DHSs (rows) in tsv format without header. First 4 columns are treated as `chr`, `start`, `end`, `dhs_id`. `dhs_id` - unique identifier of DHS
-    + (optional) `samples_weights`: weights for the samples in tsv format. Useful when you have class imbalance, e.g. more samples of some specific cell type/condition.
+    + (required) `dhs_meta`: metadata for DHSs (rows) in tsv format without header. First 4 columns are treated as `chr`, `start`, `end`, `dhs_id`, where `dhs_id` is a unique identifier of DHS
+    + (optional) `samples_weights`: sample weights in tsv format. Useful when you have class imbalance, e.g. abundance of samples of some specific cell type/condition.
     
         Expected to be a two column tsv file: <br>
         <table>
