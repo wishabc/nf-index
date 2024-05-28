@@ -138,7 +138,7 @@ Parameters for each process can be specified either in ```params.config``` file 
         </tr>
         </table>
 
-- **dhs_annotations**: (optional, used only for visualizations) A tsv file with DHSs annotations. Should contain `dhs_id` and `dist_tss` columns. Other columns are permitted and ignored. If provided, pipeline plots cumulative distance to tss for DHSs of each component. 
+- **dhs_annotations**: (optional, used only for visualizations) A tsv file with DHSs annotations. Should contain `dhs_id` and `dist_tss` columns. Other columns are permitted and ignored. If provided, plot cumulative distance to TSS for DHSs of each component. 
 
 </p>
 </details>
