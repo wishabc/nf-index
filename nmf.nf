@@ -5,7 +5,7 @@ include { non_required_arg } from "./normalize_signal"
 
 process fit_nmf {
 	tag "${prefix}"
-	conda "/home/sabramov/miniconda3/envs/jupyterlab"
+	conda params.conda
     publishDir "${params.outdir}/nmf/${prefix}", pattern: "${prefix}.*"
     label "highmem"
 
@@ -32,7 +32,7 @@ process fit_nmf {
 
 process visualize_nmf {
 	tag "${prefix}"
-	conda "/home/sabramov/miniconda3/envs/jupyterlab"
+	conda params.conda
     publishDir "${params.outdir}/nmf/${prefix}"
     label "highmem"
 
