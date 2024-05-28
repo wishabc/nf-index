@@ -19,8 +19,8 @@ main.nf - run `build_masterlist, generate_matrices, filter_peaks and normalize_s
 
 <p>
 
-- **samples_file**: Samples metadata in tsv format. Expected to contain `id` (unique identifier of the sample) and `sample_label` columns. Other columns are permitted and ignored. Used solely for visualizations.
-- **nmf_params_list**: TSV file with information required to run NMF. Should contain all required columns. NA values in optional columns are permitted. Other columns are permitted and ignored. See columns description below:
+- **samples_file**: Samples metadata in tsv format. File should contain `id` (unique identifier of the sample) and `sample_label` columns. Other columns are permitted and ignored. Used solely for visualizations.
+- **nmf_params_list**: A tsv file with information required to run NMF. Should contain all required columns. NA values in optional columns are permitted. Other, non-specified columns are permitted and ignored. See columns description below:
     + (required) `n_components` - number of components for NMF. 
     + (required) `prefix`: prefix for all input files. n_components will be added to prefix.
     + (required) `matrix_path`: path to matrix to run NMF on. Expected shape: `DHSs x samples`
