@@ -59,7 +59,7 @@ def read_weights(weights_path, shape, sample_names, ext=None):
         if ext == 'npy':
             weights_vector = np.load(weights_path)  
         else:
-            weights_df = pd.read_table(weights_path).set_index('ag_id').loc[sample_names]
+            weights_df = pd.read_table(weights_path).set_index('id').loc[sample_names]
             weights_vector = weights_df['weight'].to_numpy()
     
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
