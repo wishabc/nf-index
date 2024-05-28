@@ -2,6 +2,8 @@ from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
 import pandas as pd
 import numpy as np
+import matplotlib.colors as mcolors
+import os
 
 
 W_old_path = '/net/seq/data2/projects/sabramov/SuperIndex/dnase-index0415/embeddings/NMF/nndsvda_29c_050124//nmf_results/nndsvda.top35_max100_no_cancer_seed2674.peak_mask@cf_0.05@mv_0.7.29.W.npy'
@@ -15,9 +17,6 @@ def reorder_components(W1, W2):
 
 
 def get_component_data(W, W_old=None):
-    if W_old is None:
-        W_old = np.load(W_old_path).T
-    reorder = reorder_components(W, W_old)
     component_order = [
         27,
         6,
@@ -114,6 +113,21 @@ def get_component_data(W, W_old=None):
         'Tissue invariant',
     ]
 
+    if W_old is None:
+        if os.path.exists(W_old_path):
+            W_old = np.load(W_old_path).T
+        else:
+            if W.shape[0] <= 29:
+                colors = component_colors[:W.shape[0]]
+            else:
+                colors = define_colors(W.shape[0])
+            return pd.DataFrame({
+                'index': np.arange(W.shape[0]),
+                'color': colors,
+                'name': ['Component {}'.format(i) for i in range(W.shape[0])],
+            })
+    reorder = reorder_components(W, W_old)
+
     component_data = pd.DataFrame({
         'index': component_order,
         'color': component_colors,
@@ -141,7 +155,8 @@ def get_component_data(W, W_old=None):
 
 
 def define_colors(n_components):
-    # comp_colors = ['#FFE500', '#FE8102', '#FF0000', '#07AF00', '#4C7D14', '#414613', '#05C1D9', '#0467FD', '#009588', '#BB2DD4', '#7A00FF', '#4A6876', '#08245B', '#B9461D', '#692108', '#C3C3C3']
+    # Function to define colors for components. Borrowed from Meuleman et al. 2020
+    # Based on 2020 component colors
     comp_colors = ["#ffe500",
                     "#fe8102",
                     "#ff0000",
@@ -189,7 +204,7 @@ def define_colors(n_components):
             trialcount = 0
             while ((new_color in component_colors) and (trialcount < 100)):
                 #print('what am i doing here')
-                newcolor = colornames[np.random.randint(0,len(colornames))]
+                newcolor = colornames[np.random.randint(0, len(colornames))]
                 trialcount += 1
             #print('new color', count, new_color)
             component_colors.append(new_color)

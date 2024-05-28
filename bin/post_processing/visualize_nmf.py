@@ -35,9 +35,10 @@ def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colo
                      order=np.arange(num_elements),
                      agst=agst[:, order[sl]])
         ax.set_xticks(np.arange(num_elements) + 0.5)
-        ax.set_xticklabels(metadata.iloc[order, :][sl].apply(lambda row:
-                                                             f"{row['core_ontology_term']} {row['SPOT1_score']:.1f}",
-                                                             axis=1), rotation=90, )
+        ax.set_xticklabels(
+            metadata.iloc[order, 'sample_label'][sl],
+            rotation=90
+        )
         if label_colors is not None:
             assert len(label_colors) == matrix.shape[1]
             for xtick, col in zip(ax.get_xticklabels(), label_colors[sl]):
@@ -134,7 +135,6 @@ def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', order=N
     if lims is None:
         lims = 0, matrix.shape[1]
     matrix = matrix[:, lims[0]:lims[1]]
-    n_components, n_objects = matrix.shape
 
     if agst is None:
         agst = np.argsort(matrix, axis=0)[::-1, :]
@@ -184,26 +184,6 @@ def plot_barplots(matrix, component_data=None, n=10_000, normalize=True, ax=None
         fig, ax = plt.subplots(figsize=(20, 2))
 
     return plot_stacked(H_dsp, colors, ax=ax, **kwargs)
-
-
-def adjust_agst(agst, i):
-    n_rows, n_cols = agst.shape
-    # Create a new array that will hold the adjusted indices
-    new_agst = np.empty_like(agst)
-    
-    # For each column, find the position of the zero index
-    zero_positions = (agst == i)
-    
-    # Iterate through each column to set the zero at the top and reorder the remaining elements
-    for col in range(n_cols):
-        col_indices = agst[:, col]
-        zero_pos = np.where(col_indices == i)[0][0]
-        # Place the zero at the top of the new column
-        new_agst[0, col] = col_indices[zero_pos]
-        # Fill the rest of the column with the remaining indices, excluding the original zero position
-        new_agst[1:, col] = np.concatenate([col_indices[:zero_pos], col_indices[zero_pos + 1:]])
-        
-    return new_agst
 
 
 def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path):
@@ -317,6 +297,7 @@ def plot_dist_tss(H, index, component_data, ax=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
+    parser.add_argument('sample_names', help='Path to file with sample names')
     parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('H', help='H matrix of perform NMF decomposition')
     parser.add_argument('metadata', help='Path to metadata file')
@@ -326,20 +307,34 @@ if __name__ == '__main__':
     parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array')
     #parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
-    parser.add_argument('--dhs_annotations', help='Path to DHS annotations', default=None)
+    parser.add_argument('--dhs_annotations', help='Path to DHS annotations. Required to plot distance to tss plot. Expected to have dist_tss column.', default=None)
     args = parser.parse_args()
 
     mat = np.load(args.matrix).astype(float)
+
+    sample_names = np.loadtxt(args.sample_names, dtype=str)
+
     samples_m = np.loadtxt(args.samples_mask).astype(bool)
     peaks_m = np.loadtxt(args.peaks_mask).astype(bool)
 
     metadata = pd.read_table(args.metadata)
+    # Reformat metadata to handle DNase columns
+    id_col = 'id' if 'id' in metadata.columns else 'ag_id'
+    assert id_col in metadata.columns, f'No id or ag_id column found in metadata. Available columns: {metadata.columns}'
+    if 'sample_label' not in metadata.columns:
+        metadata['sample_label'] = metadata.apply(
+            lambda row: f"{row['core_ontology_term']} {row['SPOT1_score']:.1f}",
+            axis=1
+        )
+    
+    metadata = metadata.set_index(id_col).loc[sample_names]
+
     W = np.load(args.W).T
     H = np.load(args.H).T
-    dhs_meta = pd.read_table(args.dhs_meta, header=None)[3].to_numpy()
+    dhs_meta = pd.read_table(args.dhs_meta, header=None, usecols=np.arange(4), names=['chr', 'start', 'end', 'dhs_id'])
     if args.dhs_annotations is not None:
         dhs_annotations = pd.read_table(args.dhs_annotations)
-        dhs_annotations = dhs_annotations[dhs_annotations['dhs_id'].isin(dhs_meta)]
+        dhs_annotations = dhs_annotations[dhs_annotations['dhs_id'].isin(dhs_meta['dhs_id'].to_numpy())]
     else:
         dhs_annotations = None
 

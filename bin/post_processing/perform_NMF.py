@@ -71,6 +71,8 @@ def read_args(args):
     mat = np.load(args.matrix).astype(float)
 
     sample_names = np.loadtxt(args.sample_names, dtype=str)
+
+    dhs_meta = pd.read_table(args.dhs_meta, header=None, usecols=np.arange(4), names=['chr', 'start', 'end', 'dhs_id'])
     
     if args.samples_mask is not None:
         samples_m = np.load(args.samples_mask)
@@ -85,7 +87,7 @@ def read_args(args):
     
     if args.samples_weights or args.peaks_weights:
         W_weights_vector = read_weights(args.samples_weights, mat.shape[1], sample_names)
-        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0])
+        H_weights_vector = read_weights(args.peaks_weights, mat.shape[0], dhs_meta['dhs_id'].to_numpy())
     else:
         H_weights_vector = W_weights_vector = None
 
@@ -132,7 +134,7 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
-    parser.add_argument('sample_names', help='Path to txt file with sample names')
+    parser.add_argument('sample_names', help='Path to file with sample names')
     parser.add_argument('prefix', help='Prefix for the output file')
     parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
     parser.add_argument('--samples_mask', help='Mask of used samples, numpy array', default=None)

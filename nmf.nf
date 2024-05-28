@@ -10,16 +10,17 @@ process fit_nmf {
     label "highmem"
 
 	input:
-		tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(index), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights)
+		tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(dhs_meta), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights)
 
 	output:
-        tuple val(prefix), val(n_components), path(matrix_path), path(index), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
+        tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(dhs_meta), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
 
 	script:
 	"""
     python3 $moduleDir/bin/post_processing/perform_NMF.py \
         ${matrix_path} \
         ${sample_names} \
+        ${dhs_meta} \
         ${prefix} \
         ${n_components} \
         ${non_required_arg(weights_path, '--samples_weights')} \
@@ -36,7 +37,7 @@ process visualize_nmf {
     label "highmem"
 
 	input:
-        tuple val(prefix), val(n_components), path(binary_matrix), path(masterlist), path(W), path(H), path(peaks_mask), path(samples_mask)
+        tuple val(prefix), val(n_components), path(binary_matrix), path(sample_names), path(masterlist), path(W), path(H), path(peaks_mask), path(samples_mask)
 
 	output:
         tuple val(prefix), path("*.pdf")
@@ -45,6 +46,7 @@ process visualize_nmf {
 	"""
     python3 $moduleDir/bin/post_processing/visualize_nmf.py \
         ${binary_matrix} \
+        ${sample_names} \
         ${W} \
         ${H} \
         ${params.samples_file} \
