@@ -5,7 +5,7 @@ channels:
   - defaults
 dependencies:
   - matplotlib
-  - pandas
+  - pandas=2.1.0
   - scikit-learn
   - umap-learn
   - seaborn
