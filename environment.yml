@@ -6,6 +6,7 @@ channels:
 dependencies:
   - matplotlib
   - pandas=2.1.0
+  - 
   - wiggletools
   - ucsc-bedgraphtobigwig
   - scikit-learn
