@@ -9,6 +9,7 @@ dependencies:
   - nextflow=23.10.1
   - wiggletools
   - ucsc-bedgraphtobigwig
+  - ucsc-bigwigtobedgraph
   - scikit-learn
   - umap-learn
   - seaborn
