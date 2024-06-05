@@ -1,10 +1,13 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import argparse
 from tqdm import tqdm
+import scipy.cluster.hierarchy as sch
 
 from order_by_template import get_component_data, define_colors
+from plotting_utils import construct_sample_labels, average_profiles, hierarchical_cluster, identity_agst, get_sampled_dhs_indices
 
 def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colors=None):
     assert len(metadata) == matrix.shape[1]
@@ -131,7 +134,10 @@ def get_tops_and_bottoms(agst, heights):
     return np.take_along_axis(tops, idxs, axis=0), np.take_along_axis(bottoms, idxs, axis=0)
 
 
-def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', order=None, agst=None, orient='horizontal'):
+def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', normalize=True, order=None, agst=None, orient='horizontal'):
+    if normalize:
+        matrix = matrix / matrix.sum(axis=0)
+    
     if lims is None:
         lims = 0, matrix.shape[1]
     matrix = matrix[:, lims[0]:lims[1]]
@@ -164,7 +170,7 @@ def plot_stacked(matrix, colors, ax=None, lims=None, order_by='primary', order=N
     return ax, agst, order
 
 
-def plot_barplots(matrix, component_data=None, n=10_000, normalize=True, ax=None, **kwargs):
+def plot_barplots(matrix, component_data=None, n=10_000, ax=None, **kwargs):
     if matrix.shape[1] > n:
         np.random.seed(0)
         H_dsp = matrix[:, np.random.choice(np.arange(matrix.shape[1]), n)]
@@ -177,13 +183,73 @@ def plot_barplots(matrix, component_data=None, n=10_000, normalize=True, ax=None
         H_dsp = H_dsp[component_data['index'], :]
         colors = component_data['color']
 
-    if normalize:
-        H_dsp = H_dsp / H_dsp.sum(axis=0)
-
     if ax is None:
         fig, ax = plt.subplots(figsize=(20, 2))
 
     return plot_stacked(H_dsp, colors, ax=ax, **kwargs)
+
+
+def plot_dist_tss(H, index, component_data, ax=None):
+    max_component = np.argmax(H, axis=0)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(2, 2))
+    for i, row in component_data.iterrows():
+        data = np.abs(index['dist_tss'][max_component == row['index']])
+        ax.plot(np.sort(data), np.linspace(0, 1, len(data)), color=row['color'])
+    ax.set_xlim(-50, 5000)
+    ax.set_xlabel('Distance to TSS')
+    ax.set_ylabel('Cumulative proportion of DHSs')
+    return ax
+
+
+def plot_bar_hcl(H, order_s, clusters_s, component_data, ax=None, **kwargs):
+    unordered_clusters = clusters_s[np.argsort(order_s)]
+    mat = H[component_data['index'], :]
+    agst = np.argsort(mat, axis=0)[::-1, :]
+    for i in np.unique(unordered_clusters):
+        idx = unordered_clusters == i
+        component_priority = np.argsort((mat[:, idx] / mat[:, idx].sum(axis=0)).mean(axis=1))[::-1]
+        agst[:, idx] = component_priority[:, None]
+    
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(20, 2))
+    plot_stacked(mat, component_data['color'], order=order_s, agst=agst, ax=ax, **kwargs)
+    for i in np.where(np.diff(clusters_s) != 0)[0]:
+        ax.axvline(i+1, color='k', lw=1)
+
+
+def plot_dendro_and_bar(H_subsampled, order_s, clusters_s, linkage_s, component_data, tr=0.5, fig=None, **kwargs):
+    if fig is None:
+        fig = plt.figure(figsize=(20, 4))
+    gs = gridspec.GridSpec(2, 1, hspace=0)
+
+    ax = fig.add_subplot(gs[0])
+    sch.dendrogram(linkage_s, color_threshold=tr, ax=ax)
+    ax.axhline(tr, color='r')
+    ax.set_xticks([])
+
+    ax = fig.add_subplot(gs[1])
+    plot_bar_hcl(H_subsampled, clusters_s, order_s, component_data, ax=ax, **kwargs)
+
+
+def hierarchical_barplot_metasamples(W, metadata, columns_for_herarchy, component_data, fig=None, **kwargs):
+    av_W_tn = average_profiles(W, metadata, columns_for_herarchy)
+    order_metasamples_tn, clusters_metasamples_tn, linkage_metasamples_tn = hierarchical_cluster(av_W_tn.values, cluster_threshold=0.5)
+    if fig is None:
+        fig = plt.figure(figsize=(av_W_tn.shape[1] / 8, 4))
+    plot_dendro_and_bar(av_W_tn.values, order_metasamples_tn,
+                        clusters_metasamples_tn, linkage_metasamples_tn, component_data,
+                        **kwargs)
+
+    av_labels_tn = []
+    gb = av_W_tn.groupby(level=0, axis=1)
+    for i, (group_name, group_df) in tqdm(enumerate(gb), total=gb.ngroups):
+        av_labels_tn.extend([x[-1] for x in group_df.T.reset_index(level=0, drop=True).index])
+    av_labels_tn = np.array(av_labels_tn)
+    ax = plt.gca()
+    ax.set_xticks(np.arange(av_W_tn.shape[1]) + 0.5)
+    ax.set_xticklabels(av_labels_tn[order_metasamples_tn], rotation=90)
+    return ax
 
 
 def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path):
@@ -193,7 +259,25 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     relative_W = W / W.sum(axis=0)
     relative_W = relative_W[component_data['index'], :]
 
+    #Hierarchical barplot samples
+    fig = plt.figure(figsize=(20, 4))
+    ax = hierarchical_barplot_metasamples(W, metadata, ['sample_label'], component_data)
+    plt.savefig(f'{vis_path}/hierarchical_clustering_sample_label.pdf', transparent=True, bbox_inches='tight', normalize=False)
 
+    #Hierarchical barplot detailed
+    leaves_order, clusters, linkage = hierarchical_cluster(W, cluster_threshold=0.5)
+    barplot_at_scale(W[component_data['index'], :], metadata, component_data['color'], order=np.array(leaves_order), agst=identity_agst(W))
+
+    #Heirarchical barplot DHSs
+    H_norm = H / H.sum(axis=0)
+    filter_mask = (binary_matrix.sum(axis=1) >= 2) & (H.sum(axis=0) >= 0.2) & (H_norm.max(axis=0) >= 0.2)
+    plotting_args, _ = get_sampled_dhs_indices(H, filter_mask,
+                                                    min_dhs_per_cluster=100, cluster_threshold=0.5,
+                                                    n_per_cluster=200, n_to_sample=min(filter_mask.sum(), 20_000))
+    plot_dendro_and_bar(*plotting_args, component_data, tr=0.5)
+    plt.savefig(f'{vis_path}/hierarchical_clustering_DHSs.pdf', transparent=True, bbox_inches='tight')
+
+    #Detailed barplot for each component
     for i, row in component_data.iterrows():
         weights = np.ones(W.shape[0])
         weights[i] = W.shape[0]
@@ -280,20 +364,6 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
         plt.close(fig)
 
 
-
-def plot_dist_tss(H, index, component_data, ax=None):
-    max_component = np.argmax(H, axis=0)
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(2, 2))
-    for i, row in component_data.iterrows():
-        data = np.abs(index['dist_tss'][max_component == row['index']])
-        ax.plot(np.sort(data), np.linspace(0, 1, len(data)), color=row['color'])
-    ax.set_xlim(-50, 5000)
-    ax.set_xlabel('Distance to TSS')
-    ax.set_ylabel('Cumulative proportion of DHSs')
-    return ax
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
@@ -322,10 +392,7 @@ if __name__ == '__main__':
     id_col = 'id' if 'id' in metadata.columns else 'ag_id'
     assert id_col in metadata.columns, f'No id or ag_id column found in metadata. Available columns: {metadata.columns}'
     if 'sample_label' not in metadata.columns:
-        metadata['sample_label'] = metadata.apply(
-            lambda row: f"{row['core_ontology_term']} {row['SPOT1_score']:.1f}",
-            axis=1
-        )
+        metadata['sample_label'] = construct_sample_labels(metadata)
     
     metadata = metadata.set_index(id_col).loc[sample_names]
 
