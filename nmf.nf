@@ -59,28 +59,6 @@ process visualize_nmf {
 	"""
 }
 
-process top_samples_track {
-
-    scratch true
-    conda params.conda
-    tag "${component}"
-    publishDir "${params.outdir}/top_samples"
-
-    input:
-        tuple val(component), path(density_bw, stageAs: "?/*")
-    
-    output:
-        tuple path(name), path("${component}.top_samples.bg")
-    
-    script:
-    name = "${component}.top_samples.bw"
-    bg = "${component}.top_samples.bg"
-    """
-    wiggletools write_bg ${bg} mean ${density_bw}
-    bedGraphToBigWig "${bg}" "${params.chrom_sizes}" "${name}"
-    """
-}
-
 
 workflow runNMF {
     take:
@@ -132,18 +110,4 @@ workflow visualize {
             )
         )
         | visualize_nmf
-}
-
-
-workflow topSamples {
-    meta = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.normalized_density_bw)))
-    Channel.fromPath(params.top_components_ids)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, row.component))
-        | join(meta)
-        | map(it -> tuple(it[1], it[2]))
-        | groupTuple()
-        | top_samples_track
 }
