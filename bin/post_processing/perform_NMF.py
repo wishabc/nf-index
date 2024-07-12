@@ -10,7 +10,8 @@ def perform_NMF(X, W_weights=None, H_weights=None, n_components=16):
     params = dict(n_components=n_components,
                     solver='mu', beta_loss='frobenius',
                     random_state=0, init="nndsvda",
-                    max_iter=1000, tol=1e-4, verbose=True)
+                    max_iter=1000, tol=1e-4, alpha_W=0.0, l1_ratio=1.0,
+                    verbose=True)
     if W_weights is not None:
         assert H_weights is not None
         model = weighted_NMF(**params)

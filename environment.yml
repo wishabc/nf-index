@@ -16,6 +16,7 @@ dependencies:
   - tmux
   - python=3.9
   - datatable
+  - statsmodels
   - scipy
   - bedops
   - pysam=0.19.1
