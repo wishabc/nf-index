@@ -310,23 +310,23 @@ awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$8}' best_intron_mapped.bed \
 #Paste the Annotations together
 
 #gene_body
-cut -f4 dhs_annotated.bed \
-> gene_body.txt
+cut -f4 dhs_annotated.bed > gene_body.txt
 
 #exon_subfamily
 bedmap --echo-map --fraction-both 1 ${masterlist} dhs_annotated_exon.bed \
-| awk -F'\t' '{if($5 == "NPC") print $1"\t"$2"\t"$3"\t"$4"\t"""; else print}' \
-| cut -f5 \
-> exon_subfamily.txt
+    | awk -F'\t' '{if($5 == "NPC") print $1"\t"$2"\t"$3"\t"$4"\t"""; else print}' \
+    | cut -f5 \
+    | sed 's/;.*//' \
+    > exon_subfamily.txt
 
 #PC/NP
 cat dhs_annotated_exon.bed dhs_annotated_intron.bed dhs_annotated_promoter.bed \
-| sort-bed - \
-| bedmap --echo-map --fraction-both 1 ${masterlist} - \
-| awk -F'\t' '{if($5 == "CDS" || $5 == "three_prime_utr" || $5 == "five_prime_utr") print $1"\t"$2"\t"$3"\t"$4"\t""PC"; else print}' \
-| awk -F'\t' '{if($5 == "") print $1"\t"$2"\t"$3"\t"$4"\t""NPC"; else print}' \
-| cut -f5 \
-> is_coding.txt
+    | sort-bed - \
+    | bedmap --echo-map --fraction-both 1 ${masterlist} - \
+    | awk -F'\t' '{if($5 == "CDS" || $5 == "three_prime_utr" || $5 == "five_prime_utr") print $1"\t"$2"\t"$3"\t"$4"\t""PC"; else print}' \
+    | awk -F'\t' '{if($5 == "") print $1"\t"$2"\t"$3"\t"$4"\t""NPC"; else print}' \
+    | cut -f5 \
+    > is_coding.txt
 
 
 ###############
@@ -334,34 +334,34 @@ cat dhs_annotated_exon.bed dhs_annotated_intron.bed dhs_annotated_promoter.bed \
 ###############
 
 zcat ${gencode} \
-| awk -F'\t' '{if($4 != $5) print}' \
-| awk -F'\t' '{
-        if($3 == "transcript") {
-                if($7 == "+") {
-                        print $1"\t"$4"\t"$4+1"\t"$9;
-                }
-                else if($7 == "-") {
-                         print $1"\t"$5-1"\t"$5"\t"$9;
-                }
-        }
-}' - \
-| grep -v chrM | grep -v Selenocysteine | grep -v codon \
-| sort-bed - \
-| awk -F';' '{print $1"\t"$3}' \
-| awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$5}' \
-| sed 's/gene_name//g' \
-| sed 's/\"//g' \
-| sed 's/ //g' \
-> tss.bed
+    | awk -F'\t' '{if($4 != $5) print}' \
+    | awk -F'\t' '{
+            if($3 == "transcript") {
+                    if($7 == "+") {
+                            print $1"\t"$4"\t"$4+1"\t"$9;
+                    }
+                    else if($7 == "-") {
+                            print $1"\t"$5-1"\t"$5"\t"$9;
+                    }
+            }
+    }' - \
+    | grep -v chrM | grep -v Selenocysteine | grep -v codon \
+    | sort-bed - \
+    | awk -F';' '{print $1"\t"$3}' \
+    | awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$5}' \
+    | sed 's/gene_name//g' \
+    | sed 's/\"//g' \
+    | sed 's/ //g' \
+    > tss.bed
 
 ###########################
 #Closest-Features to Genes#
 ##########################
 
 closest-features --closest --no-ref --dist ${masterlist} tss.bed \
-| awk -F'\t' '{print $4}' \
-| awk -F'|' -v OFS='\t' '{print $2,$1}' \
-> dist_gene.txt
+    | awk -F'\t' '{print $4}' \
+    | awk -F'|' -v OFS='\t' '{print $2,$1}' \
+    > dist_gene.txt
 
 
 echo "Finished Distance to TSS"
