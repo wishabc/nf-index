@@ -3,9 +3,8 @@
 #Path to relevant Masterlist Files
 masterlist=$1
 encode3=$2
-gencode=$3
-gwas_catalog=$4
-repeats=$5
+gwas_catalog=$3
+repeats=$4
 
 #Bedops command to print whether or not the masterlist file overlaps an encode3 DHS and by how much
 bedmap --echo --echo-map --bp-ovr 1 --indicator --bases-uniq-f ${masterlist} ${encode3} \
@@ -17,66 +16,15 @@ bedmap --echo --echo-map --bp-ovr 1 --indicator --bases-uniq-f ${masterlist} ${e
 
 echo "Finished encode3 annotation"
 
-###############
-#Parse Gencode#
-###############
-
-zcat ${gencode} \
-| awk -F'\t' '{if($4 != $5) print}' \
-| awk -F'\t' '{
-        if($3 == "transcript") {
-                if($7 == "+") {
-                        print $1"\t"$4"\t"$4+1"\t"$9;
-                }
-                else if($7 == "-") {
-                         print $1"\t"$5-1"\t"$5"\t"$9;
-                }
-        }
-}' - \
-| grep -v chrM | grep -v Selenocysteine | grep -v codon \
-| sort-bed - \
-| awk -F';' '{print $1"\t"$3}' \
-| awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$5}' \
-| sed 's/gene_name//g' \
-| sed 's/\"//g' \
-| sed 's/ //g' \
-> tss.bed
-
-###########################
-#Closest-Features to Genes#
-##########################
-
-closest-features --closest --no-ref --dist ${masterlist} tss.bed \
-| awk -F'\t' '{print $4}' \
-| awk -F'|' '{print $2"\t"$1}' \
-> dist_gene.txt
-
-
-echo "Finished Distance to TSS"
-
-
 ####################
 #Parse gwas_catalog#
 ####################
-touch tmp2.catalog_parsed.tsv
-rm tmp2.catalog_parsed.tsv
-touch tmp2.catalog_parsed.tsv
-
-#Get columns I want from the gwas catalog
 #Got rid of some weird chr5 X 12, chr1 x 3 in the first column
 cut -f7,12,13,21,28,31 ${gwas_catalog} \
-| awk -F'\t' '{print "chr"$2"\t"$3"\t"$3+1"\t"$4"\t"$5"\t"$6"\t"$1}' \
-| awk -F' ' '{if($2 != "x") print}' \
-> tmp.catalog_parsed.tsv
-
-#Only extract chr1-22,X,Y
-for i in {1..22} X Y
-do
-        awk -v chrom=$i '{if($1 =="chr"chrom) print}' tmp.catalog_parsed.tsv >> tmp2.catalog_parsed.tsv
-done
-
-cat tmp2.catalog_parsed.tsv \
-| sort-bed - \
+    | awk -F'\t' '{print "chr"$2"\t"$3"\t"$3+1"\t"$4"\t"$5"\t"$6"\t"$1}' \
+    | awk -F' ' '{if($2 != "x") print}' \
+    | awk '$1 ~ /^chr([1-9]|1[0-9]|2[0-2]|X|Y)$/' \
+    | sort-bed - \
 > catalog_parsed.tsv
 
 ################################
@@ -159,6 +107,9 @@ bedmap --echo-map --fraction-both 1 tmp.masterlist.bed3 dhs_annotated_all-repeat
 | cut -f4-6 \
 | awk -F'\t' '{if($1 == "") print """\t""""\t"""; else print}' \
 > repeats.txt
+
+paste is_encode3.txt gwas_catalog_count.txt repeats.txt > simpleAnnotations.txt
+echo -e "is_encode3\tencode3_ovr-fraction\tnum_gwasCatalog_variants\trepeat_class\trepeat_family\trepeat_name" > simpleAnnotations_header.txt
 
 echo "Finished Repeat Annotations"
 

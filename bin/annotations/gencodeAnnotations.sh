@@ -3,11 +3,13 @@
 #Path to relevant Masterlist Files
 masterlist=$1
 gencode=$2
-chromInfo=$3
+chromSize=$3
 
 ##################################
 #Parse Gencode File (utr updated)#
 ##################################
+chromInfo="chrom_sizes.bed"
+awk -v OFS='\t' '{ print \$1,0,\$2 }' ${chromSize} > ${chromInfo}
 
 #Remove row if start = end
 zcat ${gencode} \
@@ -48,7 +50,7 @@ bedops --ec -m utr.bed exon.bed promoter.bed cds.bed | bedops --ec -d gene.bed -
 awk '{print $1"\t"$2"\t"$3"\t""intron"}' tmp.intron.bed > intron.bed
 
 #Need to find the Intergenic region. Difference between Genome and gene-body + promoter region
-bedops --ec -d ${chromInfo}  gene.bed promoter.bed > tmp.intergenic.bed
+bedops --ec -d ${chromInfo} gene.bed promoter.bed > tmp.intergenic.bed
 awk '{print $1"\t"$2"\t"$3"\t""intergenic"}' tmp.intergenic.bed > intergenic.bed
 
 #Clean Up
@@ -327,7 +329,44 @@ cat dhs_annotated_exon.bed dhs_annotated_intron.bed dhs_annotated_promoter.bed \
 > is_coding.txt
 
 
-paste gene_body.txt exon_subfamily.txt is_coding.txt > gencode_annotations.txt
-echo -e "gene_body\texon_subgroup\tis_coding" > gencodeAnnotations_header.txt
+###############
+#Parse Gencode#
+###############
+
+zcat ${gencode} \
+| awk -F'\t' '{if($4 != $5) print}' \
+| awk -F'\t' '{
+        if($3 == "transcript") {
+                if($7 == "+") {
+                        print $1"\t"$4"\t"$4+1"\t"$9;
+                }
+                else if($7 == "-") {
+                         print $1"\t"$5-1"\t"$5"\t"$9;
+                }
+        }
+}' - \
+| grep -v chrM | grep -v Selenocysteine | grep -v codon \
+| sort-bed - \
+| awk -F';' '{print $1"\t"$3}' \
+| awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$5}' \
+| sed 's/gene_name//g' \
+| sed 's/\"//g' \
+| sed 's/ //g' \
+> tss.bed
+
+###########################
+#Closest-Features to Genes#
+##########################
+
+closest-features --closest --no-ref --dist ${masterlist} tss.bed \
+| awk -F'\t' '{print $4}' \
+| awk -F'|' -v OFS='\t' '{print $2,$1}' \
+> dist_gene.txt
+
+
+echo "Finished Distance to TSS"
+
+paste dist_gene.txt gene_body.txt exon_subfamily.txt is_coding.txt > gencode_annotations.txt
+echo -e "dist_tss\tgene\tgene_body\texon_subgroup\tis_coding" > gencodeAnnotations_header.txt
 
 echo "Finished Gencode Annotation"
