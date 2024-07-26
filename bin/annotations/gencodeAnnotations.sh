@@ -328,6 +328,6 @@ cat dhs_annotated_exon.bed dhs_annotated_intron.bed dhs_annotated_promoter.bed \
 
 
 paste gene_body.txt exon_subfamily.txt is_coding.txt > gencode_annotations.txt
-
+echo -e "gene_body\texon_subgroup\tis_coding" > gencodeAnnotations_header.txt
 
 echo "Finished Gencode Annotation"

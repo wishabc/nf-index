@@ -57,7 +57,7 @@ process annotate_masterlist {
 
     echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
     echo -e "is_encode3\tencode3_ovr-fraction\tdist_tss\tgene_name\tnum_gwasCatalog_variants\trepeat_class\trepeat_family\trepeat_name" > simpleAnnotations_header.txt
-    echo -e "gene_body\texon_subgroup\tis_coding" > gencodeAnnotations_header.txt
+    
     echo -e "spot1_std\tspot1_min\tspot1_mean\tspot1_median\tspot1_max\tspot1_Q1\tspot1_Q3" > spot1_header.txt
     echo -e 'n_gc\tpercent_gc\tn_mappable' > gc_header.txt
 
