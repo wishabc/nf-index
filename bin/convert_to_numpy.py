@@ -36,7 +36,7 @@ if __name__ == '__main__':
     dtype = dict(zip(('int', 'float', 'bool'), (int, float, bool)))[args.dtype]
     matrix_dense = read_matrix(input_path, dtype=dtype)
     logger.info(f'Matrix size: {matrix_dense.shape}. '
-                f'Density: {(matrix_dense != 0).size / matrix_dense.size}'
+                f'Density: {(matrix_dense != 0).sum() / matrix_dense.size}'
                 )
     if args.mask is not None:
         mask = np.loadtxt(args.mask, dtype=bool)
