@@ -103,7 +103,7 @@ workflow countPeaks {
         | map(it -> "${it[0]}\t${it[1]}\t${it[2]}")
         | collectFile(
             name: "peaks_count.tsv",
-            storeDir: params.outdir
+            storeDir: params.outdir,
             newLine: true
         )
 }
