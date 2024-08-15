@@ -76,3 +76,34 @@ workflow {
         | collect_matrix
     
 }
+
+
+process count_peaks {
+    conda params.conda
+    tag "${ag_id}"
+    scratch true
+
+    input:
+        tuple val(ag_id), path(peaks_file)
+    
+    output:
+        tuple val(ag_id), val(peaks_file.name), val(stdout)
+    
+    script:
+    """
+    unstarch ${peaks_file} | wc -l
+    """
+}
+
+workflow countPeaks {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.peaks_file)))
+        | count_peaks
+        | map(it -> "${it[0]}\t${it[1]}\t${it[2]}")
+        | collectFile(
+            name: "peaks_count.tsv",
+            storeDir: params.outdir
+            newLine: true
+        )
+}
