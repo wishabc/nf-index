@@ -87,7 +87,7 @@ process count_peaks {
         tuple val(ag_id), path(peaks_file)
     
     output:
-        tuple val(ag_id), val(peaks_file.name), val(stdout)
+        tuple val(ag_id), val(peaks_file.name), stdout
     
     script:
     """
