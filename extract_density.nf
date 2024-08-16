@@ -133,23 +133,24 @@ process create_genome_chunks {
                 } \
                 print \$1"\t"i-step+1"\t"\$2; \
             }'
+        | sed 's/\t/_/g'
 	"""
 }
 
 process apply_wiggletools {
     conda params.conda
     publishDir "${params.outdir}"
-    tag "${function}:${chunk}"
+    tag "${function}:${chunk_id}"
     scratch true
 
     input:
-        tuple val(function), val(chunk), path(bigwigs)
+        tuple val(function), val(chunk_id), path(bigwigs)
     
     output:
         tuple val(function), path(name)
     
     script:
-    chunk_id = chunk.replaceAll(" ", "_")
+    chunk = chunk_id.replaceAll("_", "")
     name = "normalized.${function}.${chunk_id}.tsv"
     """
     wiggletools write normalized.${function}.wig \
@@ -171,7 +172,7 @@ workflow averageTracks {
         | view()
     create_genome_chunks()
         | flatMap(n -> n.split())
-        | map(it -> it.replaceAll(':', ' ').replaceAll('-', ' '))
+        | map(it -> it)
         | view()
         | combine(funcs) // chunk, function
         | combine(bigwigs) // function, chunk, bigwigs
