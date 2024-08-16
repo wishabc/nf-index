@@ -160,11 +160,11 @@ process apply_wiggletools {
 
 
 workflow averageTracks {
-    functions = Channel.of('median', 'mean', 'max')
+    funcs = Channel.of('median', 'mean', 'max')
     functions_and_chunks = create_genome_chunks()
         | flatMap(n -> n.split())
         | map(it -> it.replaceAll(':', ' ').replaceAll('-', ' '))
-        | combine(functions) // chunk, function
+        | combine(funcs) // chunk, function
 
     bigwigs = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
