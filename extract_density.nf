@@ -107,3 +107,72 @@ workflow countPeaks {
             newLine: true
         )
 }
+
+
+process create_genome_chunks {
+	memory 500.MB
+	conda "${params.conda}"
+	scratch true
+
+	output:
+		path "genome_chunks.bed"
+
+	script:
+	"""
+	cat ${params.chrom_sizes} \
+	    | grep -v chrX \
+        | grep -v chrY \
+        | grep -v chrM \
+        | grep -v _random \
+        | grep -v _alt \
+        | grep -v chrUn \
+        | awk -v step=${params.chunksize} -v OFS="\t" \
+            '{ \
+                for(i=step; i<=\$2; i+=step) { \
+                    print \$1"\t"i-step+1"\t"i; \
+                } \
+                print \$1"\t"i-step+1"\t"\$2; \
+            }' > genome_chunks.bed
+	"""
+}
+
+process apply_wiggletools {
+    conda params.conda
+    publishDir "${params.outdir}"
+    scratch true
+
+    input:
+        tuple val(function), val(chunk)
+        path bigwigs
+    
+    output:
+        tuple val(function), path(name)
+    
+    script:
+    name = "normalized.${function}.${chunk}.tsv"
+    """
+    wiggletools write normalized.${function}.wig \
+        ${function} \
+        seek ${chunk} \
+        ${bigwigs} > ${name}
+    """
+}
+
+
+workflow averageTracks {
+    functions = Channel.of('median', 'mean', 'max')
+    functions_and_chunks = create_genome_chunks()
+        | flatMap(n -> n.split().replaceAll(':', ' ').replaceAll('-', ' '))
+        | combine(functions) // chunk, function
+
+    bigwigs = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> file(row.normalized_density_bw))
+        | collect(sort: true)
+     
+    apply_wiggletools(functions_and_chunks, bigwigs)
+        | collectFile(
+                storeDir: params.outdir,
+                sort: true,
+            ) { it -> [ "normalized.${it[0]}.tsv", it[1].text ] }
+}
