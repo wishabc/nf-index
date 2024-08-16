@@ -96,7 +96,15 @@ process generate_binary_counts {
             ' \
         | awk -F'\t' \
             'NR==FNR \
-                { ids[\$1]; next } \
+                { 
+                    if (\$1 in ids) {
+                        print "Error: Repetitive element detected in input IDs: " $1 > "/dev/stderr";
+                        exit 1;
+                    }
+                    ids[\$1]; 
+                    next 
+                
+                } \
                 { print (\$4 in ids ? 1 : 0) }' \
                 - ${masterlist} > ${name}
     """
