@@ -132,7 +132,7 @@ process create_genome_chunks {
                     print \$1"\t"i-step+1"\t"i; \
                 } \
                 print \$1"\t"i-step+1"\t"\$2; \
-            }'
+            }' \
         | sed 's/\t/_/g'
 	"""
 }
