@@ -74,7 +74,7 @@ process generate_binary_counts {
         -a <(cut -f1-4 ${masterlist}) \
         -b <(unstarch ${peaks_file} | cut -f1-3) \
         -wo \
-        -f 0.5 \
+        -F 0.5 \
         | sort -k5,5 -k6,6n \
         | awk -F'\t' -v OFS='\t' \
             '{
