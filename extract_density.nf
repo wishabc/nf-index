@@ -172,6 +172,8 @@ workflow averageTracks {
 
     create_genome_chunks()
         | flatMap(n -> n.split())
+        | take(5)
+        | view()
         | combine(funcs) // chunk, function
         | combine(bigwigs) // function, chunk, bigwigs
         | apply_wiggletools
