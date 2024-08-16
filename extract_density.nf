@@ -144,7 +144,7 @@ process apply_wiggletools {
     scratch true
 
     input:
-        tuple val(function), val(chunk_id), path(bigwigs)
+        tuple val(chunk_id), val(function), path(bigwigs)
     
     output:
         tuple val(function), path(name)
