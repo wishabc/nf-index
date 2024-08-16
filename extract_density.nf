@@ -139,7 +139,7 @@ process create_genome_chunks {
 
 process apply_wiggletools {
     conda params.conda
-    publishDir "${params.outdir}"
+    publishDir "${params.outdir}/chunks"
     tag "${function}:${chunk_id}"
     scratch true
 
