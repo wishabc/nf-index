@@ -171,7 +171,6 @@ workflow averageTracks {
     funcs = Channel.of('median', 'mean', 'max')
     functions_and_chunks = create_genome_chunks()
         | flatMap(n -> n.split())
-        | map(it -> it.replaceAll(':', ' ').replaceAll('-', ' '))
         | combine(funcs) // chunk, function
 
 
