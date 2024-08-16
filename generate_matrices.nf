@@ -98,7 +98,7 @@ process generate_binary_counts {
             'NR==FNR \
                 { 
                     if (\$1 in ids) {
-                        print "Error: Repetitive element detected in input IDs: "\$1;
+                        print "Error: Repetitive element detected in input IDs: "\$1 > "/dev/stderr";
                         exit 1;
                     }
                     ids[\$1]; 
