@@ -69,10 +69,41 @@ process generate_binary_counts {
     script:
     name = "${id}.binary.txt"
     """
-    bedmap --fraction-map 0.8 --indicator ${masterlist} \
-        ${peaks_file} > ${name}
+    bedtools intersect \
+        -a <(cut -f1-4 ${masterlist}) \
+        -b <(unstarch ${peaks_file} | cit -f1-3) \
+        -wo \
+        -f 0.5 \
+        | sort -k5,5 -k6,6n \
+        # choose only one peak in masterlist with LARGEST overlap for each peak in peaks_file
+        | awk -F'\t' -v OFS='\t' \
+            '{
+                overlap = \$NF;
+                key = \$5":"\$6"-"\$7;
+                if (key != prev_key) {
+                    if (NR > 1) {
+                        print current_line;
+                    }
+                    max_overlap = -1;
+                    prev_key = key;
+                }
+                
+                if (overlap > max_overlap) {
+                    max_overlap = overlap;
+                    current_line = \$1;
+                }
+            } END { print current_line }
+            ' \
+        | awk -F'\t' \
+            'NR==FNR \
+                { ids[\$1]; next } \
+                { print (\$4 in ids ? 1 : 0) }' \
+                - ${masterlist} > ${name}
     """
-
+    // bedmap --fraction-map 0.8 \
+    //     --indicator \
+    //     ${masterlist} \
+    //     ${peaks_file} > ${name}
 }
 
 process collect_chunks {
