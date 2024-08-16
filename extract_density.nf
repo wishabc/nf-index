@@ -151,12 +151,12 @@ process apply_wiggletools {
     
     script:
     chunk = chunk_id.replaceAll("_", "")
-    name = "normalized.${function}.${chunk_id}.tsv"
+    name = "normalized.${function}.${chunk_id}.wig"
     """
-    wiggletools write normalized.${function}.wig \
+    wiggletools write ${name} \
         ${function} \
         seek ${chunk} \
-        `cat ${bigwigs}` > ${name}
+        `cat ${bigwigs}`
     """
 }
 
