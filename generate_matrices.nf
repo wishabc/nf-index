@@ -80,7 +80,7 @@ process generate_binary_counts {
             '{
                 overlap = \$NF;
                 key = \$6":"\$7"-"\$8;
-                summit_dist = sqrt((\$7 + \$8) / 2 - \$5)^2);
+                summit_dist = sqrt(((\$7 + \$8) / 2 - \$5)^2);
                 if (key != prev_key) {
                     if (NR > 1) {
                         print current_line;
