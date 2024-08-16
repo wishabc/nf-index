@@ -154,7 +154,7 @@ process apply_wiggletools {
     wiggletools write normalized.${function}.wig \
         ${function} \
         seek ${chunk} \
-        ${bigwigs} > ${name}
+        `cat ${bigwigs}` > ${name}
     """
 }
 
@@ -168,7 +168,7 @@ workflow averageTracks {
     bigwigs = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row.normalized_density_bw))
-        | collect(sort: true)
+        | collectFile(sort: true, name: 'bigwigs.txt', newLine: true)
      
     apply_wiggletools(functions_and_chunks, bigwigs)
         | collectFile(
