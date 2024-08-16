@@ -169,11 +169,9 @@ workflow averageTracks {
     
 
     funcs = Channel.of('median', 'mean', 'max')
-        | view()
+
     create_genome_chunks()
         | flatMap(n -> n.split())
-        | map(it -> it)
-        | view()
         | combine(funcs) // chunk, function
         | combine(bigwigs) // function, chunk, bigwigs
         | apply_wiggletools
