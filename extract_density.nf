@@ -143,8 +143,7 @@ process apply_wiggletools {
     scratch true
 
     input:
-        tuple val(function), val(chunk)
-        path bigwigs
+        tuple val(function), val(chunk), path(bigwigs)
     
     output:
         tuple val(function), path(name)
@@ -166,19 +165,15 @@ workflow averageTracks {
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row.normalized_density_bw))
         | collectFile(sort: true, name: 'bigwigs.txt', newLine: true)
-        | take(5)
-        | view()
     
 
     funcs = Channel.of('median', 'mean', 'max')
-    functions_and_chunks = create_genome_chunks()
+    create_genome_chunks()
         | flatMap(n -> n.split())
         | map(it -> it.replaceAll(':', ' ').replaceAll('-', ' '))
         | combine(funcs) // chunk, function
-
-
-     
-    apply_wiggletools(functions_and_chunks, bigwigs)
+        | combine(bigwigs) // function, chunk, bigwigs
+        | apply_wiggletools
         | collectFile(
                 storeDir: params.outdir,
                 sort: true,
