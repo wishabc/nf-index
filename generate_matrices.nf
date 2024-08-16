@@ -69,13 +69,13 @@ process generate_binary_counts {
     script:
     name = "${id}.binary.txt"
     """
+    # choose only one peak in masterlist with LARGEST overlap for each peak in peaks_file
     bedtools intersect \
         -a <(cut -f1-4 ${masterlist}) \
-        -b <(unstarch ${peaks_file} | cit -f1-3) \
+        -b <(unstarch ${peaks_file} | cut -f1-3) \
         -wo \
         -f 0.5 \
         | sort -k5,5 -k6,6n \
-        # choose only one peak in masterlist with LARGEST overlap for each peak in peaks_file
         | awk -F'\t' -v OFS='\t' \
             '{
                 overlap = \$NF;
@@ -90,7 +90,7 @@ process generate_binary_counts {
                 
                 if (overlap > max_overlap) {
                     max_overlap = overlap;
-                    current_line = \$1;
+                    current_line = \$4;
                 }
             } END { print current_line }
             ' \
@@ -98,8 +98,8 @@ process generate_binary_counts {
             'NR==FNR \
                 { 
                     if (\$1 in ids) {
-                        print "Error: Repetitive element detected in input IDs: "\$1 > "/dev/stderr";
-                        exit 1;
+                        print "Warning: Repetitive element detected in input IDs: "\$1 > "/dev/stderr";
+                        next;
                     }
                     ids[\$1]; 
                     next 
