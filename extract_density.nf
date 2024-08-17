@@ -150,9 +150,9 @@ process apply_wiggletools {
     
     script:
     chunk = chunk_id.replaceAll("_", "")
-    name = "normalized.${function}.${chunk_id}.wig"
+    name = "normalized.${function}.${chunk_id}.bg"
     """
-    wiggletools write ${name} \
+    wiggletools write_bg ${name} \
         ${function} \
         seek ${chunk} \
         `cat ${bigwigs} | tr '\n' ' '`
