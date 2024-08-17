@@ -156,7 +156,7 @@ process apply_wiggletools {
     wiggletools write ${name} \
         ${function} \
         seek ${chunk} \
-        `cat ${bigwigs}`
+        `cat ${bigwigs} | tr '\n' ' '`
     """
 }
 
