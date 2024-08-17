@@ -142,6 +142,7 @@ process apply_wiggletools {
     publishDir "${params.outdir}/chunks"
     tag "${function}:${chunk_id}"
 
+
     input:
         tuple val(chunk_id), val(function), path(bigwigs)
     
@@ -149,13 +150,13 @@ process apply_wiggletools {
         tuple val(function), path(name)
     
     script:
-    chunk = chunk_id.replaceAll("_", "")
-    name = "normalized.${function}.${chunk_id}.bg"
+    chunk = chunk_id.replaceAll("_", " ")
+    name = "normalized.${function}.${chunk_id}.wig"
     """
-    wiggletools write_bg ${name} \
+    wiggletools write ${name} \
         ${function} \
         seek ${chunk} \
-        `cat ${bigwigs} | tr '\n' ' '`
+        `cat ${bigwigs} | tr '\\n' ' '`
     """
 }
 
