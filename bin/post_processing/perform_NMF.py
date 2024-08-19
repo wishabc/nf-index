@@ -136,6 +136,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Run NMF decomposition on a DHS x sample matrix')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
     parser.add_argument('sample_names', help='Path to file with sample names')
+    parser.add_argument('dhs_meta', help='Path to DHS metadata file')
     parser.add_argument('prefix', help='Prefix for the output file')
     parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
     parser.add_argument('--samples_mask', help='Mask of used samples, numpy array', default=None)
