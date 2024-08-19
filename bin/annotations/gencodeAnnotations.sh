@@ -9,7 +9,7 @@ chromSize=$3
 #Parse Gencode File (utr updated)#
 ##################################
 chromInfo="chrom_sizes.bed"
-awk -v OFS='\t' '{ print \$1,0,\$2 }' ${chromSize} > ${chromInfo}
+awk -v OFS='\t' '{ print $1,0,$2 }' ${chromSize} > ${chromInfo}
 
 #Remove row if start = end
 zcat ${gencode} \

@@ -95,9 +95,10 @@ awk -F'|' -v f=$fraction -v b=$biggest -v c=$col '{
 }'  repeated_mapped.bed  > overlap-answer.txt
 
 
-awk '{print $1"\t"$2"\t"$3"\t"$9"\t"$10"\t"$8}' overlap-answer.txt \
-| sort-bed - \
-> dhs_annotated_all-repeats.bed
+awk -v OFS='\t' \
+    '{print $1,$2,$3,$9,$10,$8}'\
+     overlap-answer.txt \
+    | sort-bed - > dhs_annotated_all-repeats.bed
 
 
 ###################################
