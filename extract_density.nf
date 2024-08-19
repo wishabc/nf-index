@@ -142,6 +142,7 @@ process apply_wiggletools {
     publishDir "${params.outdir}/chunks"
     tag "${function}:${chunk_id}"
     errorStrategy 'retry'
+    label "medmem"
 
 
     input:
