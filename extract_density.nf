@@ -166,8 +166,8 @@ process apply_wiggletools {
 workflow averageTracks {
     bigwigs = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> row.normalized_density_bw)
-        | collectFile(sort: true, name: 'bigwigs.txt', newLine: true)
+        | map(row -> file(row.normalized_density_bw))
+        | collect()
     
 
     funcs = Channel.of('median', 'mean', 'max')
@@ -176,6 +176,8 @@ workflow averageTracks {
         | flatMap(n -> n.split())
         | combine(funcs) // chunk, function
         | combine(bigwigs) // function, chunk, bigwigs
+        | take(5)
+        | view()
         | apply_wiggletools
         | collectFile(
                 storeDir: params.outdir,
