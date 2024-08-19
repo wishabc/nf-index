@@ -156,7 +156,7 @@ process apply_wiggletools {
     chunk = chunk_id.replaceAll("_", " ")
     name = "normalized.${function}.${chunk_id}.wig"
     """
-    wiggletools run write ${name} seek ${chunk} ${function} "data/*" 
+    wiggletools do write ${name} seek ${chunk} ${function} data/*.bw
     """
 }
 
