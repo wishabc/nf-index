@@ -114,7 +114,7 @@ def get_component_data(W, W_old=None):
     ]
 
     if W_old is None:
-        if os.path.exists(W_old_path):
+        if os.path.exists(W_old_path) and W.shape[0] <= 29:
             W_old = np.load(W_old_path).T
         else:
             if W.shape[0] <= 29:
