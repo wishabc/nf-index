@@ -146,7 +146,8 @@ process apply_wiggletools {
 
 
     input:
-        tuple val(chunk_id), val(function), path(bigwigs)
+        tuple val(chunk_id), val(function)
+        path("data/*")
     
     output:
         tuple val(function), path(name)
@@ -157,7 +158,7 @@ process apply_wiggletools {
     """
     paste <(echo "write ${name} \
         ${function} \
-        seek ${chunk}") <( cat ${bigwigs} | tr "\n" " ") > command.txt
+        seek ${chunk}") "data/*" > command.txt
     wiggletools run command.txt
     """
 }
@@ -166,19 +167,19 @@ process apply_wiggletools {
 workflow averageTracks {
     bigwigs = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> file(row.normalized_density_bw))
-        | toList()
+        | map(row -> file(row.normalized_density_bw)).collect()
     
 
     funcs = Channel.of('median', 'mean', 'max')
 
-    create_genome_chunks()
+    chunks = create_genome_chunks()
         | flatMap(n -> n.split())
         | combine(funcs) // chunk, function
         | combine(bigwigs) // function, chunk, bigwigs
         | take(5)
         | view()
-        | apply_wiggletools
+    
+    apply_wiggletools(chunks, bigwigs)
         | collectFile(
                 storeDir: params.outdir,
                 sort: true,
