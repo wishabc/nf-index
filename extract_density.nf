@@ -147,7 +147,7 @@ process apply_wiggletools {
 
     input:
         tuple val(chunk_id), val(function)
-        path("data/*")
+        path("data/*", stageAs: "?/*")
     
     output:
         tuple val(function), path(name)
