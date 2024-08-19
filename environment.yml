@@ -20,6 +20,7 @@ dependencies:
   - scipy
   - bedops
   - pysam=0.19.1
+  - pyfaidx
   - r-essentials
   - samtools=1.15.1
   - ucsc-bedtobigbed
