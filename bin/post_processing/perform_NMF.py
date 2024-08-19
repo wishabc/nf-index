@@ -133,7 +133,7 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
     return W_np, H_np, peaks_mask
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Matrix normalization using lowess')
+    parser = argparse.ArgumentParser('Run NMF decomposition on a DHS x sample matrix')
     parser.add_argument('matrix', help='Path to matrix to run NMF on')
     parser.add_argument('sample_names', help='Path to file with sample names')
     parser.add_argument('prefix', help='Prefix for the output file')
