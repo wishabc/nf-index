@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
 from tqdm import tqdm
+import os
 
 from order_by_template import get_component_data, define_colors
 
@@ -332,7 +333,7 @@ if __name__ == '__main__':
     W = np.load(args.W).T
     H = np.load(args.H).T
     dhs_meta = pd.read_table(args.dhs_meta, header=None, usecols=np.arange(4), names=['chr', 'start', 'end', 'dhs_id'])
-    if args.dhs_annotations is not None:
+    if args.dhs_annotations is not None and os.path.exists(args.dhs_annotations):
         dhs_annotations = pd.read_table(args.dhs_annotations)
         dhs_annotations = dhs_annotations[dhs_annotations['dhs_id'].isin(dhs_meta['dhs_id'].to_numpy())]
     else:
