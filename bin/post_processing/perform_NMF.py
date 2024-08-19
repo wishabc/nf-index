@@ -1,17 +1,25 @@
 import numpy as np
 import pandas as pd
 import argparse
-
+import json
 from sklearn.decomposition import NMF
 from weighted_NMF import NMF as weighted_NMF
 
 
-def perform_NMF(X, W_weights=None, H_weights=None, n_components=16):
+def perform_NMF(X, W_weights=None, H_weights=None, n_components=16, extra_params=None):
     params = dict(n_components=n_components,
                     solver='mu', beta_loss='frobenius',
                     random_state=0, init="nndsvda",
                     max_iter=1000, tol=1e-4, alpha_W=0.0, l1_ratio=1.0,
                     verbose=True)
+    if extra_params is not None and extra_params:
+        overwritten = {
+            key: f'New: {extra_params[key]}. Old: {params[key]}' for key in extra_params
+              if key in params and extra_params[key] != params[key]
+        }
+        params.update(extra_params)
+        print("Overwritten params:", overwritten)
+
     if W_weights is not None:
         assert H_weights is not None
         model = weighted_NMF(**params)
@@ -95,7 +103,7 @@ def read_args(args):
     return mat, samples_m, peaks_m, W_weights_vector, H_weights_vector
 
 
-def main(mat, samples_m, peaks_m, W_weights, H_weights):
+def main(mat, samples_m, peaks_m, W_weights, H_weights, **extra_params):
     samples_masked_matrix = mat[:, samples_m]
     non_zero_rows = samples_masked_matrix.sum(axis=1) > 0
 
@@ -116,7 +124,8 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights):
         X=matrix_samples_peaks_slice,
         W_weights=W_weights_slice,
         H_weights=H_weights_slice,
-        n_components=args.n_components
+        n_components=args.n_components,
+        extra_params=extra_params
     )
     if samples_m.shape[0] > samples_m.sum():
         assert W_weights is None
@@ -144,10 +153,17 @@ if __name__ == '__main__':
     parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array', default=None)
     parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--peaks_weights', help='Path to peaks weights (for weighted NMF)', default=None)
+    parser.add_argument('--extra_params', help='Path to json with NMF params (overwrites default settings)', default=None)
     args = parser.parse_args()
 
+    if args.extra_params is not None:
+        with open(args.extra_params) as f:
+            extra_params = json.load(f)
+    else:
+        extra_params = {}
+
     mat, samples_m, peaks_m, W_weights_vector, H_weights_vector = read_args(args)
-    W_np, H_np, peaks_mask = main(mat, samples_m, peaks_m, W_weights_vector, H_weights_vector)
+    W_np, H_np, peaks_mask = main(mat, samples_m, peaks_m, W_weights_vector, H_weights_vector, **extra_params)
     
     print('Saving results')
     np.save(f'{args.prefix}.W.npy', W_np) # samples x components
