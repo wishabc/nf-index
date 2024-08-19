@@ -141,6 +141,7 @@ process apply_wiggletools {
     conda params.conda
     publishDir "${params.outdir}/chunks"
     tag "${function}:${chunk_id}"
+    errorStrategy 'retry'
 
 
     input:
