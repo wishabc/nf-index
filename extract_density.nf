@@ -153,10 +153,10 @@ process apply_wiggletools {
     chunk = chunk_id.replaceAll("_", " ")
     name = "normalized.${function}.${chunk_id}.wig"
     """
-    wiggletools write ${name} \
+    paste <(echo "write ${name} \
         ${function} \
-        seek ${chunk} \
-        `cat ${bigwigs} | tr '\\n' ' '`
+        seek ${chunk}") <( cat bigwigs | tr "\n" " ") > command.txt
+    wiggletools run command.txt
     """
 }
 
