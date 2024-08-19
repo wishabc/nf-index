@@ -36,6 +36,7 @@ process visualize_nmf {
 	conda params.conda
     publishDir "${params.outdir}/nmf/${prefix}"
     label "highmem"
+    errorStrategy 'ignore'
 
 	input:
         tuple val(prefix), val(n_components), path(binary_matrix), path(sample_names), path(masterlist), path(W), path(H), path(peaks_mask), path(samples_mask)
