@@ -112,5 +112,6 @@ workflow visualize {
                 file("${params.nmf_results_path}/${it[0]}/${it[0]}.samples_mask.txt"),
             )
         )
+        | filter { it[5].exists() }
         | visualize_nmf
 }
