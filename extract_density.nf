@@ -168,7 +168,8 @@ workflow averageTracks {
     bigwigs = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row.normalized_density_bw))
-        | take(5).collect(sort: true, flat: true)
+        | take(5)
+        | collect(sort: true, flat: true)
         | view()
     
 
