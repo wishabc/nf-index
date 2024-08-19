@@ -155,7 +155,7 @@ process apply_wiggletools {
     """
     paste <(echo "write ${name} \
         ${function} \
-        seek ${chunk}") <( cat bigwigs | tr "\n" " ") > command.txt
+        seek ${chunk}") <( cat ${bigwigs} | tr "\n" " ") > command.txt
     wiggletools run command.txt
     """
 }
