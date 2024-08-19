@@ -147,7 +147,7 @@ process apply_wiggletools {
 
     input:
         tuple val(chunk_id), val(function)
-        path(bamfiles, stageAs: "data/?/*")
+        path(bamfiles, stageAs: "data/?.bw")
     
     output:
         tuple val(function), path(name)
@@ -156,10 +156,7 @@ process apply_wiggletools {
     chunk = chunk_id.replaceAll("_", " ")
     name = "normalized.${function}.${chunk_id}.wig"
     """
-    paste <(echo "write ${name} \
-        ${function} \
-        seek ${chunk}") "data/*" > command.txt
-    wiggletools run command.txt
+    wiggletools run write ${name} seek ${chunk} ${function} "data/*" 
     """
 }
 
