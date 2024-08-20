@@ -61,6 +61,23 @@ process visualize_nmf {
 	"""
 }
 
+process add_metadata {
+    conda params.conda
+    publishDir "${params.outdir}"
+
+    output:
+        tuple path(name)
+
+    script:
+    name = "nmf_meta.tsv"
+    """
+    python3 $moduleDir/bin/post_processing/add_metadata.py \
+        ${params.samples_file} \
+        ${params.outdir}/nmf \
+        ${name}
+    """
+}
+
 
 workflow runNMF {
     take:
@@ -69,6 +86,7 @@ workflow runNMF {
         out = hyperparams
             | fit_nmf
             | visualize_nmf
+        add_metadata()
     emit:
         out
 }
