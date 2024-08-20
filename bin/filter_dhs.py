@@ -4,6 +4,9 @@ import pandas as pd
 import numpy as np
 import sys
 
+
+dhs_colnames = ['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end']
+
 def main(masterlist, mask, percentile, singleton_cutoff=1):
     masterlist['mean_signal'] = masterlist.eval('total_signal / num_samples')
     print(masterlist.shape[0])
@@ -17,7 +20,7 @@ def main(masterlist, mask, percentile, singleton_cutoff=1):
     print(percentile)
     print(cutoff)
 
-    valid_dhs = blacklist_filtered.eval(f'(num_samples > {singleton_cutoff}) | (num_samples <= {singleton_cutoff} & mean_signal >= {cutoff})')
+    valid_dhs = blacklist_filtered.eval(f'(num_samples > {singleton_cutoff}) | (mean_signal >= {cutoff})')
     print(np.sum(valid_dhs))
     print(valid_dhs.shape)
 
@@ -37,8 +40,17 @@ if __name__ == '__main__':
     valid_rows_mask = ~blacklist_rows & non_zero_rows
 
     print("Reading Masterlist")
-    masterlist = pd.read_table(sys.argv[5], header=None, names=['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end'])
+    masterlist = pd.read_table(
+        sys.argv[5],
+        header=None, 
+        names=dhs_colnames
+    )
     filtered_index, final_mask = main(masterlist, mask=valid_rows_mask, percentile=percentile)
 
-    filtered_index[['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end', 'mean_signal']].to_csv(sys.argv[6], index=False, header=False, sep="\t")
+    filtered_index[[*dhs_colnames, 'mean_signal']].to_csv(
+        sys.argv[6],
+        index=False,
+        header=False,
+        sep="\t"
+    )
     np.savetxt(sys.argv[7], final_mask, fmt="%d")
