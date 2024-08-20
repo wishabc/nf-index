@@ -66,7 +66,7 @@ process add_metadata {
     publishDir "${params.outdir}"
 
     output:
-        tuple path(name)
+        path name
 
     script:
     name = "nmf_meta.tsv"
