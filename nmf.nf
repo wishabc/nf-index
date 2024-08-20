@@ -72,7 +72,7 @@ process add_metadata {
     name = "nmf_meta.tsv"
     """
     python3 $moduleDir/bin/post_processing/add_metadata.py \
-        ${params.samples_file} \
+        ${params.nmf_params_list} \
         ${params.outdir}/nmf \
         ${name}
     """
