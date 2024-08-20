@@ -14,7 +14,7 @@ process annotate_masterlist {
     conda params.conda
     publishDir "${params.outdir}/annotations"
     scratch true
-    label "bigmem"
+    label "highmem"
     errorStrategy 'ignore'
 
     input: 
