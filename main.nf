@@ -85,7 +85,7 @@ process annotate_masterlist {
 workflow annotateMasterlist {
     index_and_mask = Channel.of(tuple(file("${params.outdir}/raw_matrices/matrix.binary.mtx.gz"), file(params.index_file)))
         | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
-        | map(it -> tuple(it[0], it[1])) // index, mask
+        | map(it -> tuple(it[1], it[2])) // index, mask
 
     Channel.fromPath("${params.outdir}/annotations/binary.filtered.matrix.npy")
         | combine(index_and_mask)
@@ -120,7 +120,7 @@ workflow createAndFilterMatrices {
         | filter(it -> it[0] == "binary")
 		| map(it -> it[1])
 		| combine(
-	        filters_and_matrices[0].map(it -> tuple(it[0], it[1]))
+	        filters_and_matrices[0].map(it -> tuple(it[1], it[2]))
         )
 		| annotate_masterlist
 }

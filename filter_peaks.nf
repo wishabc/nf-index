@@ -35,17 +35,19 @@ process filter_masterlist {
         tuple path(binary_matrix), path(masterlist)
     
     output:
-	    tuple path(name), path(mask), path(filtered_masterlist), path(autosomes_mask), path(non_zero_rows)
+	    tuple path(non_zero_rows), path(filtered_masterlist), path(filtered_mask), path(only_autosomes_masterlist), path(only_autosomes_mask)
 
     script:
     prefix = "masterlist"
     non_zero_rows = "${prefix}.non_zero_rows.mask.txt"
-    name = "${prefix}_DHSs.blacklistfiltered.bed"
-    mask = "${prefix}.bad_dhs.mask.txt"
-    autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
-    filtered_masterlist = "${prefix}.only_autosomes.filtered.bed"
+    filtered_masterlist = "${prefix}_DHSs.blacklistfiltered.bed"
+    filtered_mask = "${prefix}.filtered_DHS.mask.txt"
+    only_autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
+    only_autosomes_masterlist = "${prefix}.only_autosomes.filtered.bed"
     """
-    zcat ${binary_matrix} | awk '{ if (/1/) print 1; else print 0; }' > ${non_zero_rows}
+    zcat ${binary_matrix} \
+        | awk '{ if (/1/) print 1; else print 0; }' > ${non_zero_rows}
+    
     bedmap --bases ${masterlist} \
         ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print 1; else print 0}' \
@@ -57,8 +59,8 @@ process filter_masterlist {
         blacklist_rows.txt \
         ${non_zero_rows} \
         ${masterlist} \
-        ${name} \
-        ${mask}
+        ${filtered_masterlist} \
+        ${filtered_mask}
     
     cat ${masterlist} \
 		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
@@ -84,12 +86,14 @@ workflow filterAndConvertToNumpy {
             | filter_masterlist
 
         w_autosomes_matrices = raw_matrices 
-            | combine(masterlist_and_mask.map(it -> it[1]))
+            | combine(
+                masterlist_and_mask.map(it -> it[2])
+            )
 
         npy_matrices = raw_matrices
             | map(it -> tuple("${it[0]}.only_autosomes", it[1]))
             | combine(
-                masterlist_and_mask.map(it -> it[3])
+                masterlist_and_mask.map(it -> it[4])
             )
             | mix(w_autosomes_matrices)
             | apply_filter_and_convert_to_np
