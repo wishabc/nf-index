@@ -71,7 +71,7 @@ process filter_masterlist {
         ${filtered_mask} autosomes.mask.txt > ${only_autosomes_mask}
 
 	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
-		${autosomes_mask} ${masterlist} > ${only_autosomes_masterlist}
+		${only_autosomes_mask} ${masterlist} > ${only_autosomes_masterlist}
     """
 }
 
