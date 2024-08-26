@@ -162,7 +162,8 @@ workflow averageTracks {
     chunks = create_genome_chunks()
         | flatMap(n -> n.split())
         | collect_stats_for_chunk
-        | flatMap(it -> tuple(it.simpleName, it))
+        | flatten()
+        | map(it -> tuple(it.simpleName, it))
         | collectFile(
                 storeDir: params.outdir,
                 sort: true,
