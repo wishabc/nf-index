@@ -142,7 +142,7 @@ process collect_stats_for_chunk {
     publishDir "${params.outdir}/chunks"
     tag "${chunk_id}"
     errorStrategy 'retry'
-    label "medmem"
+    memory { 80.GB * task.attempt }
 
 
     input:
