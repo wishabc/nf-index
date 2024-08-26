@@ -10,9 +10,7 @@ def extract_data(bw_path, interval):
         data = bw.values(interval[0], interval[1], interval[2], numpy=True)
     return data
 
-def main(bw_paths, str_interval, funcs):
-    chrom, start, end = str_interval.split('_')
-    interval = (chrom, int(start), int(end))
+def main(bw_paths, interval, funcs):
 
     # Initialize the result array based on the number of BigWig files
     result = np.empty((len(bw_paths), interval[2] - interval[1]))
@@ -41,7 +39,9 @@ if __name__ == '__main__':
     met = pd.read_table(sys.argv[2])
     bw_paths = met['normalized_density_bw'].values
     str_interval = sys.argv[1]
+    chrom, start, end = str_interval.split('_')
+    interval = (chrom, int(start), int(end))
     funcs = {'mean': np.mean, 'std': np.std, 'median': np.median, 'min': np.min, 'max': np.max}
     results = main(bw_paths, str_interval, funcs)
     for fname, data in results.items():
-        write_to_bed(f'{fname}.{str_interval}.bed', data)
+        write_to_bed(f'{fname}.{str_interval}.bed', interval, data)
