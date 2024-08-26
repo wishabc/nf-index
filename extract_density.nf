@@ -137,49 +137,32 @@ process create_genome_chunks {
 	"""
 }
 
-process apply_wiggletools {
+process collect_stats_for_chunk {
     conda params.conda
     publishDir "${params.outdir}/chunks"
-    tag "${function}:${chunk_id}"
+    tag "${chunk_id}"
     errorStrategy 'retry'
     label "medmem"
 
 
     input:
-        tuple val(chunk_id), val(function)
-        path(bamfiles, stageAs: "data/?.bw")
+        val(chunk_id)
     
     output:
-        tuple val(function), path(name)
+        path "*.${chunk_id}.bed"
     
     script:
-    chunk = chunk_id.replaceAll("_", " ")
-    name = "normalized.${function}.${chunk_id}.wig"
     """
-    wiggletools do write_bg ${name} seek ${chunk} ${function} data/*.bw
+    python3 $moduleDir/bin/stats_on_bw.py ${chunk_id} ${params.samples_file}
     """
 }
 
 
 workflow averageTracks {
-    bigwigs = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> file(row.normalized_density_bw))
-        //| take(5)
-        | collect(sort: true, flat: true)
-        //| view()
-    
-
-    funcs = Channel.of('median', 'mean', 'max')
-
     chunks = create_genome_chunks()
         | flatMap(n -> n.split())
-        | combine(funcs) // chunk, function
-        //| combine(bigwigs) // function, chunk, bigwigs
-        //| take(5)
-        //| view()
-    
-    apply_wiggletools(chunks, bigwigs)
+        | collect_stats_for_chunk
+        | map(it -> tuple(it.simpleName, it))
         | collectFile(
                 storeDir: params.outdir,
                 sort: true,
