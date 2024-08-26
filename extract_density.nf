@@ -153,7 +153,7 @@ process collect_stats_for_chunk {
     
     script:
     """
-    python3 $moduleDir/bin/stats_on_bw.py ${chunk_id} ${params.samples_file}
+    python3 $moduleDir/bin/post_processing/stats_on_bw.py ${chunk_id} ${params.samples_file}
     """
 }
 
