@@ -42,6 +42,6 @@ if __name__ == '__main__':
     chrom, start, end = str_interval.split('_')
     interval = (chrom, int(start), int(end))
     funcs = {'mean': np.mean, 'std': np.std, 'median': np.median, 'min': np.min, 'max': np.max}
-    results = main(bw_paths, str_interval, funcs)
+    results = main(bw_paths, interval, funcs)
     for fname, data in results.items():
         write_to_bed(f'{fname}.{str_interval}.bed', interval, data)
