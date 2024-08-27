@@ -30,9 +30,16 @@ def main(bw_paths, interval, funcs):
 
 
 def write_to_bed(filename, interval, values):
+    if len(values) == 0:
+        return 'No data to write'
+    start = 0
+    value = values[0]
     with open(filename, 'w') as bed_file:
-        for i, value in enumerate(values):
-            bed_file.write(f"{interval[0]}\t{interval[1] + i}\t{interval[1] + i + 1}\t{value}\n")
+        for i, v in enumerate(values):
+            if value != v:
+                bed_file.write(f"{interval[0]}\t{interval[1] + start}\t{interval[1] + i}\t{value}\n")
+                start = i
+                value = v
 
 
 if __name__ == '__main__':
