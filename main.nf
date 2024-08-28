@@ -83,9 +83,11 @@ process annotate_masterlist {
 }
 
 workflow annotateMasterlist {
-    index_and_mask = Channel.of(tuple(file("${params.outdir}/raw_matrices/matrix.binary.mtx.gz"), file(params.index_file)))
-        | filter_masterlist // returns filtered_dhs, filtered_dhs_mask, filtered_autosomes_masterlist, filtered_autosomes_mask
-        | map(it -> tuple(it[1], it[2])) // index, mask
+    index_and_mask = Channel.of(tuple(
+        file("${params.outdir}/masks/masterlist_no_header/masterlist_DHSs.blacklistfiltered.bed"), 
+        file("${params.outdir}/masks/masterlist.filtered_DHS.mask.txt")
+        )
+    )
 
     Channel.fromPath("${params.outdir}/annotations/binary.filtered.matrix.npy")
         | combine(index_and_mask)

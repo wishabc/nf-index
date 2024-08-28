@@ -28,7 +28,8 @@ process apply_filter_and_convert_to_np {
 process filter_masterlist {
     conda params.conda
 
-    publishDir "${params.outdir}", pattern: "${filtered_masterlist}"
+    publishDir "${params.outdir}", pattern: "${only_autosomes_masterlist}"
+    publishDir "${params.outdir}/masks/masterlist_no_header", pattern: "${filtered_masterlist}"
     publishDir "${params.outdir}/masks", pattern: "*.mask.txt"
 
     input:
