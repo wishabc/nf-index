@@ -113,3 +113,11 @@ workflow {
         matrices
     )
 }
+
+workflow getMasks {
+    params.base_dir = params.outdir
+
+    matrices = Channel.fromPath("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")
+        | combine(params.index_file)
+        | filter_masterlist
+}
