@@ -54,14 +54,13 @@ process filter_masterlist {
         > blacklist_rows.txt
 
     python3 $moduleDir/bin/filter_dhs.py \
-        ${prefix} \
-        .5 \
-        blacklist_rows.txt \
-        ${non_zero_rows} \
         ${masterlist} \
+        ${non_zero_rows} \
+        blacklist_rows.txt \
         ${filtered_masterlist} \
-        ${filtered_mask}
-    
+        ${filtered_mask} \
+        --singletons_strategy ${params.singletons_strategy}
+
     cat ${masterlist} \
 		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
 		> autosomes.mask.txt
