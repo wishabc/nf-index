@@ -68,53 +68,55 @@ process generate_binary_counts {
     
     script:
     name = "${id}.binary.txt"
-    """
-    # choose only one peak in masterlist with LARGEST overlap for each peak in peaks_file
-    bedtools intersect \
-        -a <(cut -f1-4,11 ${masterlist}) \
-        -b <(unstarch ${peaks_file} | cut -f1-3) \
-        -wo \
-        -F 0.5 \
-        | sort -k6,6 -k7,7n \
-        | awk -F'\t' -v OFS='\t' \
-            '{
-                overlap = \$NF;
-                key = \$6":"\$7"-"\$8;
-                summit_dist = sqrt(((\$7 + \$8) / 2 - \$5)^2);
-                if (key != prev_key) {
-                    if (NR > 1) {
-                        print current_line;
-                    }
-                    max_overlap = -1;
-                    prev_summit_dist = 1000000;
-                    prev_key = key;
-                }
+    // """
+    // # choose only one peak in masterlist with LARGEST overlap for each peak in peaks_file
+    // bedtools intersect \
+    //     -a <(cut -f1-4,11 ${masterlist}) \
+    //     -b <(unstarch ${peaks_file} | cut -f1-3) \
+    //     -wo \
+    //     -F 0.5 \
+    //     | sort -k6,6 -k7,7n \
+    //     | awk -F'\t' -v OFS='\t' \
+    //         '{
+    //             overlap = \$NF;
+    //             key = \$6":"\$7"-"\$8;
+    //             summit_dist = sqrt(((\$7 + \$8) / 2 - \$5)^2);
+    //             if (key != prev_key) {
+    //                 if (NR > 1) {
+    //                     print current_line;
+    //                 }
+    //                 max_overlap = -1;
+    //                 prev_summit_dist = 1000000;
+    //                 prev_key = key;
+    //             }
                 
-                if (overlap > max_overlap || (overlap == max_overlap && summit_dist < prev_summit_dist)) {
-                    max_overlap = overlap;
-                    prev_summit_dist = summit_dist;
-                    current_line = \$4;
-                }
-            } END { print current_line }
-            ' \
-        | awk -F'\t' \
-            'NR==FNR \
-                { 
-                    if (\$1 in ids) {
-                        print "Warning: Repetitive element detected in input IDs: "\$1 > "/dev/stderr";
-                        next;
-                    }
-                    ids[\$1]; 
-                    next 
+    //             if (overlap > max_overlap || (overlap == max_overlap && summit_dist < prev_summit_dist)) {
+    //                 max_overlap = overlap;
+    //                 prev_summit_dist = summit_dist;
+    //                 current_line = \$4;
+    //             }
+    //         } END { print current_line }
+    //         ' \
+    //     | awk -F'\t' \
+    //         'NR==FNR \
+    //             { 
+    //                 if (\$1 in ids) {
+    //                     print "Warning: Repetitive element detected in input IDs: "\$1 > "/dev/stderr";
+    //                     next;
+    //                 }
+    //                 ids[\$1]; 
+    //                 next 
                 
-                } \
-                { print (\$4 in ids ? 1 : 0) }' \
-                - ${masterlist} > ${name}
+    //             } \
+    //             { print (\$4 in ids ? 1 : 0) }' \
+    //             - ${masterlist} > ${name}
+    // """
     """
-    // bedmap --fraction-map 0.8 \
-    //     --indicator \
-    //     ${masterlist} \
-    //     ${peaks_file} > ${name}
+    bedmap --fraction-map 0.5 \
+        --indicator \
+        ${masterlist} \
+        ${peaks_file} > ${name}
+    """
 }
 
 process collect_chunks {
