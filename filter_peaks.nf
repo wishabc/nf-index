@@ -1,7 +1,7 @@
 
 process convert_to_numpy {
     conda params.conda
-    publishDir "${params.outdir}/annotations"
+    publishDir "${params.outdir}/raw_matrices"
     label "highmem"
 
     input:
