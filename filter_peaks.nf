@@ -1,5 +1,27 @@
 
-process apply_filter_and_convert_to_np {
+process convert_to_numpy {
+    conda params.conda
+    publishDir "${params.outdir}/annotations"
+    label "highmem"
+
+    input:
+        tuple val(prefix), path(matrix)
+
+    output:
+        tuple val(prefix), path(name)
+
+    script:
+    name = "${prefix}.raw.matrix.npy"
+    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('signal') ? 'int' : 'float')
+    """
+    python3 $moduleDir/bin/convert_to_numpy.py \
+        ${matrix} \
+        ${name} \
+        --dtype ${dtype}
+    """
+}
+
+process apply_filter {
 	publishDir "${publishDirectory}", pattern: "${name}"
 	label "highmem"
     tag "${prefix}"
@@ -16,11 +38,10 @@ process apply_filter_and_convert_to_np {
     publishDirectory = prefix.contains("only_autosomes") ?  "${params.outdir}" : "${params.outdir}/annotations"
     dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('signal') ? 'int' : 'float')
 	"""
-    python3 $moduleDir/bin/convert_to_numpy.py \
+    python3 $moduleDir/bin/apply_mask.py \
         ${matrix} \
         ${name} \
-        --dtype ${dtype} \
-        --mask ${mask}
+        ${mask}
 	"""
 }
 
@@ -86,18 +107,21 @@ workflow filterAndConvertToNumpy {
             | combine(masterlist)
             | filter_masterlist
 
-        w_autosomes_matrices = raw_matrices 
+        raw_np = raw_matrices
+            | convert_to_numpy
+
+        w_autosomes_matrices = raw_np 
             | combine(
                 masterlist_and_mask.map(it -> it[2])
             )
 
-        npy_matrices = raw_matrices
+        npy_matrices = raw_np
             | map(it -> tuple("${it[0]}.only_autosomes", it[1]))
             | combine(
                 masterlist_and_mask.map(it -> it[4])
             )
             | mix(w_autosomes_matrices)
-            | apply_filter_and_convert_to_np
+            | apply_filter
     emit:
         masterlist_and_mask
         npy_matrices
