@@ -12,7 +12,7 @@ process convert_to_numpy {
 
     script:
     name = "${prefix}.raw.matrix.npy"
-    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('signal') ? 'int' : 'float')
+    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
     """
     python3 $moduleDir/bin/convert_to_numpy.py \
         ${matrix} \
@@ -36,7 +36,6 @@ process apply_filter {
 	script:
 	name = "${prefix}.filtered.matrix.npy"
     publishDirectory = prefix.contains("only_autosomes") ?  "${params.outdir}" : "${params.outdir}/annotations"
-    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('signal') ? 'int' : 'float')
 	"""
     python3 $moduleDir/bin/apply_mask.py \
         ${matrix} \
