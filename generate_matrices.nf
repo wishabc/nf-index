@@ -112,7 +112,7 @@ process generate_binary_counts {
     //             - ${masterlist} > ${name}
     // """
     """
-    bedmap --fraction-map 0.5 \
+    bedmap --fraction-either 0.5 \
         --indicator \
         ${masterlist} \
         ${peaks_file} > ${name}
