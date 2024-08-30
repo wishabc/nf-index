@@ -53,7 +53,7 @@ process filter_masterlist {
     publishDir "${params.outdir}/masks", pattern: "*.mask.txt"
 
     input:
-        tuple path(binary_matrix), path(masterlist, name: 'masterlist.bed')
+        tuple path(binary_matrix), path(masterlist, stageAs: 'masterlist.bed')
     
     output:
 	    tuple path(non_zero_rows), path(filtered_masterlist), path(filtered_mask), path(only_autosomes_masterlist), path(only_autosomes_mask)
