@@ -1,3 +1,18 @@
+process get_samples_order {
+
+    publishDir params.outdir
+    
+    output:
+        path name
+
+    script:
+    name = "samples_order.txt"
+    """
+    awk -F"\t" -v col="ag_id" \
+        'NR==1{for(i=1;i<=NF;i++)if(\$i==col)c=i}NR>1{if(c)print \$c}' \
+            ${params.samples_file} > ${name}
+    """
+}
 
 // Create binary matrix workflows
 
