@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
-include { buildIndex } from "./build_masterlist"
+
 include { generateMatrices; get_samples_order } from "./generate_matrices"
 //include { convert_to_h5 } from "./variance_partition"
 include { normalizeMatrix } from "./normalize_signal"
@@ -94,7 +94,7 @@ workflow annotateMasterlist {
         | annotate_masterlist
 }
 
-workflow createAndFilterMatrices {
+workflow {
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
@@ -126,46 +126,6 @@ workflow createAndFilterMatrices {
         )
 		| annotate_masterlist
 }
-
-workflow {
-    bams_hotspots = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.ag_id,
-            file(row.cram_file),
-            file(row?.cram_index ?: "${row.cram_file}.crai"),
-            file(row.peaks_file)
-        ))
-    // Build index
-	index_data = bams_hotspots
-		| map(it -> it[3])
-		| buildIndex
-    
-    unfiltered_masterlist = index_data[0]
-
-    samples_order = get_samples_order()
-
-    // Generate matrices
-    raw_matrices = generateMatrices(unfiltered_masterlist, samples_order, index_data[1], bams_hotspots)
-
-    filters_and_matrices = filterAndConvertToNumpy(unfiltered_masterlist, raw_matrices)
-
-    // Normalize matrices
-    out = normalizeMatrix(filters_and_matrices[1], samples_order, Channel.empty())
-
-    // Annotate index
-    raw_matrices
-        | filter(it -> it[0] == "binary")
-		| map(it -> it[1])
-		| combine(
-	        filters_and_matrices[0].map(it -> tuple(it[0], it[1]))
-        )
-		| annotate_masterlist
-}
-
-
-
-
 
 
 

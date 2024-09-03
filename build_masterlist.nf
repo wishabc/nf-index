@@ -1,6 +1,8 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
+include { convert_to_numpy } from "./filter_peaks"
+
 process collate_and_chunk {
     conda params.conda
     label "highmem"
@@ -118,6 +120,87 @@ process merge_chunks {
     """
 }
 
+process get_samples_order {
+
+    publishDir params.outdir
+    
+    output:
+        path name
+
+    script:
+    name = "samples_order.txt"
+    """
+    awk -F"\t" -v col="ag_id" \
+        'NR==1{for(i=1;i<=NF;i++)if(\$i==col)c=i}NR>1{if(c)print \$c}' \
+            ${params.samples_file} > ${name}
+    """
+}
+
+
+process get_chunks_order {
+    input:
+        path masterlist
+    
+    output:
+        path name
+
+    script:
+    name = "chunks_order.txt"
+    """
+    cut -f4 ${masterlist} > ${name}
+    """
+}
+
+
+process write_rows {
+    tag "${chunk_file.simpleName}"
+    scratch true
+
+    input:
+        tuple path(chunk_file), path(chunks_order), path(samples_order)
+
+    output:
+        path binary
+
+    script:
+    binary = "${chunk_file.baseName}.binary.txt"
+    """
+    $moduleDir/bin/index_scripts/writeRowsPerChunkForMatrices \
+        ${samples_order} \
+        ${chunks_order} \
+        ${chunk_file} \
+        tmp.txt \
+        ${binary}
+    """
+}
+
+
+process collect_chunks {
+    publishDir "${params.outdir}/raw_matrices"
+    tag "${prefix}"
+
+    input:
+        tuple val(prefix), path("chunks/*")
+    
+    output:
+        tuple val(prefix), path(matrix)
+
+    script:
+    matrix = "matrix.${prefix}.mtx.gz"
+    """
+    ls chunks/ \
+        | wc -l \
+        | awk -v dir="chunks/" \
+            '{ \
+                for(i=1;i<=\$1;i++){ \
+                    printf("%s/chunk%04d.${prefix}.txt ",dir,i) \
+                } printf("\\n"); \
+            }' \
+        | xargs cat \
+        | gzip > ${matrix}
+    """
+}
+
 workflow buildIndex {
     take:
         peaks
@@ -135,9 +218,27 @@ workflow buildIndex {
             chunks[1].map(it -> it.toString()).collectFile(name: 'no_core.paths.txt', newLine: true), 
             chunks[2].map(it -> it.toString()).collectFile(name: 'no_any.paths.txt', newLine: true)
         ).non_merged
+
+        chunks_order = index
+            | get_chunks_order
+        
+        raw_binary = process_chunk.out[1]
+            | combine(chunks_order)
+            | combine(samples_order)
+            | write_rows
+            | collect(sort: true)
+            | map(it -> tuple("index.binary", it))
+            | collect_chunks
+
+        raw_binary
+            | convert_to_numpy
+
+        raw_binary   
+            | map(it -> it[1])
+            | combine(index)
+            | filter_masterlist
     emit:
         index
-        process_chunk.out[1]
 }
 
 workflow {
