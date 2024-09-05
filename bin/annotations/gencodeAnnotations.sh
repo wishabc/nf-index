@@ -98,16 +98,13 @@ zcat ${gencode} \
     | grep -v protein_coding \
     | awk '{
             if($3 == "transcript") {
-                    if ($7 == "+") {
-                        print $1"\t"$4"\t"$4+1000"\t""NPC";
-                    }
-                    else {
-                        print $1"\t"$5-1000"\t"$5"\t""NPC";
-            }
-            }
-            else {
-
-                    print $1"\t"$4"\t"$5"\t""NPC"
+                if ($7 == "+") {
+                    print $1"\t"$4"\t"$4+1000"\t""NPC";
+                } else {
+                    print $1"\t"$5-1000"\t"$5"\t""NPC";
+                }
+            } else {
+                print $1"\t"$4"\t"$5"\t""NPC"
             }
     }' \
     | awk -F'\t' '{if($2 != $3) print}' - \
@@ -126,12 +123,12 @@ col=0
 
 #Promoter > Exon > Intron > Intergenic
 sed 's/intergenic/1/g' gencode_mapped.bed \
-| sed 's/intron/2/g' \
-| sed 's/exon/3/g' \
-| sed 's/promoter/4/g' \
-> choose_best_annotation.bed
+    | sed 's/intron/2/g' \
+    | sed 's/exon/3/g' \
+    | sed 's/promoter/4/g' \
+    > choose_best_annotation.bed
 
-awk -F'|' -v b=$biggest -v c=$col '{
+awk -F'|' -v OFS='\t' -v b=$biggest -v c=$col '{
     line=$3
     split(line,a,";")
 
@@ -139,14 +136,13 @@ awk -F'|' -v b=$biggest -v c=$col '{
     split(mapped,m,";")
         
     if (length(a) == 1) {
-        print $1"\t"$2
+        print $1","$2
     } else {
         for(i=1;i<=NF;i++) {
             if (a[i] > b) {
                 b=a[i];
                 c=i;
-            }
-            else if (a[i] == b) {
+            } else if (a[i] == b) {
                 old=m[c];
                 split(old,o,"\t");
                 new=m[i];
@@ -157,11 +153,12 @@ awk -F'|' -v b=$biggest -v c=$col '{
                 }
             }
         }
-    print $1"\t"m[c];
+    print $1,m[c];
     b=0;
     } \
 }' choose_best_annotation.bed > best_annotation.bed
 
+echo "Write Best gencode Annotation"
 awk -v OFS='\t' \
     '{print $1,$2,$3,$NF}' best_annotation.bed \
     | sort-bed - \
