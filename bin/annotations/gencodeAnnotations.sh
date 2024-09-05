@@ -10,7 +10,7 @@ chromSize=$3
 ##################################
 chromInfo="chrom_sizes.bed"
 awk -v OFS='\t' \
-    '{ print \$1,0,\$2 }' \
+    '{ print $1,0,$2 }' \
     ${chromSize} \
     | sort-bed - > ${chromInfo}
 
