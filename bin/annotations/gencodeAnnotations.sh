@@ -131,35 +131,36 @@ sed 's/intergenic/1/g' gencode_mapped.bed \
 awk -F'|' \
     -v OFS='\t' \
     -v b=$biggest \
-    -v c=$col '{
-    line=$3
-    split(line,a,";")
+    -v c=$col \
+    '{
+        line=$3
+        split(line,a,";")
 
-    mapped=$2
-    split(mapped,m,";")
-        
-    if (length(a) == 1) {
-        print $1,$2
-    } else {
-        for(i=1;i<=NF;i++) {
-            if (a[i] > b) {
-                b=a[i];
-                c=i;
-            } else if (a[i] == b) {
-                old=m[c];
-                split(old,o,"\t");
-                new=m[i];
-                split(new,n,"\t");
-                if (o[4] < n[4]) {
+        mapped=$2
+        split(mapped,m,";")
+            
+        if (length(a) == 1) {
+            print $1,$2
+        } else {
+            for(i=1;i<=NF;i++) {
+                if (a[i] > b) {
                     b=a[i];
                     c=i;
+                } else if (a[i] == b) {
+                    old=m[c];
+                    split(old,o,"\t");
+                    new=m[i];
+                    split(new,n,"\t");
+                    if (o[4] < n[4]) {
+                        b=a[i];
+                        c=i;
+                    }
                 }
             }
-        }
-    print $1,m[c];
-    b=0;
-    } \
-}' choose_best_annotation.bed > best_annotation.bed
+        print $1,m[c];
+        b=0;
+        } \
+    }' choose_best_annotation.bed > best_annotation.bed
 
 echo "Write Best gencode Annotation"
 awk -v OFS='\t' -F'\t' \
