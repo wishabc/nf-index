@@ -61,6 +61,7 @@ bedops --ec -d \
     awk -v OFS='\t' \
         '{print $1,$2,$3,"intergenic"}' > intergenic.bed
 
+echo "Unite annotations"
 #Unite promoter, exon, intron, and intergenic regions in one bed file
 #Map united bed file and map to DHS_Index.bed
 bedops --ec -u \
@@ -90,7 +91,7 @@ zcat ${gencode} \
             print $1,$4,$5,"PC"
         }
     }' \
-    | awk -F'\t' '{if($2 != $3) print}' - \
+    | awk -F'\t' '{if($2 != $3) print}' \
     | sort-bed - \
     > PC.bed
 
