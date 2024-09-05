@@ -159,7 +159,7 @@ awk -F'|' -v OFS='\t' -v b=$biggest -v c=$col '{
 }' choose_best_annotation.bed > best_annotation.bed
 
 echo "Write Best gencode Annotation"
-awk -v OFS='\t' \
+awk -v OFS='\t' -F'\t' \
     '{print $1,$2,$3,$NF}' best_annotation.bed \
     | sort-bed - \
     | awk -v OFS='\t' '{
@@ -197,7 +197,11 @@ biggest=0
 col=0
 fraction=0
 
-awk -F'|' -v f=$fraction -v b=$biggest -v c=$col '{
+awk -F'|' \
+    -v OFS='\t' \
+    -v f=$fraction \
+    -v b=$biggest \
+    -v c=$col '{
         line=$3
         split(line,a,";")
         mapped=$2
@@ -223,7 +227,7 @@ awk -F'|' -v f=$fraction -v b=$biggest -v c=$col '{
         } else {
             c=1;
         }
-        print $1"\t"m[c];
+        print $1,m[c];
         b=0;
 }' exon_mapped.bed > best_exon_mapped.bed
 
@@ -232,12 +236,19 @@ cat best_exon_mapped.bed \
     | awk -v OFS='\t' '{print $1,$2,$3,$4,$8}' \
     | sort-bed - \
     | awk -F'\t' -v OFS='\t' \
-    '{if($5 == "") print $1,$2,$3,$4,"NPC"; else print}' \
+        '{
+            if($5 == "") {
+                print $1,$2,$3,$4,"NPC";
+            } else {
+                print;
+            }
+        }' \
     > dhs_annotated_exon.bed
 
 #Map Promoter
-awk '{if($4 == "promoter") print}' dhs_annotated.bed 
-    | bedmap --echo --echo-map \
+awk '{if($4 == "promoter") print}' dhs_annotated.bed \
+    | bedmap --echo \
+        --echo-map \
         --echo-overlap-size \
         --echo-map-size \
         --skip-unmapped \
