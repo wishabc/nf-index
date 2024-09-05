@@ -9,34 +9,37 @@ chromSize=$3
 #Parse Gencode File (utr updated)#
 ##################################
 chromInfo="chrom_sizes.bed"
-awk -v OFS='\t' '{ print $1,0,$2 }' ${chromSize} > ${chromInfo}
+awk -v OFS='\t' \
+    '{ print \$1,0,\$2 }' \
+    ${chromSize} \
+    | sort-bed - > ${chromInfo}
 
 #Remove row if start = end
 zcat ${gencode} \
-| awk -F'\t' '{
-    if($4 != $5) {
-        print $1"\t"$4"\t"$5"\t"$3"\t"$7
-    }
-}' \
-| sort-bed -  \
-> gencode.filtered.gtf
+    | awk -F'\t' -v OFS='\t' '{
+        if($4 != $5) {
+            print $1,$4,$5,$3,$7
+        }
+    }' \
+    | sort-bed -  \
+    > gencode.filtered.gtf
 
 #Expand the transcription region to say promoter. +/- 1KB of TSS
-awk -F'\t' '{
+awk -F'\t' -v OFS='\t' '{
         if($4 == "transcript") {
-                if ($5 == "+") {
-                        print $1"\t"$2"\t"$2+1000"\t""promoter";
-                }
-                else if ($5 == "-") {
-                        print $1"\t"$3-1000"\t"$3"\t""promoter";
-                }
-    }
-        else if($4 != "transcript") {
-                print $1"\t"$2"\t"$3"\t"$4;
+            if ($5 == "+") {
+                print $1,$2,$2+1000,"promoter";
+            } else {
+                print $1,$3-1000,$3,"promoter";
+            }
+        } else  {
+            print $1"\t"$2"\t"$3"\t"$4;
         }
-}' gencode.filtered.gtf \
-| grep -v chrM | grep -v Selenocysteine | grep -v codon \
-| sort-bed - \
+    }' gencode.filtered.gtf \
+    | grep -v chrM \
+    | grep -v Selenocysteine \
+    | grep -v codon \
+    | sort-bed - \
 > gencode.bed
 
 #Need to find the INTRONS. Difference between gene and (CDS + PROMOTER + UTR) 
@@ -46,12 +49,17 @@ awk '{if($4 == "CDS") print}' gencode.bed > cds.bed
 awk '{if($4 == "promoter") print}' gencode.bed > promoter.bed
 awk '{if($4 == "five_prime_utr" || $4 == "three_prime_utr") print}' gencode.bed > utr.bed
 
-bedops --ec -m utr.bed exon.bed promoter.bed cds.bed | bedops --ec -d gene.bed - > tmp.intron.bed
+bedops --ec -m utr.bed exon.bed promoter.bed cds.bed \
+    | bedops --ec -d gene.bed - > tmp.intron.bed
 awk '{print $1"\t"$2"\t"$3"\t""intron"}' tmp.intron.bed > intron.bed
 
 #Need to find the Intergenic region. Difference between Genome and gene-body + promoter region
-bedops --ec -d ${chromInfo} gene.bed promoter.bed > tmp.intergenic.bed
-awk '{print $1"\t"$2"\t"$3"\t""intergenic"}' tmp.intergenic.bed > intergenic.bed
+bedops --ec -d \
+    ${chromInfo} \
+    gene.bed \
+    promoter.bed \
+    awk -v OFS='\t' \
+        '{print $1,$2,$3,"intergenic"}' > intergenic.bed
 
 #Clean Up
 rm tmp.intron.bed
@@ -59,49 +67,56 @@ rm tmp.intergenic.bed
 
 #Unite promoter, exon, intron, and intergenic regions in one bed file
 #Map united bed file and map to DHS_Index.bed
-bedops --ec -u promoter.bed exon.bed intron.bed intergenic.bed | sort-bed - > gencode-genome.bed
-bedmap --ec --echo --echo-map --skip-unmapped --echo-overlap-size ${masterlist} gencode-genome.bed > gencode_mapped.bed
+bedops --ec -u \
+    promoter.bed \
+    exon.bed \
+    intron.bed \
+    intergenic.bed \
+    | sort-bed - \
+    | bedmap --ec --echo \
+        --echo-map \
+        --skip-unmapped \
+        --echo-overlap-size \
+        ${masterlist} - > gencode_mapped.bed
 
 #Filter Initial Gencode file based on protein coding and non-protein coding regions
 zcat ${gencode} \
-| grep protein_coding \
-| awk '{
-	if($3 == "transcript") {
-		if ($7 == "+") {
-                        print $1"\t"$4"\t"$4+1000"\t""PC";
-                }
-                else if ($7 == "-") {
-                        print $1"\t"$5-1000"\t"$5"\t""PC";
-		}
-	}
-	else {
-
-		print $1"\t"$4"\t"$5"\t""PC"
-	}
-}' \
-| awk -F'\t' '{if($2 != $3) print}' - \
-| sort-bed - \
-> PC.bed
-
-zcat ${gencode} \
-| grep -v protein_coding \
-| awk '{
+    | grep protein_coding \
+    | awk -v OFS='\t' '{
         if($3 == "transcript") {
-                if ($7 == "+") {
-                        print $1"\t"$4"\t"$4+1000"\t""NPC";
-                }
-                else if ($7 == "-") {
-                        print $1"\t"$5-1000"\t"$5"\t""NPC";
-		}
+            if ($7 == "+") {
+                print $1,$4,$4+1000,"PC";
+            } else {
+                print $1,$5-1000,$5,"PC";
+            }
         }
         else {
-
-                print $1"\t"$4"\t"$5"\t""NPC"
+            print $1,$4,$5,"PC"
         }
-}' \
-| awk -F'\t' '{if($2 != $3) print}' - \
-| sort-bed - \
-> NPC.bed
+    }' \
+    | awk -F'\t' '{if($2 != $3) print}' - \
+    | sort-bed - \
+    > PC.bed
+
+zcat ${gencode} \
+    | grep -v protein_coding \
+    | awk '{
+            if($3 == "transcript") {
+                    if ($7 == "+") {
+                        print $1"\t"$4"\t"$4+1000"\t""NPC";
+                    }
+                    else {
+                        print $1"\t"$5-1000"\t"$5"\t""NPC";
+            }
+            }
+            else {
+
+                    print $1"\t"$4"\t"$5"\t""NPC"
+            }
+    }' \
+    | awk -F'\t' '{if($2 != $3) print}' - \
+    | sort-bed - \
+    > NPC.bed
 
 bedops -u PC.bed NPC.bed > PC-NPC-gencode.bed
 
@@ -151,12 +166,22 @@ awk -F'|' -v b=$biggest -v c=$col '{
     b=0;
     }
 
-}'  choose_best_annotation.bed > best_annotation.bed
+}' choose_best_annotation.bed > best_annotation.bed
 
-awk '{print $1"\t"$2"\t"$3"\t"$NF}' best_annotation.bed \
-| sort-bed - \
-| awk '{if($4 == 1) print $1"\t"$2"\t"$3"\t""intergenic"; else if($4 == 2) print $1"\t"$2"\t"$3"\t""intron"; else if($4 == 3) print $1"\t"$2"\t"$3"\t""exon"; else if($4 == 4) print $1"\t"$2"\t"$3"\t""promoter"}' - \
-> dhs_annotated.bed
+awk -v OFS='\t' \
+    '{print $1,$2,$3,$NF}' best_annotation.bed \
+    | sort-bed - \
+    | awk -v OFS='\t' '{
+        if($4 == 1) {
+            print $1,$2,$3,"intergenic";
+        } else if($4 == 2) {
+            print $1,$2,$3,"intron";
+        } else if($4 == 3) {
+            print $1,$2,$3,"exon";
+        } else if($4 == 4) {
+            print $1,$2,$3,"promoter"
+        }' - \
+    > dhs_annotated.bed
 
 #####################################
 #Update Exon/Promoter/NPC/PC Regions#
