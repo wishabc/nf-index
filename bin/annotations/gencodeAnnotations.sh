@@ -33,7 +33,7 @@ awk -F'\t' -v OFS='\t' '{
                 print $1,$3-1000,$3,"promoter";
             }
         } else  {
-            print $1"\t"$2"\t"$3"\t"$4;
+            print $1,$2,$3,$4;
         }
     }' gencode.filtered.gtf \
     | grep -v chrM \
@@ -50,8 +50,8 @@ awk '{if($4 == "promoter") print}' gencode.bed > promoter.bed
 awk '{if($4 == "five_prime_utr" || $4 == "three_prime_utr") print}' gencode.bed > utr.bed
 
 bedops --ec -m utr.bed exon.bed promoter.bed cds.bed \
-    | bedops --ec -d gene.bed - > tmp.intron.bed
-awk '{print $1"\t"$2"\t"$3"\t""intron"}' tmp.intron.bed > intron.bed
+    | bedops --ec -d gene.bed - \
+    | awk -v OFS='\t' '{print $1,$2,$3,"intron"}' tmp.intron.bed > intron.bed
 
 #Need to find the Intergenic region. Difference between Genome and gene-body + promoter region
 bedops --ec -d \
@@ -77,7 +77,7 @@ bedops --ec -u \
         --echo-map \
         --skip-unmapped \
         --echo-overlap-size \
-        ${masterlist} - > gencode_mapped.bed
+        <(cut -f1-3 ${masterlist}) - > gencode_mapped.bed
 
 #Filter Initial Gencode file based on protein coding and non-protein coding regions
 zcat ${gencode} \
