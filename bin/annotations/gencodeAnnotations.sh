@@ -120,7 +120,7 @@ bedops -u PC.bed NPC.bed > PC-NPC-gencode.bed
 ####################################
 #Choose the best Gencode Annotation#
 ####################################
-
+echo "Choose Best gencode Annotation"
 biggest=0
 col=0
 
@@ -200,29 +200,26 @@ awk -F'|' -v f=$fraction -v b=$biggest -v c=$col '{
         size=$4
         split(size,s,";")
         
-       
        if (length(a) == 1) {
-                c=1;
+            c=1;
         } else if(length(a) > 1) {
-                for(i=1;i<=NF;i++) {
-                        if (a[i] > b) {
-                                b=a[i];
-                                c=i;
-                                f=a[i]/s[i];
-                        }
-                        else if (a[i] == b) {
-                                if(a[i]/s[i] > f) {
-                                        b=a[i];
-                                        c=i;
-                                }
-                        } 
-                }
-        }
-        else {
+            for(i=1;i<=NF;i++) {
+                if (a[i] > b) {
+                    b=a[i];
+                    c=i;
+                    f=a[i]/s[i];
+                } else if (a[i] == b) {
+                    if(a[i]/s[i] > f) {
+                        b=a[i];
+                        c=i;
+                    }
+                } 
+            }
+        } else {
             c=1;
         }
         print $1"\t"m[c];
-        b=0;      
+        b=0;
 }' exon_mapped.bed > best_exon_mapped.bed
 
 
