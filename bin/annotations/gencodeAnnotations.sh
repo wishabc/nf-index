@@ -182,8 +182,15 @@ awk -v OFS='\t' \
 echo 'Start Mapping Exon'
 awk '{if($4 == "exon") print}' dhs_annotated.bed > dhs-exon.bed
 bedops -u utr.bed cds.bed > utr-cds-gencode.bed
-bedmap --echo --echo-map --echo-overlap-size --echo-map-size --ec dhs-exon.bed  utr-cds-gencode.bed \
-> exon_mapped.bed
+
+bedmap --echo \
+    --echo-map \
+    --echo-overlap-size \
+    --echo-map-size \
+    --ec \
+    dhs-exon.bed  \
+    utr-cds-gencode.bed \
+    > exon_mapped.bed
 
 #Choose the element with the largest overlap or the largest fraction of overlap
 biggest=0
