@@ -171,8 +171,8 @@ awk -v OFS='\t' \
             print $1,$2,$3,"exon";
         } else if($4 == 4) {
             print $1,$2,$3,"promoter"
-        }' - \
-    > dhs_annotated.bed
+        }
+    }' > dhs_annotated.bed
 
 #####################################
 #Update Exon/Promoter/NPC/PC Regions#
