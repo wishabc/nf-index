@@ -51,7 +51,7 @@ awk '{if($4 == "five_prime_utr" || $4 == "three_prime_utr") print}' gencode.bed 
 
 bedops --ec -m utr.bed exon.bed promoter.bed cds.bed \
     | bedops --ec -d gene.bed - \
-    | awk -v OFS='\t' '{print $1,$2,$3,"intron"}' tmp.intron.bed > intron.bed
+    | awk -v OFS='\t' '{print $1,$2,$3,"intron"}' - > intron.bed
 
 #Need to find the Intergenic region. Difference between Genome and gene-body + promoter region
 bedops --ec -d \
