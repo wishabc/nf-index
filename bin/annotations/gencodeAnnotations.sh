@@ -179,6 +179,7 @@ awk -v OFS='\t' \
 #####################################
 
 #Map Exon regions to DHS Annotations
+echo 'Start Mapping Exon'
 awk '{if($4 == "exon") print}' dhs_annotated.bed > dhs-exon.bed
 bedops -u utr.bed cds.bed > utr-cds-gencode.bed
 bedmap --echo --echo-map --echo-overlap-size --echo-map-size --ec dhs-exon.bed  utr-cds-gencode.bed \
@@ -220,16 +221,23 @@ awk -F'|' -v f=$fraction -v b=$biggest -v c=$col '{
 }' exon_mapped.bed > best_exon_mapped.bed
 
 
-awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$8}' best_exon_mapped.bed \
-| sort-bed - \
-| awk -F'\t' '{if($5 == "") print $1"\t"$2"\t"$3"\t"$4"\t""NPC"; else print}' \
-> dhs_annotated_exon.bed
+cat best_exon_mapped.bed \
+    | awk -v OFS='\t' '{print $1,$2,$3,$4,$8}' \
+    | sort-bed - \
+    | awk -F'\t' -v OFS='\t' \
+    '{if($5 == "") print $1,$2,$3,$4,"NPC"; else print}' \
+    > dhs_annotated_exon.bed
 
 #Map Promoter
-awk '{if($4 == "promoter") print}' dhs_annotated.bed > dhs-promoter.bed
-
-bedmap --echo --echo-map --echo-overlap-size --echo-map-size --skip-unmapped --ec dhs-promoter.bed PC-NPC-gencode.bed \
-> promoter_mapped.bed
+awk '{if($4 == "promoter") print}' dhs_annotated.bed 
+    | bedmap --echo --echo-map \
+        --echo-overlap-size \
+        --echo-map-size \
+        --skip-unmapped \
+        --ec \
+        - \
+        PC-NPC-gencode.bed \
+    > promoter_mapped.bed
 
 
 #Pick the element with the largest overlap or the largest fraction of overlap
