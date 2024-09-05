@@ -132,16 +132,15 @@ sed 's/intergenic/1/g' gencode_mapped.bed \
 > choose_best_annotation.bed
 
 awk -F'|' -v b=$biggest -v c=$col '{
-        line=$3
-        split(line,a,";")
+    line=$3
+    split(line,a,";")
 
-        mapped=$2
-        split(mapped,m,";")
+    mapped=$2
+    split(mapped,m,";")
         
     if (length(a) == 1) {
         print $1"\t"$2
-    }
-    else {
+    } else {
         for(i=1;i<=NF;i++) {
             if (a[i] > b) {
                 b=a[i];
@@ -160,8 +159,7 @@ awk -F'|' -v b=$biggest -v c=$col '{
         }
     print $1"\t"m[c];
     b=0;
-    }
-
+    } \
 }' choose_best_annotation.bed > best_annotation.bed
 
 awk -v OFS='\t' \
@@ -205,8 +203,7 @@ awk -F'|' -v f=$fraction -v b=$biggest -v c=$col '{
        
        if (length(a) == 1) {
                 c=1;
-        }
-        else if(length(a) > 1) {
+        } else if(length(a) > 1) {
                 for(i=1;i<=NF;i++) {
                         if (a[i] > b) {
                                 b=a[i];
