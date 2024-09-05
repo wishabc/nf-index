@@ -118,8 +118,6 @@ bedops -u PC.bed NPC.bed > PC-NPC-gencode.bed
 #Choose the best Gencode Annotation#
 ####################################
 echo "Choose Best gencode Annotation"
-biggest=0
-col=0
 
 #Promoter > Exon > Intron > Intergenic
 sed 's/intergenic/1/g' gencode_mapped.bed \
@@ -130,8 +128,8 @@ sed 's/intergenic/1/g' gencode_mapped.bed \
 
 awk -F'|' \
     -v OFS='\t' \
-    -v b=$biggest \
-    -v c=$col \
+    -v b=0 \
+    -v c=0 \
     '{
         line=$3
         split(line,a,";")
@@ -197,15 +195,12 @@ bedmap --echo \
     > exon_mapped.bed
 
 #Choose the element with the largest overlap or the largest fraction of overlap
-biggest=0
-col=0
-fraction=0
 
 awk -F'|' \
     -v OFS='\t' \
-    -v f=$fraction \
-    -v b=$biggest \
-    -v c=$col '{
+    -v f=0 \
+    -v b=0 \
+    -v c=0 '{
         line=$3
         split(line,a,";")
         mapped=$2
@@ -269,33 +264,33 @@ col=0
 fraction=0
 
 awk -F'|' -v f=$fraction -v b=$biggest -v c=$col '{
-        line=$3
-        split(line,a,";")
-        mapped=$2
-        split(mapped,m,";")
-        size=$4
-        split(size,s,";")
-        
-        if (length(a) == 1) {
-                c=1;
-        }
-        else {
-                for(i=1;i<=NF;i++) {
-                        if (a[i] > b) {
-                                b=a[i];
-                                c=i;
-                                f=a[i]/s[i];
-                        }
-                        else if (a[i] == b) {
-                                if(a[i]/s[i] > f) {
-                                        b=a[i];
-                                        c=i;
-                                }
-                        } 
-                }      
-        }
-        print $1"\t"m[c];
-        b=0;      
+    line=$3
+    split(line,a,";")
+    mapped=$2
+    split(mapped,m,";")
+    size=$4
+    split(size,s,";")
+    
+    if (length(a) == 1) {
+            c=1;
+    }
+    else {
+            for(i=1;i<=NF;i++) {
+                    if (a[i] > b) {
+                            b=a[i];
+                            c=i;
+                            f=a[i]/s[i];
+                    }
+                    else if (a[i] == b) {
+                            if(a[i]/s[i] > f) {
+                                    b=a[i];
+                                    c=i;
+                            }
+                    } 
+            }      
+    }
+    print $1"\t"m[c];
+    b=0;      
 }' promoter_mapped.bed > best_promoter_mapped.bed
 
 awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$8}' best_promoter_mapped.bed \
