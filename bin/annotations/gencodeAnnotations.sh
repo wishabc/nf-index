@@ -61,10 +61,6 @@ bedops --ec -d \
     awk -v OFS='\t' \
         '{print $1,$2,$3,"intergenic"}' > intergenic.bed
 
-#Clean Up
-rm tmp.intron.bed
-rm tmp.intergenic.bed
-
 #Unite promoter, exon, intron, and intergenic regions in one bed file
 #Map united bed file and map to DHS_Index.bed
 bedops --ec -u \
