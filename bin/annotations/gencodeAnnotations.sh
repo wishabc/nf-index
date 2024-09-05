@@ -128,7 +128,10 @@ sed 's/intergenic/1/g' gencode_mapped.bed \
     | sed 's/promoter/4/g' \
     > choose_best_annotation.bed
 
-awk -F'|' -v OFS='\t' -v b=$biggest -v c=$col '{
+awk -F'|' \
+    -v OFS='\t' \
+    -v b=$biggest \
+    -v c=$col '{
     line=$3
     split(line,a,";")
 
@@ -136,7 +139,7 @@ awk -F'|' -v OFS='\t' -v b=$biggest -v c=$col '{
     split(mapped,m,";")
         
     if (length(a) == 1) {
-        print $1","$2
+        print $1,$2
     } else {
         for(i=1;i<=NF;i++) {
             if (a[i] > b) {
