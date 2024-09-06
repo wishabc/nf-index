@@ -210,13 +210,13 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
             agst=agst
         )
         comp_name = row["name"].replace("/", "_").replace(' ', '_')
-        fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
+        fig.savefig(f'{vis_path}/Detailed_barplot.{comp_name}.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
 
     # Plot samples
     print('All samples')
     ax, _, _ = plot_barplots(W, component_data)
-    plt.savefig(f'{vis_path}/Barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}/Barplot_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
     print('Train stratified samples set')
@@ -261,7 +261,7 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
                 'r' if s else 'k' for s in s_mask
             ]
         )
-    plt.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}/Detailed_barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
 
     print('Top 20 samples per component')
