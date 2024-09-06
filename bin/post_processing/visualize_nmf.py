@@ -209,7 +209,7 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
             order=np.argsort(relative_W[i, :])[::-1],
             agst=agst
         )
-        comp_name = row["name"].replace("/", "_")
+        comp_name = row["name"].replace("/", "_").replace(' ', '_')
         fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
 
@@ -265,7 +265,7 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     plt.close(fig)
 
     print('Top 20 samples per component')
-    annotations = metadata["taxonomy_name"].values
+    annotations = metadata["sample_label"].values
     fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data)
     plt.savefig(f'{vis_path}/Top20_all_samples_barplot.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
