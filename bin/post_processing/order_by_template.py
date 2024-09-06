@@ -118,7 +118,8 @@ def get_component_data(W, W_old=None):
             W_old = np.load(W_old_path).T
             if W_old.shape[1] != W.shape[1]:
                 W_old = None
-        else:
+
+        if W_old is None:
             if W.shape[0] <= 29:
                 colors = component_colors[:W.shape[0]]
             else:
