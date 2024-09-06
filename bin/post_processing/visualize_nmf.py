@@ -195,23 +195,23 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     relative_W = relative_W[component_data['index'], :]
 
 
-    # for i, row in component_data.iterrows():
-    #     weights = np.ones(W.shape[0])
-    #     weights[i] = W.shape[0]
+    for i, row in component_data.iterrows():
+        weights = np.ones(W.shape[0])
+        weights[i] = W.shape[0]
 
-    #     agst = np.argsort(relative_W + weights[:, None], axis=0)[::-1, :]
-    #     print((agst[0] == i).all())
+        agst = np.argsort(relative_W + weights[:, None], axis=0)[::-1, :]
+        print((agst[0] == i).all())
 
-    #     _, fig = barplot_at_scale(
-    #         relative_W,
-    #         metadata.iloc[:, :],
-    #         colors=component_data['color'],
-    #         order=np.argsort(relative_W[i, :])[::-1],
-    #         agst=agst
-    #     )
-    #     comp_name = row["name"].replace("/", "_").replace(' ', '_')
-    #     fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
-    #     plt.close(fig)
+        _, fig = barplot_at_scale(
+            relative_W,
+            metadata.iloc[:, :],
+            colors=component_data['color'],
+            order=np.argsort(relative_W[i, :])[::-1],
+            agst=agst
+        )
+        comp_name = row["name"].replace("/", "_").replace(' ', '_')
+        fig.savefig(f'{vis_path}/detailed_barplot_all_normal_samples.{comp_name}.pdf', transparent=True, bbox_inches='tight')
+        plt.close(fig)
 
     # Plot samples
     print('All samples')
