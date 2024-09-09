@@ -213,22 +213,26 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
         fig.savefig(f'{vis_path}/Detailed_barplot.{comp_name}.pdf', transparent=True, bbox_inches='tight')
         plt.close(fig)
 
-    # Plot samples
+    ######### Plot samples #########
+    if samples_mask.sum() < samples_mask.shape[0]:
+        print('Reference samples set')
+        ax, _, _ = plot_barplots(W[:, samples_mask], component_data)
+        plt.savefig(f'{vis_path}/Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
+        plt.close(ax.get_figure())
+    
+
     print('All samples')
     ax, _, _ = plot_barplots(W, component_data)
-    plt.savefig(f'{vis_path}/Barplot_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}/Barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
-    print('Train stratified samples set')
-    ax, _, _ = plot_barplots(W[:, samples_mask], component_data)
-    plt.savefig(f'{vis_path}/Barplot_stratified_train_samples.pdf', transparent=True, bbox_inches='tight')
-    plt.close(ax.get_figure())
 
-    # Plot peaks
-    print('Reference peaks')
-    ax, _, _ = plot_barplots(H[:, peaks_mask], component_data, normalize=True)
-    plt.savefig(f'{vis_path}/Barplot_reference_train_DHSs.pdf', transparent=True, bbox_inches='tight')
-    plt.close(ax.get_figure())
+    ######## Plot peaks #########
+    if peaks_mask.sum() < peaks_mask.shape[0]:
+        print('Reference peaks set')
+        ax, _, _ = plot_barplots(H[:, peaks_mask], component_data, normalize=True)
+        plt.savefig(f'{vis_path}/Barplot_reference_train_DHSs.pdf', transparent=True, bbox_inches='tight')
+        plt.close(ax.get_figure())
 
     print('All peaks')
     ax, _, _ = plot_barplots(H, component_data)
@@ -261,7 +265,7 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
                 'r' if s else 'k' for s in s_mask
             ]
         )
-    plt.savefig(f'{vis_path}/Detailed_barplot_all_normal_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}/Detailed_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
 
     print('Top 20 samples per component')
