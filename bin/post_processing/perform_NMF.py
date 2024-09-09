@@ -6,7 +6,7 @@ from sklearn.decomposition import NMF
 from weighted_NMF import NMF as weighted_NMF
 
 
-def perform_NMF(X, W_weights=None, H_weights=None, n_components=16, extra_params=None):
+def initialize_model(n_components, extra_params, is_weighted=False):
     params = dict(n_components=n_components,
                     solver='mu', beta_loss='frobenius',
                     random_state=0, init="nndsvda",
@@ -19,13 +19,18 @@ def perform_NMF(X, W_weights=None, H_weights=None, n_components=16, extra_params
         }
         params.update(extra_params)
         print("Overwritten params:", overwritten)
+    
+    return weighted_NMF(**params) if is_weighted else NMF(**params)
+
+
+def perform_NMF(X, W_weights=None, H_weights=None, n_components=16, extra_params=None):
 
     if W_weights is not None:
         assert H_weights is not None
-        model = weighted_NMF(**params)
+        model = initialize_model(n_components, extra_params, is_weighted=True)
         W = model.fit_transform(X.T, W_weights=W_weights[:, None], H_weights=H_weights[None, :])
     else:
-        model = NMF(**params)
+        model = initialize_model(n_components, extra_params, is_weighted=False)
         W = model.fit_transform(X.T)
 
     H = model.components_ # components x peaks
