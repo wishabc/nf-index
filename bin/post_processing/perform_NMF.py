@@ -23,14 +23,11 @@ def initialize_model(n_components, extra_params, is_weighted=False):
     return weighted_NMF(**params) if is_weighted else NMF(**params)
 
 
-def perform_NMF(X, W_weights=None, H_weights=None, n_components=16, extra_params=None):
-
+def perform_NMF(model, X, W_weights=None, H_weights=None):
     if W_weights is not None:
         assert H_weights is not None
-        model = initialize_model(n_components, extra_params, is_weighted=True)
         W = model.fit_transform(X.T, W_weights=W_weights[:, None], H_weights=H_weights[None, :])
     else:
-        model = initialize_model(n_components, extra_params, is_weighted=False)
         W = model.fit_transform(X.T)
 
     H = model.components_ # components x peaks
@@ -121,16 +118,16 @@ def main(mat, samples_m, peaks_m, W_weights, H_weights, **extra_params):
         print('Using weighted NMF')
         W_weights_slice = W_weights[samples_m]
         H_weights_slice = H_weights[peaks_m]
-
+        model = initialize_model(n_components=args.n_components, extra_params=extra_params, is_weighted=True)
     else:
         W_weights_slice = H_weights_slice = None
+        model = initialize_model(n_components=args.n_components, extra_params=extra_params, is_weighted=False)
 
     W_np, H_np, model = perform_NMF(
+        model=model,
         X=matrix_samples_peaks_slice,
         W_weights=W_weights_slice,
         H_weights=H_weights_slice,
-        n_components=args.n_components,
-        extra_params=extra_params
     )
     if samples_m.shape[0] > samples_m.sum():
         assert W_weights is None
