@@ -187,8 +187,9 @@ def plot_barplots(matrix, component_data=None, n=10_000, normalize=True, ax=None
     return plot_stacked(H_dsp, colors, ax=ax, **kwargs)
 
 
-def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path):
-    component_data = get_component_data(W)
+def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path, component_data=None):
+    if component_data is None:
+        component_data = get_component_data(W)
 
     print('Order samples by component contribution')
     relative_W = W / W.sum(axis=0)
