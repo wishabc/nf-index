@@ -224,7 +224,7 @@ workflow buildIndex {
         
         raw_binary = process_chunk.out[1]
             | combine(chunks_order)
-            | combine(samples_order)
+            | combine(get_samples_order())
             | write_rows
             | collect(sort: true)
             | map(it -> tuple("index.binary", it))
