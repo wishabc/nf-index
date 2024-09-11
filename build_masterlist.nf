@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { convert_to_numpy } from "./filter_peaks"
+include { convert_to_numpy; filter_masterlist } from "./filter_peaks"
 
 process collate_and_chunk {
     conda params.conda
