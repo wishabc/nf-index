@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { convert_to_numpy; filter_masterlist } from "./filter_peaks"
+include { filterAndConvertToNumpy } from "./filter_peaks"
 
 process collate_and_chunk {
     conda params.conda
@@ -283,15 +283,14 @@ workflow buildIndex {
             | write_rows
             | groupTuple()
             | collect_chunks // binary.index, binary.index.raw.matrix.mtx.gz
-            | filterAndConvertToNumpy // binary.raw.
+            | filterAndConvertToNumpy
         
-        annotated_index = binary_matrix[1] // binary matrix
-            | map(it -> it[1])
+        out = binary_matrix[1]
             | combine(samples_order)
             | combine(index)
-            | annotate_masterlist
+
     emit:
-        annotated_index
+        out
 }
 
 workflow annotateMasterlist {
@@ -310,4 +309,5 @@ workflow {
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row.peaks_file))
         | buildIndex
+        | annotate_masterlist
 }
