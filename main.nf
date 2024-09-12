@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { generateMatrices; get_samples_order } from "./generate_matrices"
+include { generateMatrices } from "./generate_matrices"
 //include { convert_to_h5 } from "./variance_partition"
 include { normalizeMatrix } from "./normalize_signal"
 include { filterAndConvertToNumpy; filter_masterlist } from "./filter_peaks"
@@ -34,14 +34,13 @@ workflow {
     samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
 
     // Generate matrices
-    raw_matrices = generateMatrices(
+    filters_and_matrices = generateMatrices(
         unfiltered_masterlist,
         samples_order,
-        Channel.empty(),
         bams_hotspots
-    )
-
-    filters_and_matrices = filterAndConvertToNumpy(unfiltered_masterlist, raw_matrices)
+    ) 
+        | combine(unfiltered_masterlist)
+        | filterAndConvertToNumpy
 
     filters_and_matrices[1]
         | filter(it -> it[0] == "binary")

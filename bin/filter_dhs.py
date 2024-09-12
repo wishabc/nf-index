@@ -9,9 +9,10 @@ import argparse
 
 
 def read_masterlist_no_header(masterlist_path):
-    dhs_colnames = ['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks', 'width', 'summit', 'core_start', 'core_end']
+    dhs_colnames = ['seqname', 'start', 'end', 'id', 'total_signal', 'num_samples', 'num_peaks']
     return pd.read_table(
         masterlist_path,
+        usecols=[i for i in range(7)],
         header=None, 
         names=dhs_colnames
     )

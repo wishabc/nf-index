@@ -68,20 +68,23 @@ process filter_masterlist {
     zcat ${binary_matrix} \
         | awk '{ if (/1/) print 1; else print 0; }' > ${non_zero_rows}
     
-    bedmap --bases ${masterlist} \
+    grep -v "^#" ${masterlist} > masterlist.no_header.bed
+
+    bedmap --bases  masterlist.no_header.bed \
         ${params.encode_blacklist_regions} \
         |  awk -F'\t' '{ if(\$1 > 0) print 1; else print 0}' \
         > blacklist_rows.txt
 
     python3 $moduleDir/bin/filter_dhs.py \
-        ${masterlist} \
+        masterlist.no_header.bed \
         ${non_zero_rows} \
         blacklist_rows.txt \
         ${filtered_masterlist} \
         ${filtered_mask} \
         --singletons_strategy ${params.singletons_strategy}
 
-    cat ${masterlist} \
+    # FIXME to work with list of autosomes
+    cat masterlist.no_header.bed \
 		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
 		> autosomes.mask.txt
     
@@ -107,18 +110,6 @@ workflow filterAndConvertToNumpy {
         raw_np = raw_matrices
             | convert_to_numpy
 
-        // w_autosomes_matrices = raw_np 
-        //     | combine(
-        //         masterlist_and_mask.map(it -> it[2])
-        //     )
-
-        // npy_matrices = raw_np
-        //     | map(it -> tuple("${it[0]}.only_autosomes", it[1]))
-        //     | combine(
-        //         masterlist_and_mask.map(it -> it[4])
-        //     )
-        //     | mix(w_autosomes_matrices)
-        //     | apply_filter
     emit:
         masterlist_and_mask
         raw_np
@@ -141,3 +132,19 @@ workflow getMasks {
         | combine(params.index_file)
         | filter_masterlist
 }
+
+
+// DEFUNC
+
+        // w_autosomes_matrices = raw_np 
+        //     | combine(
+        //         masterlist_and_mask.map(it -> it[2])
+        //     )
+
+        // npy_matrices = raw_np
+        //     | map(it -> tuple("${it[0]}.only_autosomes", it[1]))
+        //     | combine(
+        //         masterlist_and_mask.map(it -> it[4])
+        //     )
+        //     | mix(w_autosomes_matrices)
+        //     | apply_filter
