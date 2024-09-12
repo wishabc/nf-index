@@ -183,10 +183,11 @@ process collect_chunks {
         tuple val(prefix), path("chunks/*")
     
     output:
-        tuple val(prefix), path(matrix)
+        tuple val(new_prefix), path(matrix)
 
     script:
-    matrix = "matrix.${prefix}.mtx.gz"
+    new_prefix = "index.${prefix}"
+    matrix = "matrix.${new_prefix}.mtx.gz"
     """
     ls chunks/ \
         | wc -l \
@@ -222,21 +223,20 @@ workflow buildIndex {
         chunks_order = index
             | get_chunks_order
         
-        raw_binary = process_chunk.out[1]
+        process_chunk.out[1]
             | combine(chunks_order)
             | combine(get_samples_order())
             | write_rows
             | collect(sort: true)
-            | map(it -> tuple("index.binary", it))
+            | map(it -> tuple("binary", it))
             | collect_chunks
-
-        raw_binary
-            | convert_to_numpy
-
-        raw_binary   
             | map(it -> it[1])
             | combine(index)
             | filter_masterlist
+
+        collect_chunks.out
+            | convert_to_numpy
+
     emit:
         index
 }
