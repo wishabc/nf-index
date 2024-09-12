@@ -48,15 +48,15 @@ process apply_filter {
 process filter_masterlist {
     conda params.conda
 
-    publishDir "${params.outdir}", pattern: "${only_autosomes_masterlist}"
-    publishDir "${params.outdir}/masks/masterlist_no_header", pattern: "${filtered_masterlist}"
+    // publishDir "${params.outdir}", pattern: "${only_autosomes_masterlist}"
+    // publishDir "${params.outdir}/masks/masterlist_no_header", pattern: "${filtered_masterlist}"
     publishDir "${params.outdir}/masks", pattern: "*.mask.txt"
 
     input:
         tuple val(prefix), path(binary_matrix), path(masterlist, name: 'masterlist.bed')
     
     output:
-	    tuple path(non_zero_rows), path(filtered_masterlist), path(filtered_mask), path(only_autosomes_masterlist), path(only_autosomes_mask)
+	    tuple path(non_zero_rows), path(filtered_mask), path(only_autosomes_mask)
 
     script:
     non_zero_rows = "${prefix}.non_zero_rows.mask.txt"
