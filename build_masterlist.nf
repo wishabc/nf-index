@@ -268,9 +268,9 @@ workflow buildIndex {
  
         index = merge_chunks(
             // workaround
-            chunks[0].map(it -> it.toString()).collectFile(name: 'all.paths.txt', newLine: true), 
-            chunks[1].map(it -> it.toString()).collectFile(name: 'no_core.paths.txt', newLine: true), 
-            chunks[2].map(it -> it.toString()).collectFile(name: 'no_any.paths.txt', newLine: true)
+            chunks[0].map(it -> it.toString()).collectFile(name: 'all.paths.txt', newLine: true, sort: true), 
+            chunks[1].map(it -> it.toString()).collectFile(name: 'no_core.paths.txt', newLine: true, sort: true), 
+            chunks[2].map(it -> it.toString()).collectFile(name: 'no_any.paths.txt', newLine: true, sort: true)
         ).non_merged
 
         chunks_order = index
