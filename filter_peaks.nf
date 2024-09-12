@@ -5,7 +5,7 @@ process convert_to_numpy {
     label "highmem"
 
     input:
-        tuple val(prefix), path(matrix)
+        tuple val(prefix), path(matrix), path(masterlist)
 
     output:
         tuple val(prefix), path(name)
@@ -97,13 +97,11 @@ process filter_masterlist {
 
 workflow filterAndConvertToNumpy {
     take:
-        masterlist
         raw_matrices
 
     main:
         masterlist_and_mask = raw_matrices 
             | filter { it[0].startsWith('binary') }
-            | combine(masterlist)
             | filter_masterlist
 
         raw_np = raw_matrices
@@ -131,17 +129,15 @@ workflow {
 
     matrices = Channel.of('binary', 'counts')
         | map(it -> tuple(it, file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
+        | combine(Channel.fromPath(params.index_file))
+        | filterAndConvertToNumpy
 
-    filterAndConvertToNumpy(
-        Channel.fromPath(params.index_file),
-        matrices
-    )
 }
 
 workflow getMasks {
     params.base_dir = params.outdir
 
-    matrices = Channel.fromPath("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")
+    matrices = Channel.fromPath("${params.base_dir}/raw_matrices/matrix.binary.mtx.gz")
         | combine(params.index_file)
         | filter_masterlist
 }
