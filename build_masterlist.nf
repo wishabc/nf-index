@@ -2,6 +2,7 @@
 nextflow.enable.dsl = 2
 
 include { filterAndConvertToNumpy } from "./filter_peaks"
+include { convert_index_to_anndata } from "./convert_to_anndata"
 
 process collate_and_chunk {
     conda params.conda
@@ -204,7 +205,7 @@ process collect_chunks {
 
 process annotate_masterlist {
     conda params.conda
-    publishDir "${params.outdir}"
+    publishDir "${params.outdir}", pattern: "${name}"
     scratch true
     label "highmem"
     errorStrategy 'ignore'
@@ -213,7 +214,7 @@ process annotate_masterlist {
         tuple path(binary_matrix), path(samples_order), path(masterlist)
 
     output:
-        path name
+        tuple path(binary_matrix), path(samples_order), path(name)
 
     script:
     name = "masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
@@ -291,6 +292,7 @@ workflow buildIndex {
 
     emit:
         out
+        binary_matrix[0]
 }
 
 workflow annotateMasterlist {
@@ -304,9 +306,15 @@ workflow annotateMasterlist {
 }
 
 workflow {
-    Channel.fromPath(params.samples_file)
+    index_data = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row.peaks_file))
         | buildIndex
-        | annotate_masterlist
+    
+    masks = index_data[1] | collect(sort: true, flat: true)
+
+    annotated_masterlist = index_data[0]
+        | annotate_masterlist // matrix, samples_order, annotated_index
+        | combine(masks)
+        | convert_index_to_anndata
 }

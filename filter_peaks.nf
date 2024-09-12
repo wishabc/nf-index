@@ -48,42 +48,42 @@ process apply_filter {
 process filter_masterlist {
     conda params.conda
 
-    // publishDir "${params.outdir}", pattern: "${only_autosomes_masterlist}"
-    // publishDir "${params.outdir}/masks/masterlist_no_header", pattern: "${filtered_masterlist}"
-    publishDir "${params.outdir}/masks", pattern: "*.mask.txt"
+    publishDir "${params.outdir}/masks"
 
     input:
         tuple val(prefix), path(binary_matrix), path(masterlist, name: 'masterlist.bed')
     
     output:
-	    tuple path(non_zero_rows), path(filtered_mask), path(only_autosomes_mask)
+	    tuple path(non_zero_rows), path(blacklist_rows), path(filtered_mask), path(only_autosomes_mask)
 
     script:
     non_zero_rows = "${prefix}.non_zero_rows.mask.txt"
     filtered_mask = "${prefix}.filtered_DHS.mask.txt"
     only_autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
+    blacklist_rows = "${prefix}.blacklist_rows.mask.txt"
     """
     zcat ${binary_matrix} \
         | awk '{ if (/1/) print 1; else print 0; }' > ${non_zero_rows}
     
     grep -v "^#" ${masterlist} > masterlist.no_header.bed
 
-    bedmap --bases  masterlist.no_header.bed \
-        ${params.encode_blacklist_regions} \
-        |  awk -F'\t' '{ if(\$1 > 0) print 1; else print 0}' \
-        > blacklist_rows.txt
-
-    python3 $moduleDir/bin/filter_dhs.py \
-        masterlist.no_header.bed \
-        ${non_zero_rows} \
-        blacklist_rows.txt \
-        ${filtered_mask} \
-        --singletons_strategy ${params.singletons_strategy}
-
     # FIXME to work with list of autosomes
     cat masterlist.no_header.bed \
 		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
 		> ${only_autosomes_mask}
+
+    bedmap --bases masterlist.no_header.bed \
+        ${params.encode_blacklist_regions} \
+        |  awk -F'\t' \
+            '{ if(\$1 > 0) print 1; else print 0}' \
+        > ${blacklist_rows}
+
+    python3 $moduleDir/bin/filter_dhs.py \
+        masterlist.no_header.bed \
+        ${non_zero_rows} \
+        ${blacklist_rows} \
+        ${filtered_mask} \
+        --singletons_strategy ${params.singletons_strategy}
     """
 }
 
@@ -92,7 +92,7 @@ workflow filterAndConvertToNumpy {
         raw_matrices
 
     main:
-        masterlist_and_mask = raw_matrices 
+        masks = raw_matrices 
             | filter { it[0].startsWith('binary') }
             | filter_masterlist
 
@@ -100,7 +100,7 @@ workflow filterAndConvertToNumpy {
             | convert_to_numpy
 
     emit:
-        masterlist_and_mask
+        masks
         raw_np
 }
 
