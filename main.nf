@@ -50,6 +50,7 @@ workflow {
     ) 
         | combine(unfiltered_masterlist)
         | filterAndConvertToNumpy
+    
 
 }
 

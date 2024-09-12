@@ -4,6 +4,25 @@ nextflow.enable.dsl = 2
 include { get_samples_order } from "./build_masterlist"
 
 
+process bed2saf {
+	conda params.conda
+
+	input:
+		path masterlist
+
+	output:
+		path name
+
+	script:
+	name = "masterlist.saf"
+	"""
+	cat ${masterlist} \
+        | grep -v "^#" \
+		| awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' > ${name}
+	"""
+}
+
+
 process generate_binary_counts {
 
     conda params.conda
@@ -25,24 +44,32 @@ process generate_binary_counts {
     """
 }
 
-process bed2saf {
-	conda params.conda
 
-	input:
-		path masterlist
+process extract_max_density {
+    conda params.conda
+    publishDir "${params.outdir}/density"
+    tag "${ag_id}"
+    scratch true
 
-	output:
-		tuple path(name), path(masterlist)
-
-	script:
-	name = "masterlist.saf"
-	"""
-	cat ${masterlist} \
-        | grep -v "^#" \
-		| awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' > ${name}
-	"""
+    input:
+        tuple path(masterlist), val(ag_id), path(density_bw)
+    
+    output:
+        path name
+    
+    script:
+    name = "${ag_id}.density.txt"
+    """
+    bigWigToBedGraph ${density_bw} tmp.bg 
+    cat tmp.bg \
+        | awk -v OFS='\t' '{print \$1,\$2,\$3,"${ag_id}",\$4}' \
+        | bedmap --sweep-all \
+            --delim "\t" \
+            --max <(grep -v "^#" ${masterlist}) - \
+        | sed 's/\\<NAN\\>/0/g'
+        > ${name}
+    """
 }
-
 
 process count_tags {
 	tag "${id}"
@@ -50,7 +77,7 @@ process count_tags {
 	scratch true
 
 	input:
-		tuple path(saf), path(masterlist), val(id), path(bam_file), path(bam_file_index), path(peaks_file)
+		tuple path(saf), val(id), path(bam_file), path(bam_file_index), path(peaks_file)
 
 	output:
 		path name
@@ -117,20 +144,29 @@ workflow generateMatrices {
         samples_order
         bams_hotspots
     main:
+        density_cols = unfiltered_masterlist 
+            | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, density
+            | map(it -> tuple(it[0], it[1], it[5]))
+            | extract_max_density
+            | collect(sort: true)
+            | map(it -> tuple("density", it))
+
         cols = unfiltered_masterlist
-			| bed2saf
+			| bed2saf // 
 			| combine(bams_hotspots)
+            | map()
 			| count_tags
-			| collect(sort: true, flat: true)
+			| collect(sort: true)
             | map(it -> tuple("counts", it))
 
         all_cols = unfiltered_masterlist
-            | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, paired_aligned
+            | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, density
             | map(it -> tuple(it[0], it[1], it[4]))
             | generate_binary_counts
             | collect(sort: true)
             | map(it -> tuple("binary", it))
             | mix(cols)
+            | mix(density_cols)
 
         out = generate_matrix(all_cols, samples_order)
     emit:
@@ -147,7 +183,8 @@ workflow {
             row.ag_id,
             file(row.cram_file),
             file(row?.cram_index ?: "${row.cram_file}.crai"),
-            file(row.peaks_file)
+            file(row.peaks_file),
+            file(row.normalized_density_bw)
         ))
     
     generateMatrices(unfiltered_masterlist, samples_order, bams_hotspots)
