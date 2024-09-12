@@ -7,11 +7,7 @@ def non_required_arg(value, key) {
 process normalize_matrix {
 	conda params.conda
 	label "bigmem"
-	publishDir "${params.outdir}" //, pattern: "${prefix}.scale_factors.npy"
-    // publishDir "${params.outdir}", pattern: "${prefix}.log_difference.npy"
-	// publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.npy", saveAs: "${pref}.lowess_params.npy"
-    // publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params.json", saveAs: "${pref}.lowess_params.json"
-    // publishDir "${params.outdir}/qc", pattern: "${prefix}.*.pdf"
+	publishDir "${params.outdir}"
 
 	input:
         path peaks_matrix
@@ -108,7 +104,7 @@ workflow normalizeMatrix {
 }
 
 // Re-use existing model from other run (e.g. different samples)
-workflow useExistingModel {
+workflow existingModel {
     params.template_run_dir = "/path/to/previous/run"
     if (!file(params.template_run_dir).exists()) {
         error "Template directory ${params.template_run_dir} does not exist!"

@@ -60,10 +60,8 @@ process filter_masterlist {
 
     script:
     non_zero_rows = "${prefix}.non_zero_rows.mask.txt"
-    filtered_masterlist = "${prefix}_DHSs.blacklistfiltered.bed"
     filtered_mask = "${prefix}.filtered_DHS.mask.txt"
     only_autosomes_mask = "${prefix}.filtered.autosomes.mask.txt"
-    only_autosomes_masterlist = "${prefix}.only_autosomes.filtered.bed"
     """
     zcat ${binary_matrix} \
         | awk '{ if (/1/) print 1; else print 0; }' > ${non_zero_rows}
@@ -79,22 +77,13 @@ process filter_masterlist {
         masterlist.no_header.bed \
         ${non_zero_rows} \
         blacklist_rows.txt \
-        ${filtered_masterlist} \
         ${filtered_mask} \
         --singletons_strategy ${params.singletons_strategy}
 
     # FIXME to work with list of autosomes
     cat masterlist.no_header.bed \
 		| awk '{print (\$1 ~ /^chr[0-9]+/) ? 1 : 0}' \
-		> autosomes.mask.txt
-    
-    awk 'NR==FNR {mask1[NR]=\$0; next} \
-        {print mask1[FNR] * \$0}' \
-        ${filtered_mask} \
-        autosomes.mask.txt > ${only_autosomes_mask}
-
-	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
-		${only_autosomes_mask} ${masterlist} > ${only_autosomes_masterlist}
+		> ${only_autosomes_mask}
     """
 }
 
@@ -122,7 +111,6 @@ workflow {
         | map(it -> tuple(it, file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
         | combine(Channel.fromPath(params.index_file))
         | filterAndConvertToNumpy
-
 }
 
 workflow getMasks {

@@ -243,7 +243,7 @@ process annotate_masterlist {
         ${params.mappable_file} \
         gc_content.txt
 
-    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" \
+    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end" \
         | cat - ${masterlist} \
         | paste - \
             simple_annotations.txt \
@@ -294,12 +294,11 @@ workflow buildIndex {
 }
 
 workflow annotateMasterlist {
-    params.base_dir = params.outdir
     Channel.of(
         tuple(
-            file("${params.base_dir}/raw/binary.index.raw.matrix.npy"),
-            file("${params.base_dir}/samples_order.txt"),
-            file("${params.base_dir}/unfiltered_masterlist/masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed")
+            file("${params.index_dir}/raw/binary.index.raw.matrix.npy"),
+            file("${params.index_dir}/samples_order.txt"),
+            file("${params.index_dir}/unfiltered_masterlist/masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed")
         )
     ) | annotate_masterlist
 }

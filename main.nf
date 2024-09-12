@@ -9,17 +9,18 @@ include { filterAndConvertToNumpy; filter_masterlist } from "./filter_peaks"
 params.conda = "$moduleDir/environment.yml"
 
 
-process convert_to_anndata {
+def symlink_file(filepath) {
+    if (params.index_dir != params.outdir) {
+        f = file(filepath)
+        file(filepath).copyTo("${params.outdir}/${filepath.name}")
+    }
 
-    script:
-    """
-    
-    """
 }
 
-
 workflow {
-    params.base_dir = params.outdir
+    // Workflow to generate binary and count matrices from the samples file and existing masterlist
+    // Also it filters and creates necessary masks for normalization step
+
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
@@ -28,10 +29,18 @@ workflow {
             file(row?.cram_index ?: "${row.cram_file}.crai"),
             file(row.peaks_file)
         ))
-    
-    unfiltered_masterlist = Channel.fromPath(params.index_file)
+    unfiltered_masterlist_path = "${params.index_dir}/masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
+    samples_order_path = "${params.index_dir}/samples_order.txt"
 
-    samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
+    if (params.index_dir != params.outdir) {
+        symlink_file(unfiltered_masterlist_path)
+        symlink_file(samples_order_path)
+    }
+
+    unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
+
+    samples_order = Channel.fromPath(samples_order_path)
+
 
     // Generate matrices
     filters_and_matrices = generateMatrices(
@@ -42,13 +51,6 @@ workflow {
         | combine(unfiltered_masterlist)
         | filterAndConvertToNumpy
 
-    filters_and_matrices[1]
-        | filter(it -> it[0] == "binary")
-		| map(it -> it[1])
-		| combine(
-	        filters_and_matrices[0].map(it -> tuple(it[1], it[2]))
-        )
-		| annotate_masterlist
 }
 
 

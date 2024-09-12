@@ -9,7 +9,7 @@ process extract_max_density {
     scratch true
 
     input:
-        tuple val(ag_id), path(peaks_file)
+        tuple val(ag_id), path(peaks_file), path(index_file)
     
     output:
         tuple val(ag_id), path(density)
@@ -22,7 +22,7 @@ process extract_max_density {
         | awk -v OFS='\t' '{print \$1,\$2,\$3,"${ag_id}",\$4}' \
         | bedmap --sweep-all \
             --delim "\t" \
-            --max ${params.index_file} - \
+            --max ${index_file} - \
         > ${density}
     """
 }
@@ -55,24 +55,15 @@ process collect_matrix {
 
 }
 
-workflow tmp {	
-    matrix = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.normalized_density_bw.replaceAll(".bw", ".starch"))))
-        | extract_max_density
-        | map(it -> it[1])
-        | collect(sort: true)
-        | collect_matrix
-    
-}
-
 workflow {	
     matrix = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.normalized_density_bw)))
+        | combine(Channel.fromPath(params.index_file))
         | extract_max_density
         | map(it -> it[1])
         | collect(sort: true)
+        | combine(params.samples_order)
         | collect_matrix
     
 }
@@ -168,4 +159,16 @@ workflow averageTracks {
                 storeDir: params.outdir,
                 sort: true,
             ) { it -> [ "normalized.${it[0]}.tsv", it[1].text ] }
+}
+
+// DEFUNC
+workflow tmp {	
+    matrix = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.normalized_density_bw.replaceAll(".bw", ".starch"))))
+        | extract_max_density
+        | map(it -> it[1])
+        | collect(sort: true)
+        | collect_matrix
+    
 }
