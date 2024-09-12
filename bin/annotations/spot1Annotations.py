@@ -3,20 +3,15 @@
 #Load Dependencies
 import pandas as pd
 import numpy as np
-import gzip
 import sys
 import gc
-#Load in Binary Matrix and Metadata for subsampled SPOT score
 
+
+#Load in Binary Matrix and Metadata for subsampled SPOT score
 b = np.load(sys.argv[1]).astype(float)
 
-mask_file = sys.argv[2]
-mask_df = pd.read_table(mask_file, header=None, names=['mask'])
-#b_filtered = b[mask_df['mask'] == 1]
-print(b.shape)
-
 samples_file = sys.argv[3]
-metadata = pd.read_table(samples_file)
+metadata = pd.read_table(samples_file).set_index('ag_id')
 
 #Make sure the spot1 scores and matrix are matrix compatible
 spot1 = metadata['SPOT1_score'].to_numpy()
@@ -48,4 +43,4 @@ spot1_metrics = pd.DataFrame({
 })
 
 #Output Results
-spot1_metrics[order].to_csv("spot1_metrics.tsv", index=False, header=False, sep="\t")
+spot1_metrics[order].to_csv(sys.argv[4], index=False, sep="\t")

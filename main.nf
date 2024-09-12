@@ -7,94 +7,19 @@ include { normalizeMatrix } from "./normalize_signal"
 include { filterAndConvertToNumpy; filter_masterlist } from "./filter_peaks"
 
 params.conda = "$moduleDir/environment.yml"
-params.sample_weights = ""
 
 
-process annotate_masterlist {
-    conda params.conda
-    publishDir "${params.outdir}/annotations"
-    scratch true
-    label "highmem"
-    errorStrategy 'ignore'
-
-    input: 
-        tuple path(binary_matrix), path(filtered_masterlist), path(mask)
-
-    output:
-        path name
+process convert_to_anndata {
 
     script:
-    name = "masterlist_DHSs_${params.masterlist_id}.filtered.annotated.bed"
     """
-
-     echo "${binary_matrix}"
-     echo "${filtered_masterlist}"
-     head -10 ${filtered_masterlist}
-
-     python $moduleDir/bin/annotations/spot1Annotations.py \
-        ${binary_matrix} \
-	    ${mask} \
-        ${params.samples_file}
- 
-    bash $moduleDir/bin/annotations/simpleAnnotations.sh \
-        ${filtered_masterlist} \
-        ${params.encode3} \
-        ${params.gwas_catalog} \
-	    ${params.repeats} 
     
-    bash $moduleDir/bin/annotations/gencodeAnnotations.sh \
-        ${filtered_masterlist} \
-        ${params.gencode} \
-        ${params.chrom_sizes}
-
-
-    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" > masterlist_header.txt
-    
-    echo -e "spot1_std\tspot1_min\tspot1_mean\tspot1_median\tspot1_max\tspot1_Q1\tspot1_Q3" > spot1_header.txt
-    
-    echo -e 'n_gc\tpercent_gc\tn_mappable' > gc_header.txt
-
-	
-    faidx -i nucleotide -b ${filtered_masterlist} ${params.genome_fasta} \
-		| awk -v OFS="\t" \
-            'NR>1 { 
-                total=\$4+\$5+\$6+\$7+\$8;
-                cg=\$6+\$7;
-                print \$1, \$2-1, \$3, cg, cg/total; }' \
-		| bedmap --delim "\t" --echo \
-			--bases-uniq - ${params.mappable_file} \
-        | cut -f4- \
-        > gc_content.txt
-
-    paste masterlist_header.txt \
-        simpleAnnotations_header.txt \
-        gencodeAnnotations_header.txt \
-        spot1_header.txt \
-        gc_header.txt > header.txt
-    
-    paste ${filtered_masterlist} \
-        simpleAnnotations.txt \
-        gencode_annotations.txt \
-        spot1_metrics.tsv \
-        gc_content.txt \
-        | cat header.txt - > ${name}
- 
     """
 }
 
-workflow annotateMasterlist {
-    index_and_mask = Channel.of(tuple(
-        file("${params.outdir}/masks/masterlist_no_header/masterlist_DHSs.blacklistfiltered.bed"), 
-        file("${params.outdir}/masks/masterlist.filtered_DHS.mask.txt")
-        )
-    )
-
-    Channel.fromPath("${params.outdir}/annotations/binary.filtered.matrix.npy")
-        | combine(index_and_mask)
-        | annotate_masterlist
-}
 
 workflow {
+    params.base_dir = params.outdir
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
@@ -106,7 +31,7 @@ workflow {
     
     unfiltered_masterlist = Channel.fromPath(params.index_file)
 
-    samples_order = get_samples_order()
+    samples_order = Channel.fromPath("${params.base_dir}/samples_order.txt")
 
     // Generate matrices
     raw_matrices = generateMatrices(
@@ -126,6 +51,11 @@ workflow {
         )
 		| annotate_masterlist
 }
+
+
+
+
+
 
 
 

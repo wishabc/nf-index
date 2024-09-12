@@ -5,7 +5,7 @@ masterlist=$1
 encode3=$2
 gwas_catalog=$3
 repeats=$4
-
+$outfile=$5
 #Bedops command to print whether or not the masterlist file overlaps an encode3 DHS and by how much
 bedmap --echo --echo-map --bp-ovr 1 --indicator --bases-uniq-f ${masterlist} ${encode3} \
 | awk -F'|' '{print $(NF-1)"\t"$NF}'> is_encode3.txt
@@ -109,8 +109,8 @@ bedmap --echo-map --fraction-both 1 tmp.masterlist.bed3 dhs_annotated_all-repeat
 | awk -F'\t' '{if($1 == "") print """\t""""\t"""; else print}' \
 > repeats.txt
 
-paste is_encode3.txt gwas_catalog_count.txt repeats.txt > simpleAnnotations.txt
-echo -e "is_encode3\tencode3_ovr-fraction\tnum_gwasCatalog_variants\trepeat_class\trepeat_family\trepeat_name" > simpleAnnotations_header.txt
+echo -e "is_encode3\tencode3_ovr-fraction\tnum_gwasCatalog_variants\trepeat_class\trepeat_family\trepeat_name" > ${outfile}
+paste is_encode3.txt gwas_catalog_count.txt repeats.txt >> ${outfile}
 
 echo "Finished Repeat Annotations"
 

@@ -53,13 +53,12 @@ process filter_masterlist {
     publishDir "${params.outdir}/masks", pattern: "*.mask.txt"
 
     input:
-        tuple path(binary_matrix), path(masterlist, name: 'masterlist.bed')
+        tuple val(prefix), path(binary_matrix), path(masterlist, name: 'masterlist.bed')
     
     output:
 	    tuple path(non_zero_rows), path(filtered_masterlist), path(filtered_mask), path(only_autosomes_masterlist), path(only_autosomes_mask)
 
     script:
-    prefix = "masterlist"
     non_zero_rows = "${prefix}.non_zero_rows.mask.txt"
     filtered_masterlist = "${prefix}_DHSs.blacklistfiltered.bed"
     filtered_mask = "${prefix}.filtered_DHS.mask.txt"
@@ -88,7 +87,8 @@ process filter_masterlist {
     
     awk 'NR==FNR {mask1[NR]=\$0; next} \
         {print mask1[FNR] * \$0}' \
-        ${filtered_mask} autosomes.mask.txt > ${only_autosomes_mask}
+        ${filtered_mask} \
+        autosomes.mask.txt > ${only_autosomes_mask}
 
 	awk 'NR==FNR {mask[NR]=\$0; next} mask[FNR] == 1' \
 		${only_autosomes_mask} ${masterlist} > ${only_autosomes_masterlist}
@@ -99,31 +99,31 @@ workflow filterAndConvertToNumpy {
     take:
         masterlist
         raw_matrices
+
     main:
         masterlist_and_mask = raw_matrices 
-            | filter { it[0] == 'binary'}
-            | map(it -> it[1])
+            | filter { it[0].startsWith('binary') }
             | combine(masterlist)
             | filter_masterlist
 
         raw_np = raw_matrices
             | convert_to_numpy
 
-        w_autosomes_matrices = raw_np 
-            | combine(
-                masterlist_and_mask.map(it -> it[2])
-            )
+        // w_autosomes_matrices = raw_np 
+        //     | combine(
+        //         masterlist_and_mask.map(it -> it[2])
+        //     )
 
-        npy_matrices = raw_np
-            | map(it -> tuple("${it[0]}.only_autosomes", it[1]))
-            | combine(
-                masterlist_and_mask.map(it -> it[4])
-            )
-            | mix(w_autosomes_matrices)
-            | apply_filter
+        // npy_matrices = raw_np
+        //     | map(it -> tuple("${it[0]}.only_autosomes", it[1]))
+        //     | combine(
+        //         masterlist_and_mask.map(it -> it[4])
+        //     )
+        //     | mix(w_autosomes_matrices)
+        //     | apply_filter
     emit:
         masterlist_and_mask
-        npy_matrices
+        raw_np
 }
 
 workflow {

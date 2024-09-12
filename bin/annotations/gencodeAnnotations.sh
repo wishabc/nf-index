@@ -4,7 +4,7 @@
 masterlist=$1
 gencode=$2
 chromSize=$3
-
+outfile=$4
 ##################################
 #Parse Gencode File (utr updated)#
 ##################################
@@ -402,8 +402,7 @@ closest-features --closest --no-ref --dist ${masterlist} tss.bed \
 
 
 echo "Finished Distance to TSS"
-
-paste dist_gene.txt gene_body.txt exon_subfamily.txt is_coding.txt > gencode_annotations.txt
-echo -e "dist_tss\tgene\tgene_body\texon_subgroup\tis_coding" > gencodeAnnotations_header.txt
+echo -e "dist_tss\tgene\tgene_body\texon_subgroup\tis_coding" > ${outfile}
+paste dist_gene.txt gene_body.txt exon_subfamily.txt is_coding.txt >> ${outfile}
 
 echo "Finished Gencode Annotation"

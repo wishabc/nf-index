@@ -160,10 +160,11 @@ process write_rows {
         tuple path(chunk_file), path(chunks_order), path(samples_order)
 
     output:
-        path binary
+        tuple val(prefix), path(binary)
 
     script:
-    binary = "${chunk_file.baseName}.binary.txt"
+    prefix = "binary.index"
+    binary = "${chunk_file.baseName}.${prefix}.txt"
     """
     $moduleDir/bin/index_scripts/writeRowsPerChunkForMatrices \
         ${samples_order} \
@@ -183,11 +184,10 @@ process collect_chunks {
         tuple val(prefix), path("chunks/*")
     
     output:
-        tuple val(new_prefix), path(matrix)
+        tuple val(prefix), path(matrix)
 
     script:
-    new_prefix = "index.${prefix}"
-    matrix = "matrix.${new_prefix}.mtx.gz"
+    matrix = "${prefix}.raw.matrix.mtx.gz"
     """
     ls chunks/ \
         | wc -l \
@@ -201,6 +201,58 @@ process collect_chunks {
         | gzip > ${matrix}
     """
 }
+
+process annotate_masterlist {
+    conda params.conda
+    publishDir "${params.outdir}"
+    scratch true
+    label "highmem"
+    errorStrategy 'ignore'
+
+    input: 
+        tuple path(binary_matrix), path(samples_order), path(masterlist)
+
+    output:
+        path name
+
+    script:
+    name = "masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
+    """
+     python $moduleDir/bin/annotations/spot1Annotations.py \
+        ${binary_matrix} \
+        ${samples_order} \
+        ${params.samples_file} \
+        spot1_metrics.txt
+ 
+    bash $moduleDir/bin/annotations/simpleAnnotations.sh \
+        ${masterlist} \
+        ${params.encode3} \
+        ${params.gwas_catalog} \
+	    ${params.repeats} \
+        simple_annotations.txt
+    
+    bash $moduleDir/bin/annotations/gencodeAnnotations.sh \
+        ${masterlist} \
+        ${params.gencode} \
+        ${params.chrom_sizes} \
+        gencode_annotations.txt
+
+    bash $moduleDir/bin/annotations/gcContentAnnotations.sh \
+        ${masterlist} \
+        ${params.genome_fasta} \
+        ${params.mappable_file} \
+        gc_content.txt
+
+    echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end\tmean_signal" \
+        | cat - ${masterlist} \
+        | paste - \
+            simple_annotations.txt \
+            gencode_annotations.txt \
+            spot1_metrics.txt \
+            gc_content.txt > ${name}
+    """
+}
+
 
 workflow buildIndex {
     take:
@@ -222,23 +274,35 @@ workflow buildIndex {
 
         chunks_order = index
             | get_chunks_order
-        
-        process_chunk.out[1]
+
+        samples_order = get_samples_order()
+
+        binary_matrix = process_chunk.out[1]
             | combine(chunks_order)
-            | combine(get_samples_order())
+            | combine(samples_order)
             | write_rows
-            | collect(sort: true)
-            | map(it -> tuple("binary", it))
-            | collect_chunks
+            | groupTuple()
+            | collect_chunks // binary.index, binary.index.raw.matrix.mtx.gz
+            | filterAndConvertToNumpy // binary.raw.
+        
+        annotated_index = binary_matrix[1] // binary matrix
             | map(it -> it[1])
+            | combine(samples_order)
             | combine(index)
-            | filter_masterlist
-
-        collect_chunks.out
-            | convert_to_numpy
-
+            | annotate_masterlist
     emit:
-        index
+        annotated_index
+}
+
+workflow annotateMasterlist {
+    params.base_dir = params.outdir
+    Channel.of(
+        tuple(
+            file("${params.base_dir}/raw/binary.index.raw.matrix.npy"),
+            file("${params.base_dir}/samples_order.txt"),
+            file("${params.base_dir}/unfiltered_masterlist/masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed")
+        )
+    ) | annotate_masterlist
 }
 
 workflow {
