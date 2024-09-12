@@ -15,9 +15,9 @@ process convert_index_to_anndata {
         ${masterlist} \
         ${samples_order} \
         ${binary_matrix} \
-        ${masks} \
         ${params.samples_file} \
-        ${name}
+        ${name} \
+        ${masks}
     """
 }
 
