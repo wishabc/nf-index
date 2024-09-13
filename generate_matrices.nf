@@ -32,9 +32,7 @@ process bed2saf {
 	script:
 	name = "masterlist.saf"
 	"""
-	cat ${masterlist} \
-        | grep -v "^#" \
-		| awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' > ${name}
+	awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' ${masterlist} > ${name}
 	"""
 }
 
@@ -56,7 +54,7 @@ process generate_binary_counts {
     """
     bedmap --fraction-either 0.5 \
         --indicator \
-        <(grep -v "^#" ${masterlist}) \
+        ${masterlist} \
         ${peaks_file} > ${name}
     """
 }
@@ -83,7 +81,7 @@ process extract_max_density {
         | awk -v OFS='\t' '{print \$1,\$2,\$3,"${ag_id}",\$4}' \
         | bedmap --sweep-all \
             --delim "\t" \
-            --max <(grep -v "^#" ${masterlist}) - \
+            --max ${masterlist} - \
         | sed 's/\\<NAN\\>/0/g'
         > ${name}
     """
