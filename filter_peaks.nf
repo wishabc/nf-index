@@ -51,7 +51,7 @@ process filter_masterlist {
     publishDir "${params.outdir}/masks"
 
     input:
-        tuple val(prefix), path(binary_matrix), path(masterlist, name: 'masterlist.bed')
+        tuple val(prefix), path(binary_matrix), path(masterlist, name: 'masterlist.bed'), val(singletons_strategy)
     
     output:
 	    tuple path(non_zero_rows), path(blacklist_rows), path(filtered_mask), path(only_autosomes_mask)
@@ -83,7 +83,7 @@ process filter_masterlist {
         ${non_zero_rows} \
         ${blacklist_rows} \
         ${filtered_mask} \
-        --singletons_strategy ${params.singletons_strategy}
+        --singletons_strategy ${singletons_strategy}
     """
 }
 
@@ -97,6 +97,7 @@ workflow filterAndConvertToNumpy {
             | filter_masterlist
 
         raw_np = raw_matrices
+            | map(it -> tuple(it[0], it[1]))
             | convert_to_numpy
 
     emit:
@@ -106,18 +107,21 @@ workflow filterAndConvertToNumpy {
 
 workflow {
     params.base_dir = params.outdir
+    singletons_strategy = Channel.of('keep_all')
 
     matrices = Channel.of('binary', 'counts')
         | map(it -> tuple(it, file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
         | combine(Channel.fromPath(params.index_file))
+        | combine(singletons_strategy)
         | filterAndConvertToNumpy
 }
 
 workflow getMasks {
     params.base_dir = params.outdir
-
+    singletons_strategy = Channel.of('keep_all')
     matrices = Channel.fromPath("${params.base_dir}/raw_matrices/matrix.binary.mtx.gz")
-        | combine(params.index_file)
+        | combine(Channel.fromPath(params.index_file))
+        | combine(singletons_strategy)
         | filter_masterlist
 }
 

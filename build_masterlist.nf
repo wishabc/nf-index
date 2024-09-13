@@ -285,6 +285,7 @@ workflow buildIndex {
             | groupTuple()
             | collect_chunks // prefix, matrix
             | combine(index)
+            | combine(Channel.of('filter_median'))
             | filterAndConvertToNumpy
         
         out = binary_matrix[1] // prefix, np_matrix
