@@ -4,7 +4,7 @@ nextflow.enable.dsl = 2
 include { get_samples_order } from "./build_masterlist"
 //include { convert_to_h5 } from "./variance_partition"
 include { normalizeMatrix } from "./normalize_signal"
-include { filterAndConvertToNumpy; filter_masterlist } from "./filter_peaks"
+include { filterAndConvertToNumpy; convert_to_numpy } from "./filter_peaks"
 
 params.conda = "$moduleDir/environment.yml"
 
@@ -217,6 +217,6 @@ workflow {
         bams_hotspots
     ) 
         | combine(unfiltered_masterlist)
-        | filterAndConvertToNumpy
+        | convert_to_numpy
     
 }
