@@ -27,7 +27,7 @@ if __name__ == '__main__':
     row_masks = {}
     for row_mask in sys.argv[6:]:
         row_mask_name = os.path.basename(row_mask).replace('.mask.txt', '')
-        mask = np.loadtxt(row_mask, dtype=bool).set_index('ag_id')
+        mask = np.loadtxt(row_mask, dtype=bool)
         row_masks[row_mask_name] = mask
 
 
