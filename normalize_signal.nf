@@ -146,5 +146,5 @@ workflow {
     matrices = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
         | extract_from_anndata
 
-    out = normalizeMatrix(anndata, Channel.empty())
+    out = normalizeMatrix(matrices, Channel.empty())
 }
