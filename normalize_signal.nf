@@ -7,7 +7,6 @@ def non_required_arg(value, key) {
 
 
 process extract_from_anndata {
-
     conda params.conda
 
     input:
@@ -97,11 +96,9 @@ process deseq2 {
 
 workflow normalizeMatrix {
 	take:
-		anndata 
+		matrices  // binary_matrix, count_matrix, samples_order, masterlist
 		normalization_params
 	main:
-        matrices = anndata
-            | extract_from_anndata // binary_matrix, count_matrix, samples_order, masterlist
 
 		lowess_params = normalization_params
 			| filter { it.name =~ /lowess_params/ }
@@ -132,16 +129,19 @@ workflow existingModel {
     if (!file(params.template_run_dir).exists()) {
         error "Template directory ${params.template_run_dir} does not exist!"
     }
-    
-    anndata = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
 
     existing_params = Channel.fromPath("${params.template_run_dir}/params/*")
 
-    out = normalizeMatrix(anndata, existing_params)
+    matrices = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
+        | extract_from_anndata 
+
+    out = normalizeMatrix(matrices, existing_params)
 }
 
 // De-novo normalization
 workflow {
-    anndata = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
+    matrices = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
+        | extract_from_anndata
+
     out = normalizeMatrix(anndata, Channel.empty())
 }
