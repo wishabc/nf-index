@@ -8,22 +8,10 @@ include { add_matrices_to_anndata } from "./convert_to_anndata"
 params.conda = "$moduleDir/environment.yml"
 
 
-def copy_file(filepath) {
-    if (params.index_dir != params.outdir) {
-        f = file(filepath)
-        if (!f.exists()) {
-            error "File not found: ${filepath}"
-        }
-        file(params.outdir).mkdir()
-        f.copyTo("${params.outdir}/${f.name}")
-    }
-
-}
-
-
 process extract_meta_from_anndata {
     conda params.conda
-    
+    label "medmem"
+
     input:
         path anndata
 
