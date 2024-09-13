@@ -17,8 +17,8 @@ def main(rows_meta, cols_meta, matrix, masks):
 if __name__ == '__main__':
     annotated_masterlist = pd.read_table(sys.argv[1]).set_index('dhs_id')
     samples_order = np.loadtxt(sys.argv[2], dtype=str)
-    #matrix = csr_matrix(np.load(sys.argv[3]))
-    matrix = np.zeros((len(annotated_masterlist), len(samples_order)), dtype=bool).T
+    matrix = csr_matrix(np.load(sys.argv[3]).T)
+    #matrix = np.zeros((len(annotated_masterlist), len(samples_order)), dtype=bool).T
 
     samples_meta = pd.read_table(sys.argv[4]).set_index('ag_id').loc[samples_order]
 
