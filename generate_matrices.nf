@@ -15,7 +15,7 @@ def copy_file(filepath) {
             error "File not found: ${filepath}"
         }
         file(params.outdir).mkdir()
-        file(filepath).copyTo("${params.outdir}/${filepath.name}")
+        f.copyTo("${params.outdir}/${f.name}")
     }
 
 }
