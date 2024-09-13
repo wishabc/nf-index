@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
+include { variancePartition } from "./variance_partition"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""

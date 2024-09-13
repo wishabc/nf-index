@@ -174,7 +174,9 @@ workflow generateMatrices {
             | mix(cols)
             | mix(density_cols) // suffix, column
             | combine(samples_order) // suffix, column, samples_order
-            | groupTuple(by: [0, 2]) // suffix, columns, samples_order
+            | map(it -> tuple(groupKey(it[0], it[2].countLines()), it[1]))
+            | groupTuple(by: 0) // suffix, columns
+            | combine(samples_order) // suffix, columns, samples_order
             | generate_matrix
     emit:
         out
