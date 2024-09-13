@@ -22,6 +22,8 @@ def copy_file(filepath) {
 
 
 process extract_meta_from_anndata {
+    conda params.conda
+    
     input:
         path anndata
 
