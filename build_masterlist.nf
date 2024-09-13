@@ -283,7 +283,8 @@ workflow buildIndex {
             | combine(samples_order)
             | write_rows
             | groupTuple()
-            | collect_chunks // binary.index, binary.index.raw.matrix.mtx.gz
+            | collect_chunks // prefix, matrix
+            | combine(index)
             | filterAndConvertToNumpy
         
         out = binary_matrix[1]
