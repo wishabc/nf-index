@@ -7,7 +7,7 @@ import os
 
 
 def main(rows_meta, cols_meta, matrix, masks):
-    adata = ad.AnnData(X=matrix.T, obs=cols_meta, var=rows_meta)
+    adata = ad.AnnData(X=matrix, obs=cols_meta, var=rows_meta)
     for mask_name, mask in masks.items():
         adata.varm[mask_name] = mask
 
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     annotated_masterlist = pd.read_table(sys.argv[1]).set_index('dhs_id')
     samples_order = np.loadtxt(sys.argv[2], dtype=str)
     #matrix = csr_matrix(np.load(sys.argv[3]))
-    matrix = np.zeros((len(annotated_masterlist), len(samples_order)), dtype=bool)
+    matrix = np.zeros((len(annotated_masterlist), len(samples_order)), dtype=bool).T
 
     samples_meta = pd.read_table(sys.argv[4]).set_index('ag_id').loc[samples_order]
 
