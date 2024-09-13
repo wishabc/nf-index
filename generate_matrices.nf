@@ -5,13 +5,18 @@ include { get_samples_order } from "./build_masterlist"
 //include { convert_to_h5 } from "./variance_partition"
 include { normalizeMatrix } from "./normalize_signal"
 include { filterAndConvertToNumpy; convert_to_numpy } from "./filter_peaks"
+include { add_matrices_to_anndata } from "./convert_to_anndata"
+
 
 params.conda = "$moduleDir/environment.yml"
 
 
-def symlink_file(filepath) {
+def copy_file(filepath) {
     if (params.index_dir != params.outdir) {
         f = file(filepath)
+        if (!f.exists()) {
+            error "File not found: ${filepath}"
+        }
         file(filepath).copyTo("${params.outdir}/${filepath.name}")
     }
 
@@ -199,10 +204,12 @@ workflow {
         ))
     unfiltered_masterlist_path = "${params.index_dir}/masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
     samples_order_path = "${params.index_dir}/samples_order.txt"
+    index_anndata_path = "${params.index_dir}/index.anndata.h5ad"
 
     if (params.index_dir != params.outdir) {
-        symlink_file(unfiltered_masterlist_path)
-        symlink_file(samples_order_path)
+        copy_file(unfiltered_masterlist_path)
+        copy_file(samples_order_path)
+        copy_file(index_anndata_path)
     }
 
     unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
@@ -211,12 +218,16 @@ workflow {
 
 
     // Generate matrices
-    filters_and_matrices = generateMatrices(
+    matrices = generateMatrices(
         unfiltered_masterlist,
         samples_order,
         bams_hotspots
     ) 
         | combine(unfiltered_masterlist)
         | convert_to_numpy
+        | map(it -> it[1])
+        | collect(sort: true, flat: true)
+    
+    add_matrices_to_anndata(matrices, index_anndata_path)
     
 }
