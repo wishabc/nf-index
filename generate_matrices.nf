@@ -202,11 +202,13 @@ workflow {
     unfiltered_masterlist_path = "${params.index_dir}/masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
     samples_order_path = "${params.index_dir}/samples_order.txt"
     index_anndata_path = "${params.index_dir}/index.anndata.h5ad"
-
+    print "Directory with output of build_masterlist workflow - params.index_dir = ${params.index_dir}"
     if (params.index_dir != params.outdir) {
         copy_file(unfiltered_masterlist_path)
         copy_file(samples_order_path)
         copy_file(index_anndata_path)
+    } else {
+        
     }
 
     unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
@@ -220,13 +222,13 @@ workflow {
         samples_order,
         bams_hotspots
     ) 
-    //     | convert_to_numpy
-    //     | map(it -> it[1])
-    //     | collect(sort: true, flat: true)
+        | convert_to_numpy
+        | map(it -> it[1])
+        | collect(sort: true, flat: true)
     
-    // add_matrices_to_anndata(
-    //     matrices,
-    //     Channel.fromPath(index_anndata_path)
-    // )
+    add_matrices_to_anndata(
+        matrices,
+        Channel.fromPath(index_anndata_path)
+    )
     
 }
