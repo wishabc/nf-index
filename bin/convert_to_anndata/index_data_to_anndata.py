@@ -21,8 +21,9 @@ def main(rows_meta, cols_meta, matrix, masks):
 
         adata.varm[mask_name] = mask
     
-    adata.obsm['n_peaks'] = adata.X.tocsc().sum(axis=0)
-    adata.varm['n_contributing_samples'] = adata.X.sum(axis=0)
+
+    adata.obsm['n_peaks'] = adata.X.sum(axis=1).A1.squeeze()
+    adata.varm['n_contributing_samples'] = adata.X.sum(axis=0).A1.squeeze()
     adata.varm['autosomal_pseudo_reproduced_dhs'] = adata.varm['autosomal_dhs'] & adata.varm['pseudo_reproduced_dhs']
 
     return adata
