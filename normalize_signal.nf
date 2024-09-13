@@ -68,7 +68,7 @@ process normalize_matrix {
 
 process deseq2 {
 	conda params.conda
-	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
+	publishDir "${params.outdir}/normalization", pattern: "${prefix}*.npy"
 	publishDir "${params.outdir}/params", pattern: "${prefix}*.RDS"
 	label "bigmem"
 

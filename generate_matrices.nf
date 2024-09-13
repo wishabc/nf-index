@@ -138,15 +138,16 @@ process generate_matrix {
 	"""
     awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order} > file_list.txt
 
-    touch concatenated_output_final.txt
+    split -l 400 \
+        file_list.txt \
+        batch_file_list_
 
-    # Loop through the rest of the batches
-    xargs -a file_list.txt -n 1000 | while read -r batch; do
-        paste "concatenated_output_final.txt" <(paste \$batch) | sed 's/^\t//' > "tmp.txt"
-        mv tmp.txt concatenated_output_final.txt
+    for batch_file in batch_file_list_*; do
+        batch_output="batch_\${batch_file##*_}.txt"
+        paste \$(cat \$batch_file) > \$batch_output
     done
 
-    gzip -c concatenated_output_final.txt > ${name}
+    paste batch_*.txt | gzip -c > ${name}
 	"""
 }
 
