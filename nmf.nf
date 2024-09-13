@@ -79,18 +79,6 @@ process add_metadata {
 }
 
 
-workflow runNMF {
-    take:
-        hyperparams 
-    main:
-        out = hyperparams
-            | fit_nmf
-            | visualize_nmf
-        add_metadata()
-    emit:
-        out
-}
-
 // nextflow run ~/projects/SuperIndex/nf-index/nmf.nf -profile Altius -resume
 workflow {
     Channel.fromPath(params.nmf_params_list)
@@ -107,11 +95,14 @@ workflow {
             row?.peaks_weights,
             row?.extra_params
             ))
-        | runNMF
+        | fit_nmf
+        | visualize_nmf
+    add_metadata()
 }
 
 // Entry for visuzizations only
 workflow visualize {
+    println "Visualizing NMF results from params.nmf_params_list = ${params.nmf_params_list}"
     Channel.fromPath(params.nmf_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(

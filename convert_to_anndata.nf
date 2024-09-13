@@ -48,3 +48,27 @@ process add_matrices_to_anndata {
         ${matrices}
     """
 }
+
+process add_normalized_matrices_to_anndata {
+    conda params.conda
+    label "highmem"
+    publishDir params.outdir
+
+    input:
+        path anndata
+        path matrices
+        path normalization_params
+    
+    output:
+        path name
+
+    script:
+    name = "index+matrices+normalized.anndata.h5ad"
+    """
+    python3 $moduleDir/bin/convert_to_anndata/matrices_data_to_anndata.py \
+        ${anndata} \
+        ${params.samples_file} \
+        ${name} \
+        ${matrices}
+    """
+}

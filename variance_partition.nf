@@ -47,6 +47,7 @@ process sort_bed {
     """
 
 }
+
 workflow variancePartition {
     take:
         masterlist
