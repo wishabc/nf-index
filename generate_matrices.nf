@@ -148,7 +148,7 @@ process generate_matrix {
     touch concatenated_output_final.txt
 
     # Loop through the rest of the batches
-    xargs -a file_list.txt -n 500 | while read -r batch; do
+    xargs -a file_list.txt -n 1000 | while read -r batch; do
         paste "concatenated_output_final.txt" <(paste \$batch) | sed 's/^\t//' > "tmp.txt"
         mv tmp.txt concatenated_output_final.txt
     done
