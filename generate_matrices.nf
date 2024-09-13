@@ -170,9 +170,9 @@ workflow generateMatrices {
             | extract_max_density
 
         cols = unfiltered_masterlist
-			| bed2saf // 
-			| combine(bams_hotspots)
-            | map()
+			| bed2saf // saf_masterlist
+			| combine(bams_hotspots) // saf_masterlist, id, bam, bam_index, peaks, density
+            | map(it -> tuple(it[0], it[1], it[2], it[3]))
 			| count_tags
 
         all_cols = unfiltered_masterlist
