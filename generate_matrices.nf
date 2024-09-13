@@ -214,6 +214,7 @@ workflow {
     unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
 
     samples_order = Channel.fromPath(samples_order_path)
+        | view()
 
 
     // Generate matrices
