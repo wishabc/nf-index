@@ -200,7 +200,8 @@ workflow {
             row.ag_id,
             file(row.cram_file),
             file(row?.cram_index ?: "${row.cram_file}.crai"),
-            file(row.peaks_file)
+            file(row.peaks_file),
+            file(row.normalized_density_bw)
         ))
     unfiltered_masterlist_path = "${params.index_dir}/masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
     samples_order_path = "${params.index_dir}/samples_order.txt"
