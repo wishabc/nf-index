@@ -1,10 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { get_samples_order } from "./build_masterlist"
-//include { convert_to_h5 } from "./variance_partition"
-include { normalizeMatrix } from "./normalize_signal"
-include { filterAndConvertToNumpy; convert_to_numpy } from "./filter_peaks"
+include { convert_to_numpy } from "./filter_peaks"
 include { add_matrices_to_anndata } from "./convert_to_anndata"
 
 
@@ -229,6 +226,9 @@ workflow {
         | map(it -> it[1])
         | collect(sort: true, flat: true)
     
-    add_matrices_to_anndata(matrices, index_anndata_path)
+    add_matrices_to_anndata(
+        matrices,
+        Channel.fromPath(index_anndata_path)
+    )
     
 }
