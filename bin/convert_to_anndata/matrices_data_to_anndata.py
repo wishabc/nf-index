@@ -26,5 +26,4 @@ if __name__ == '__main__':
 
     matrices = sys.argv[4:]
 
-    result = main(adata_obj, samples_meta, matrices)
-    result.write(sys.argv[3])
+    main(adata_obj, samples_meta, matrices).write(sys.argv[3])

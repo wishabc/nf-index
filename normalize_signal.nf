@@ -1,9 +1,14 @@
+#!/usr/bin/env nextflow
+nextflow.enable.dsl = 2
+
+
+params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
+
 
 def non_required_arg(value, key) {
     return value ? "${key} ${value}": ""
 }
-
 
 
 process extract_from_anndata {
@@ -116,8 +121,6 @@ workflow normalizeMatrix {
             | combine(matrices.map(it -> tuple(it[1], it[2])))
 
 		out = deseq2(sf, deseq_params).matrix
-
-        //h5_file = convert_to_h5(binary_matrix, out, samples_order)
 
 	emit:
 		out
