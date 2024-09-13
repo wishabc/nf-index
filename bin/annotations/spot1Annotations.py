@@ -8,13 +8,13 @@ import gc
 
 
 #Load in Binary Matrix and Metadata for subsampled SPOT score
-b = np.load(sys.argv[1]).astype(np.float16)
+b = np.load(sys.argv[1]).astype(float)
+samples_order = np.loadtxt(sys.argv[2], dtype=str)
 
-samples_file = sys.argv[3]
-metadata = pd.read_table(samples_file).set_index('ag_id')
+metadata = pd.read_table(sys.argv[3]).set_index('ag_id').loc[samples_order]
 
 #Make sure the spot1 scores and matrix are matrix compatible
-spot1 = metadata['SPOT1_score'].to_numpy().astype(np.float32)
+spot1 = metadata['SPOT1_score'].to_numpy()
 b *= spot1[None, :]
 
 #Replace 0's with nan's for computation
