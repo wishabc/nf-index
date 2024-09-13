@@ -93,7 +93,7 @@ process count_tags {
 	scratch true
 
 	input:
-		tuple path(saf), val(id), path(bam_file), path(bam_file_index), path(peaks_file)
+		tuple path(saf), val(id), path(bam_file), path(bam_file_index)
 
 	output:
 		tuple val(suffix), path(name)
