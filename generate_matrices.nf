@@ -216,19 +216,19 @@ workflow {
 
 
     // Generate matrices
-    matrices = generateMatrices(
-        unfiltered_masterlist,
-        samples_order,
-        bams_hotspots
-    ) 
-        | combine(unfiltered_masterlist)
-        | convert_to_numpy
-        | map(it -> it[1])
-        | collect(sort: true, flat: true)
+    // matrices = generateMatrices(
+    //     unfiltered_masterlist,
+    //     samples_order,
+    //     bams_hotspots
+    // ) 
+    //     | combine(unfiltered_masterlist)
+    //     | convert_to_numpy
+    //     | map(it -> it[1])
+    //     | collect(sort: true, flat: true)
     
-    add_matrices_to_anndata(
-        matrices,
-        Channel.fromPath(index_anndata_path)
-    )
+    // add_matrices_to_anndata(
+    //     matrices,
+    //     Channel.fromPath(index_anndata_path)
+    // )
     
 }
