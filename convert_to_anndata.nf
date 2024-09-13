@@ -6,7 +6,8 @@ process convert_index_to_anndata {
     publishDir "${params.outdir}"
 
     input:
-        tuple path(binary_matrix), path(samples_order), path(masterlist), path(masks)
+        tuple path(binary_matrix), path(samples_order), path(masterlist)
+        path masks
     
     output:
         path name

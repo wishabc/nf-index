@@ -319,6 +319,9 @@ workflow {
 
     annotated_masterlist = index_data[0]
         | annotate_masterlist // matrix, samples_order, annotated_index
-        | combine(masks)
-        | convert_index_to_anndata
+
+    convert_index_to_anndata(
+        annotated_masterlist
+        index_data[1].collect(sort: true, flat: true)
+    )
 }
