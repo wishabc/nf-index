@@ -137,8 +137,7 @@ process generate_matrix {
 	scratch true
 
 	input:
-		tuple val(prefix), path(files)
-        path samples_order
+		tuple val(prefix), path(files), path(samples_order)
 
 	output:
 		tuple val(prefix), path(name)
@@ -178,14 +177,14 @@ workflow generateMatrices {
             | map(it -> it[1])
             | first()
 
-        all_cols = data
+        out = data
             | map(it -> tuple(it[0], it[3], it[6]))
             | generate_binary_counts
             | mix(cols)
-            | mix(density_cols)
-            | groupTuple(size: samples_order.countLines().toInteger())
-
-        out = generate_matrix(all_cols, samples_order)
+            | mix(density_cols) // suffix, column
+            | combine(samples_order) // suffix, column, samples_order
+            | groupTuple(by: [0, 2]) // suffix, columns, samples_order
+            | generate_matrix
     emit:
         out
 }
