@@ -4,6 +4,28 @@ def non_required_arg(value, key) {
     return value ? "${key} ${value}": ""
 }
 
+
+
+process extract_from_anndata {
+
+    input:
+        path anndata
+    
+    output:
+        tuple path("binary.matrix.npy"), path("counts.matrix.npy"), path(samples_order), path(masterlist)
+
+    script:
+    samples_order = "samples_order.txt"
+    masterlist = "masterlist.no_header.bed"
+    """
+    python3 $moduleDir/bin/convert_to_anndata/extract_from_anndata.py \
+        ${anndata} \
+        ${masterlist} \
+        ${samples_order} \
+        --extra_layers binary,counts \
+        --dhs_mask final_qc_passing_dhs
+    """
+}
 process normalize_matrix {
 	conda params.conda
 	label "bigmem"
@@ -49,8 +71,7 @@ process deseq2 {
 	label "bigmem"
 
 	input:
-		tuple path(scale_factors), path(signal_matrix)
-		path samples_order
+		tuple path(scale_factors), path(signal_matrix), path(samples_order)
 		path norm_params, stageAs: "params/*"
 
 	output:
@@ -74,28 +95,28 @@ process deseq2 {
 
 workflow normalizeMatrix {
 	take:
-		matrices
-		samples_order
+		anndata 
 		normalization_params
 	main:
-        binary_matrix = matrices
-            | filter(it -> it[0] == "binary.only_autosomes")
-            | map(it -> it[1])
-        count_matrix = matrices
-            | filter(it -> it[0] == "counts.only_autosomes")
-            | map(it -> it[1])
+        matrices = anndata
+            | extract_from_anndata // binary_matrix, count_matrix, samples_order, masterlist
+
 		lowess_params = normalization_params
 			| filter { it.name =~ /lowess_params/ }
 			| ifEmpty(file("empty.params"))
 			| collect(sort: true)
-
-		sf = normalize_matrix(binary_matrix, count_matrix, lowess_params).scale_factors
-            | combine(count_matrix)
-
-		deseq_params = normalization_params
+        
+        deseq_params = normalization_params
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(file("empty.params"))
-		out = deseq2(sf, samples_order, deseq_params).matrix
+
+		sf = normalize_matrix(
+            matrices.map(it -> tuple(it[0], it[1])),
+            lowess_params
+        ).scale_factors
+            | combine(matrices.map(it -> tuple(it[1], it[2])))
+
+		out = deseq2(sf, deseq_params).matrix
 
         //h5_file = convert_to_h5(binary_matrix, out, samples_order)
 
@@ -109,22 +130,16 @@ workflow existingModel {
     if (!file(params.template_run_dir).exists()) {
         error "Template directory ${params.template_run_dir} does not exist!"
     }
-    matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
-        | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy")))
     
-    samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
+    anndata = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
 
     existing_params = Channel.fromPath("${params.template_run_dir}/params/*")
 
-    out = normalizeMatrix(matrices, samples_order, existing_params)
+    out = normalizeMatrix(anndata, existing_params)
 }
 
 // De-novo normalization
 workflow {
-    matrices = Channel.of('binary.only_autosomes', 'counts.only_autosomes')
-        | map(it -> tuple(it, file("${params.outdir}/${it}.filtered.matrix.npy", checkIfExists: true)))
-    
-    samples_order = Channel.fromPath("${params.outdir}/samples_order.txt")
-
-    out = normalizeMatrix(matrices, samples_order, Channel.empty())
+    anndata = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
+    out = normalizeMatrix(anndata, Channel.empty())
 }

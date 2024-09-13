@@ -28,28 +28,6 @@ process variance_partition {
     """
 }
 
-process convert_to_h5 {
-    conda params.conda
-    publishDir params.outdir
-    label "highmem"
-    
-    input:
-        path binary_matrix
-        path vst_matrix
-        path samples_names
-
-    output:
-        path name
-    script:
-    name = "matrices.h5"
-    """
-    python3 $moduleDir/bin/variance_partition/convert_to_h5.py \
-        ${vst_matrix} \
-        ${samples_names} \
-        ${name} \
-        --binary ${binary_matrix}
-    """
-}
 process sort_bed {
 
     conda params.conda
@@ -93,16 +71,6 @@ workflow variancePartition {
         out  
 }
 
-params.masterlist = "${params.outdir}/masterlist.only_autosomes.filtered.bed"
-
-workflow convertToH5 {
-    h5 = convert_to_h5(
-        Channel.fromPath("${params.outdir}/binary.only_autosomes.filtered.matrix.npy"),
-        Channel.fromPath("${params.outdir}/deseq_normalized.only_autosomes.filtered.sf.vst.npy"),
-        Channel.fromPath("${params.outdir}/samples_order.txt")
-    )
-    variancePartition(Channel.fromPath(params.masterlist), h5)
-}
 
 workflow {
     params.h5file = "${params.outdir}/matrices.h5"

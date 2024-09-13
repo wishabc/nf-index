@@ -15,6 +15,8 @@ def main(adata, meta, matrices):
         matrix = csr_matrix(np.load(matrix).T)
         adata.layers[matrix_name] = matrix
 
+    adata.varm['projected_peaks_binary'] = adata.X.sum(axis=0).A1.squeeze()
+    adata.varm['final_qc_passing_dhs'] = (adata.varm['projected_peaks_binary'] > 0) & adata.varm['autosomal_pseudo_reproduced_dhs']
     return adata
 
 
