@@ -2,7 +2,20 @@
 nextflow.enable.dsl = 2
 
 include { get_samples_order } from "./build_masterlist"
+//include { convert_to_h5 } from "./variance_partition"
+include { normalizeMatrix } from "./normalize_signal"
+include { filterAndConvertToNumpy; filter_masterlist } from "./filter_peaks"
 
+params.conda = "$moduleDir/environment.yml"
+
+
+def symlink_file(filepath) {
+    if (params.index_dir != params.outdir) {
+        f = file(filepath)
+        file(filepath).copyTo("${params.outdir}/${filepath.name}")
+    }
+
+}
 
 process bed2saf {
 	conda params.conda
@@ -138,6 +151,7 @@ process generate_matrix {
 	"""
 }
 
+
 workflow generateMatrices {
     take:
         unfiltered_masterlist
@@ -173,68 +187,39 @@ workflow generateMatrices {
         out
 }
 
+
 workflow {
-    unfiltered_masterlist = Channel.fromPath(params.index_file)
-    samples_order = get_samples_order()
-    
+    // Workflow to generate binary and count matrices from the samples file and existing masterlist
+    // Also it filters and creates necessary masks for normalization step
+
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id,
             file(row.cram_file),
             file(row?.cram_index ?: "${row.cram_file}.crai"),
-            file(row.peaks_file),
-            file(row.normalized_density_bw)
+            file(row.peaks_file)
         ))
+    unfiltered_masterlist_path = "${params.index_dir}/masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
+    samples_order_path = "${params.index_dir}/samples_order.txt"
+
+    if (params.index_dir != params.outdir) {
+        symlink_file(unfiltered_masterlist_path)
+        symlink_file(samples_order_path)
+    }
+
+    unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
+
+    samples_order = Channel.fromPath(samples_order_path)
+
+
+    // Generate matrices
+    filters_and_matrices = generateMatrices(
+        unfiltered_masterlist,
+        samples_order,
+        bams_hotspots
+    ) 
+        | combine(unfiltered_masterlist)
+        | filterAndConvertToNumpy
     
-    generateMatrices(unfiltered_masterlist, samples_order, bams_hotspots)
 }
-
-
-
-
-
-// DEFUNC
-    // """
-    // # choose only one peak in masterlist with LARGEST overlap for each peak in peaks_file
-    // bedtools intersect \
-    //     -a <(cut -f1-4,11 ${masterlist}) \
-    //     -b <(unstarch ${peaks_file} | cut -f1-3) \
-    //     -wo \
-    //     -F 0.5 \
-    //     | sort -k6,6 -k7,7n \
-    //     | awk -F'\t' -v OFS='\t' \
-    //         '{
-    //             overlap = \$NF;
-    //             key = \$6":"\$7"-"\$8;
-    //             summit_dist = sqrt(((\$7 + \$8) / 2 - \$5)^2);
-    //             if (key != prev_key) {
-    //                 if (NR > 1) {
-    //                     print current_line;
-    //                 }
-    //                 max_overlap = -1;
-    //                 prev_summit_dist = 1000000;
-    //                 prev_key = key;
-    //             }
-                
-    //             if (overlap > max_overlap || (overlap == max_overlap && summit_dist < prev_summit_dist)) {
-    //                 max_overlap = overlap;
-    //                 prev_summit_dist = summit_dist;
-    //                 current_line = \$4;
-    //             }
-    //         } END { print current_line }
-    //         ' \
-    //     | awk -F'\t' \
-    //         'NR==FNR \
-    //             { 
-    //                 if (\$1 in ids) {
-    //                     print "Warning: Repetitive element detected in input IDs: "\$1 > "/dev/stderr";
-    //                     next;
-    //                 }
-    //                 ids[\$1]; 
-    //                 next 
-                
-    //             } \
-    //             { print (\$4 in ids ? 1 : 0) }' \
-    //             - ${masterlist} > ${name}
-    // """
