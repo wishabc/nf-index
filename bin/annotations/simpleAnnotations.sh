@@ -5,7 +5,7 @@ masterlist=$1
 encode3=$2
 gwas_catalog=$3
 repeats=$4
-$outfile=$5
+outfile=$5
 #Bedops command to print whether or not the masterlist file overlaps an encode3 DHS and by how much
 bedmap --echo --echo-map --bp-ovr 1 --indicator --bases-uniq-f ${masterlist} ${encode3} \
 | awk -F'|' '{print $(NF-1)"\t"$NF}'> is_encode3.txt
