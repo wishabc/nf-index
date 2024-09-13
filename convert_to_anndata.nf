@@ -3,10 +3,13 @@
 process convert_index_to_anndata {
     conda params.conda
     label "highmem"
-    publishDir "${params.outdir}/anndata"
+    publishDir "${params.outdir}"
 
     input:
         tuple path(binary_matrix), path(samples_order), path(masterlist), path(masks)
+    
+    output:
+        path name
 
     script:
     name = "index.anndata.h5ad"
