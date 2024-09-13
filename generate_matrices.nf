@@ -181,7 +181,7 @@ workflow generateMatrices {
             | generate_binary_counts
             | mix(cols)
             | mix(density_cols)
-            | groupTuple(size: samples_order.countLines())
+            | groupTuple(size: samples_order.countLines().toInteger())
 
         out = generate_matrix(all_cols, samples_order)
     emit:
