@@ -20,20 +20,25 @@ def copy_file(filepath) {
 
 }
 
-process bed2saf {
-	conda params.conda
 
-	input:
-		path masterlist
+process extract_meta_from_anndata {
+    input:
+        path anndata
 
-	output:
-		path name
+    output:
+        tuple path(masterlist), path(samples_order), path(saf_masterlist)
 
-	script:
-	name = "masterlist.saf"
-	"""
-	awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' ${masterlist} > ${name}
-	"""
+    script:
+    masterlist = "masterlist.no_header.bed"
+    samples_order = "samples_order.txt"
+    saf_masterlist = "masterlist.no_header.saf"
+    """
+    python3 $moduleDir/bin/convert_to_anndata/extract_from_anndata.py \
+        ${anndata} \
+        ${masterlist} \
+        ${samples_order}
+    awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' ${masterlist} > ${saf_masterlist}
+    """
 }
 
 
@@ -155,42 +160,26 @@ process generate_matrix {
 	"""
 }
 
-process remove_header {
-    input:
-        path masterlist
-
-    output:
-        path name
-
-    script:
-    name = "${masterlist.baseName}.no_header.bed"
-    """
-    grep -v "^#" ${masterlist} > ${name}
-    """
-
-}
-
 
 workflow generateMatrices {
     take:
-        unfiltered_masterlist
-        samples_order
-        bams_hotspots
+        data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density
+
     main:
-        density_cols = unfiltered_masterlist 
-            | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, density
-            | map(it -> tuple(it[0], it[1], it[5]))
+        density_cols = data // masterlist, samples_order, saf_masterlist 
+            | map(it -> tuple(it[0], it[3], it[7]))
             | extract_max_density
 
-        cols = unfiltered_masterlist
-			| bed2saf // saf_masterlist
-			| combine(bams_hotspots) // saf_masterlist, id, bam, bam_index, peaks, density
-            | map(it -> tuple(it[0], it[1], it[2], it[3]))
+        cols = data
+            | map(it -> tuple(it[2], it[3], it[4], it[5]))
 			| count_tags
+        
+        samples_order = data
+            | map(it -> it[1])
+            | first()
 
-        all_cols = unfiltered_masterlist
-            | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, density
-            | map(it -> tuple(it[0], it[1], it[4]))
+        all_cols = data
+            | map(it -> tuple(it[0], it[3], it[6]))
             | generate_binary_counts
             | mix(cols)
             | mix(density_cols)
@@ -213,35 +202,21 @@ workflow {
             file(row.peaks_file),
             file(row.normalized_density_bw)
         ))
-    unfiltered_masterlist_path = "${params.index_dir}/masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
-    samples_order_path = "${params.index_dir}/samples_order.txt"
-    index_anndata_path = "${params.index_dir}/index.anndata.h5ad"
 
-    if (params.index_dir != params.outdir) {
-        copy_file(unfiltered_masterlist_path)
-        copy_file(samples_order_path)
-        copy_file(index_anndata_path)
-    }
+    index_anndata = Channel.fromPath(params.index_anndata)
 
-    unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
-        | remove_header
-
-    samples_order = file(samples_order_path)
-
-
-    // Generate matrices
-    matrices = generateMatrices(
-        unfiltered_masterlist,
-        samples_order,
-        bams_hotspots
-    ) 
+    matrices = index_anndata
+        | extract_meta_from_anndata
+        | combine(bams_hotspots)
+        | generateMatrices
         | convert_to_numpy
         | map(it -> it[1])
         | collect(sort: true, flat: true)
+
     
     add_matrices_to_anndata(
         matrices,
-        Channel.fromPath(index_anndata_path)
+        index_anndata
     )
     
 }
