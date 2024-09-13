@@ -5,7 +5,7 @@ process convert_to_numpy {
     label "highmem"
 
     input:
-        tuple val(prefix), path(matrix), path(masterlist)
+        tuple val(prefix), path(matrix)
 
     output:
         tuple val(prefix), path(name)
