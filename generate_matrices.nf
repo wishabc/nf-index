@@ -157,6 +157,21 @@ process generate_matrix {
 	"""
 }
 
+process remove_header {
+    input:
+        path masterlist
+
+    output:
+        path name
+
+    script:
+    name = "${masterlist.baseName}.no_header.bed"
+    """
+    grep -v "^#" ${masterlist} > ${name}
+    """
+
+}
+
 
 workflow generateMatrices {
     take:
@@ -208,11 +223,10 @@ workflow {
         copy_file(unfiltered_masterlist_path)
         copy_file(samples_order_path)
         copy_file(index_anndata_path)
-    } else {
-        
     }
 
     unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
+        | remove_header
 
     samples_order = file(samples_order_path)
 
