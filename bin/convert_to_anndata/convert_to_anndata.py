@@ -7,7 +7,7 @@ import os
 
 
 def main(rows_meta, cols_meta, matrix, masks):
-    adata = ad.AnnData(X=matrix, obs=cols_meta, var=rows_meta)
+    adata = ad.AnnData(X=matrix.T, obs=cols_meta, var=rows_meta)
     for mask_name, mask in masks.items():
         adata.varm[mask_name] = mask
 
