@@ -190,6 +190,7 @@ workflow generateMatrices {
 
 
 workflow {
+    println "Directory with output of build_masterlist workflow - params.index_dir = ${params.index_dir}"
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
@@ -202,7 +203,7 @@ workflow {
     unfiltered_masterlist_path = "${params.index_dir}/masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
     samples_order_path = "${params.index_dir}/samples_order.txt"
     index_anndata_path = "${params.index_dir}/index.anndata.h5ad"
-    print "Directory with output of build_masterlist workflow - params.index_dir = ${params.index_dir}"
+
     if (params.index_dir != params.outdir) {
         copy_file(unfiltered_masterlist_path)
         copy_file(samples_order_path)
