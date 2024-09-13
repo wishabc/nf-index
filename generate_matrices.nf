@@ -125,6 +125,7 @@ process generate_matrix {
 	label "medmem"
 	cpus 2
 	scratch true
+    tag "${prefix}"
 
 	input:
 		tuple val(prefix), path(files), path(samples_order)

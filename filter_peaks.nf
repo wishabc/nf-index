@@ -1,3 +1,8 @@
+nextflow.enable.dsl = 2
+
+
+params.conda = "$moduleDir/environment.yml"
+
 
 process convert_to_numpy {
     conda params.conda
@@ -82,22 +87,11 @@ workflow filterAndConvertToNumpy {
         raw_np
 }
 
-workflow {
-    params.base_dir = params.outdir
-    singletons_strategy = Channel.of('keep_all')
 
-    matrices = Channel.of('binary', 'counts')
-        | map(it -> tuple(it, file("${params.base_dir}/raw_matrices/matrix.${it}.mtx.gz")))
-        | combine(Channel.fromPath(params.index_file))
-        | combine(singletons_strategy)
-        | filterAndConvertToNumpy
-}
-
-workflow getMasks {
+workflow  {
     params.base_dir = params.outdir
-    singletons_strategy = Channel.of('keep_all')
+    singletons_strategy = Channel.of()
     matrices = Channel.fromPath("${params.base_dir}/raw_matrices/matrix.binary.mtx.gz")
-        | combine(Channel.fromPath(params.index_file))
-        | combine(singletons_strategy)
+        | map(it -> tuple("binary", it, file(params.index_file), 'filter_median'))
         | filter_masterlist
 }
