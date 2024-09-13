@@ -135,7 +135,7 @@ workflow existingModel {
 
     existing_params = Channel.fromPath("${params.template_run_dir}/params/*")
 
-    matrices = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
+    matrices = Channel.fromPath(params.matrices_anndata)
         | extract_from_anndata 
 
     out = normalizeMatrix(matrices, existing_params)
@@ -143,7 +143,7 @@ workflow existingModel {
 
 // De-novo normalization
 workflow {
-    matrices = Channel.fromPath("${params.outdir}/index+matrices.anndata.h5ad")
+    matrices = Channel.fromPath(params.matrices_anndata)
         | extract_from_anndata
 
     out = normalizeMatrix(matrices, Channel.empty())
