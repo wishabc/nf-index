@@ -7,6 +7,7 @@ dependencies:
   - matplotlib
   - pandas=2.1.0
   - nextflow=23.10.1
+  - anndata
   - wiggletools
   - ucsc-bedgraphtobigwig
   - ucsc-bigwigtobedgraph
