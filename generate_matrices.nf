@@ -189,9 +189,6 @@ workflow generateMatrices {
 
 
 workflow {
-    // Workflow to generate binary and count matrices from the samples file and existing masterlist
-    // Also it filters and creates necessary masks for normalization step
-
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
