@@ -90,8 +90,7 @@ workflow filterAndConvertToNumpy {
 
 workflow  {
     params.base_dir = params.outdir
-    singletons_strategy = Channel.of()
-    matrices = Channel.fromPath("${params.base_dir}/raw_matrices/matrix.binary.mtx.gz")
-        | map(it -> tuple("binary", it, file(params.index_file), 'filter_median'))
+    matrices = Channel.fromPath("${params.base_dir}/raw_matrices/binary.index.raw.matrix.npy")
+        | map(it -> tuple("binary", it, file("${params.base_dir}/masterlist_DHSs_all_chunks.Altius.annotated.bed"), 'filter_median'))
         | filter_masterlist
 }

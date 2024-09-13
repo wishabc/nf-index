@@ -89,8 +89,8 @@ process merge_chunks {
         path filepaths_nonovl_any
     
     output:
-        path "masterlist*${params.masterlist_id}*", emit: all
-        path "masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed", emit: non_merged
+        path "masterlist*Altius*", emit: all
+        path "masterlist_DHSs_Altius_all_chunkIDs.bed", emit: non_merged
     
     script:
     """
@@ -115,7 +115,7 @@ process merge_chunks {
         > chrom_sizes.bed
     
     bash $moduleDir/bin/index_scripts/code_gen_masterlist.sh \
-        ${params.masterlist_id} \
+        Altius \
         chrom_sizes.bed \
         ./
     """
@@ -217,7 +217,7 @@ process annotate_masterlist {
         tuple path(binary_matrix), path(samples_order), path(name)
 
     script:
-    name = "masterlist_DHSs_all_chunks.${params.masterlist_id}.annotated.bed"
+    name = "masterlist_DHSs_all_chunks.Altius.annotated.bed"
     """
      python $moduleDir/bin/annotations/spot1Annotations.py \
         ${binary_matrix} \
@@ -304,7 +304,7 @@ workflow annotateMasterlist {
         tuple(
             file("${params.index_dir}/raw/binary.index.raw.matrix.npy"),
             file("${params.index_dir}/samples_order.txt"),
-            file("${params.index_dir}/unfiltered_masterlist/masterlist_DHSs_${params.masterlist_id}_all_chunkIDs.bed")
+            file("${params.index_dir}/unfiltered_masterlist/masterlist_DHSs_Altius_all_chunkIDs.bed")
         )
     ) | annotate_masterlist
 }

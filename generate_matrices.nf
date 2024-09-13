@@ -57,7 +57,6 @@ process generate_binary_counts {
 
 process extract_max_density {
     conda params.conda
-    publishDir "${params.outdir}/density"
     tag "${ag_id}"
     scratch true
 
