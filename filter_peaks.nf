@@ -21,29 +21,6 @@ process convert_to_numpy {
     """
 }
 
-process apply_filter {
-	publishDir "${publishDirectory}", pattern: "${name}"
-	label "highmem"
-    tag "${prefix}"
-	conda params.conda
-
-	input:
-		tuple val(prefix), path(matrix), path(mask)
-	
-	output:
-		tuple val(prefix), path(name)
-	
-	script:
-	name = "${prefix}.filtered.matrix.npy"
-    publishDirectory = prefix.contains("only_autosomes") ?  "${params.outdir}" : "${params.outdir}/annotations"
-	"""
-    python3 $moduleDir/bin/apply_mask.py \
-        ${matrix} \
-        ${name} \
-        ${mask}
-	"""
-}
-
 
 process filter_masterlist {
     conda params.conda
@@ -140,3 +117,27 @@ workflow getMasks {
         //     )
         //     | mix(w_autosomes_matrices)
         //     | apply_filter
+
+
+// process apply_filter {
+// 	publishDir "${publishDirectory}", pattern: "${name}"
+// 	label "highmem"
+//     tag "${prefix}"
+// 	conda params.conda
+
+// 	input:
+// 		tuple val(prefix), path(matrix), path(mask)
+	
+// 	output:
+// 		tuple val(prefix), path(name)
+	
+// 	script:
+// 	name = "${prefix}.filtered.matrix.npy"
+//     publishDirectory = prefix.contains("only_autosomes") ?  "${params.outdir}" : "${params.outdir}/annotations"
+// 	"""
+//     python3 $moduleDir/bin/apply_mask.py \
+//         ${matrix} \
+//         ${name} \
+//         ${mask}
+// 	"""
+// }
