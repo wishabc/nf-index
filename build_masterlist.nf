@@ -321,7 +321,7 @@ workflow {
         | annotate_masterlist // matrix, samples_order, annotated_index
 
     convert_index_to_anndata(
-        annotated_masterlist
-        index_data[1].collect(sort: true, flat: true)
+        annotated_masterlist,
+        index_data[1] | collect(sort: true, flat: true)
     )
 }
