@@ -287,9 +287,11 @@ workflow buildIndex {
             | combine(index)
             | filterAndConvertToNumpy
         
-        out = binary_matrix[1]
+        out = binary_matrix[1] // prefix, np_matrix
+            | map(it -> it[1])
             | combine(samples_order)
             | combine(index)
+            
 
     emit:
         out
