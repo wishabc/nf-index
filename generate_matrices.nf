@@ -48,10 +48,11 @@ process generate_binary_counts {
 		tuple path(masterlist), val(id), path(peaks_file)
     
     output:
-        path name
+        tuple val(suffix), path(name)
     
     script:
-    name = "${id}.binary.txt"
+    suffix = 'binary'
+    name = "${id}.${suffix}.txt"
     """
     bedmap --fraction-either 0.5 \
         --indicator \
@@ -71,10 +72,11 @@ process extract_max_density {
         tuple path(masterlist), val(ag_id), path(density_bw)
     
     output:
-        path name
+        tuple val(suffix), path(name)
     
     script:
-    name = "${ag_id}.density.txt"
+    suffix = "density"
+    name = "${ag_id}.${suffix}.txt"
     """
     bigWigToBedGraph ${density_bw} tmp.bg 
     cat tmp.bg \
@@ -96,10 +98,11 @@ process count_tags {
 		tuple path(saf), val(id), path(bam_file), path(bam_file_index), path(peaks_file)
 
 	output:
-		path name
+		tuple val(suffix), path(name)
 
 	script:
-    name = "${id}.counts.txt"
+    suffix = "counts"
+    name = "${id}.${suffix}.txt"
     ext = bam_file.extension
 	"""
     if [ ${ext} != 'bam' ]; then 
@@ -165,25 +168,20 @@ workflow generateMatrices {
             | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, density
             | map(it -> tuple(it[0], it[1], it[5]))
             | extract_max_density
-            | collect(sort: true)
-            | map(it -> tuple("density", it))
 
         cols = unfiltered_masterlist
 			| bed2saf // 
 			| combine(bams_hotspots)
             | map()
 			| count_tags
-			| collect(sort: true)
-            | map(it -> tuple("counts", it))
 
         all_cols = unfiltered_masterlist
             | combine(bams_hotspots) // masterlist, id, bam, bam_index, peaks, density
             | map(it -> tuple(it[0], it[1], it[4]))
             | generate_binary_counts
-            | collect(sort: true)
-            | map(it -> tuple("binary", it))
             | mix(cols)
             | mix(density_cols)
+            | groupTuple(size: samples_order.countLines())
 
         out = generate_matrix(all_cols, samples_order)
     emit:
@@ -213,8 +211,7 @@ workflow {
 
     unfiltered_masterlist = Channel.fromPath(unfiltered_masterlist_path)
 
-    samples_order = Channel.fromPath(samples_order_path)
-        | view()
+    samples_order = file(samples_order_path)
 
 
     // Generate matrices
