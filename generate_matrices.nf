@@ -218,12 +218,11 @@ workflow {
 
 
     // Generate matrices
-    // matrices = generateMatrices(
-    //     unfiltered_masterlist,
-    //     samples_order,
-    //     bams_hotspots
-    // ) 
-    //     | combine(unfiltered_masterlist)
+    matrices = generateMatrices(
+        unfiltered_masterlist,
+        samples_order,
+        bams_hotspots
+    ) 
     //     | convert_to_numpy
     //     | map(it -> it[1])
     //     | collect(sort: true, flat: true)
