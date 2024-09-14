@@ -135,7 +135,7 @@ process generate_matrix {
 	script:
     name = "matrix.${prefix}.mtx.gz"
 	"""
-    awk '{print \$0"."${prefix}".txt"}' ${samples_order} > file_list.txt
+    awk '{print \$0".${prefix}.txt"}' ${samples_order} > file_list.txt
 
     split -l 400 -d -a 4 \
         file_list.txt \
