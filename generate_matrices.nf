@@ -144,7 +144,7 @@ process generate_matrix {
     flist=\$(ls batch_file_list_* | sort -t '_' -k 2 -n)
     for batch_file in \$flist; do
         batch_output="batch_\${batch_file##*_}.txt"
-        paste $(cat "\$batch_file" | xargs) > "\$batch_output"
+        paste \$(cat "\$batch_file" | xargs) > "\$batch_output"
     done
 
     # Combine all batch outputs, sorted numerically, and compress the final result
