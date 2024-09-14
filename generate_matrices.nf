@@ -135,18 +135,20 @@ process generate_matrix {
 	script:
     name = "matrix.${prefix}.mtx.gz"
 	"""
-    awk '{printf "%s ", \$0".${prefix}.txt"}' ${samples_order} > file_list.txt
+    awk '{print \$0"."${prefix}".txt"}' ${samples_order} > file_list.txt
 
-    split -l 400 \
+    split -l 400 -d -a 4 \
         file_list.txt \
         batch_file_list_
 
-    for batch_file in batch_file_list_*; do
+    flist=\$(ls batch_file_list_* | sort -t '_' -k 2 -n)
+    for batch_file in \$flist; do
         batch_output="batch_\${batch_file##*_}.txt"
-        paste \$(cat \$batch_file) > \$batch_output
+        paste $(cat "\$batch_file" | xargs) > "\$batch_output"
     done
 
-    paste batch_*.txt | gzip -c > ${name}
+    # Combine all batch outputs, sorted numerically, and compress the final result
+    paste \$flist | gzip -c > ${name}
 	"""
 }
 

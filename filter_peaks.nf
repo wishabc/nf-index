@@ -8,6 +8,7 @@ process convert_to_numpy {
     conda params.conda
     publishDir "${params.outdir}/raw_matrices"
     label "highmem"
+    tag "${prefix}"
 
     input:
         tuple val(prefix), path(matrix)
