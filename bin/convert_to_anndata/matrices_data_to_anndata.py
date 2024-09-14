@@ -5,7 +5,7 @@ import numpy as np
 import os
 import gc
 
-from .index_data_to_anndata import convert_to_sparse_if_needed
+from index_data_to_anndata import convert_to_sparse_if_needed
 
 def main(adata, meta, matrices):
     meta['index_peak_files'] = adata.obs['peaks_file']
