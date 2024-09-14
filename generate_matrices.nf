@@ -76,7 +76,7 @@ process extract_max_density {
         | bedmap --sweep-all \
             --delim "\t" \
             --max ${masterlist} - \
-        | sed 's/\\<NAN\\>/0/g'
+        | sed 's/\\<NAN\\>/0/g' \
         > ${name}
     """
 }
