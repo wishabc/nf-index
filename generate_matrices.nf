@@ -209,8 +209,8 @@ workflow {
 
     
     add_matrices_to_anndata(
+        index_anndata,
         matrices,
-        index_anndata
     )
     
 }
