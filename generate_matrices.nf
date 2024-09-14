@@ -148,7 +148,7 @@ process generate_matrix {
     done
 
     # Combine all batch outputs, sorted numerically, and compress the final result
-    paste \$flist | gzip -c > ${name}
+    paste \$(ls batch*.txt | sort -t '_' -k 2 -n) | gzip -c > ${name}
 	"""
 }
 
