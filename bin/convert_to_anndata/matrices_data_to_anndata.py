@@ -6,13 +6,14 @@ from scipy.sparse import csr_matrix
 import os
 import gc
 
+from .index_data_to_anndata import convert_to_sparse_if_needed
 
 def main(adata, meta, matrices):
     meta['index_peak_files'] = adata.obs['peaks_file']
     adata.obs = meta
     for matrix in matrices:
-        matrix_name = os.path.basename(matrix).replace('.npy', '').replace('binary.index.', '')
-        matrix = csr_matrix(np.load(matrix).T)
+        matrix_name = os.path.basename(matrix).replace('.raw.matrix.npy', '')
+        matrix = convert_to_sparse_if_needed(np.load(matrix).T)
         adata.layers[matrix_name] = matrix
 
     adata.varm['projected_peaks_binary'] = adata.X.sum(axis=0).A1.squeeze()
