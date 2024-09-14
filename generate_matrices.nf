@@ -173,7 +173,7 @@ workflow generateMatrices {
             | generate_binary_counts
             | mix(cols)
             | mix(density_cols) // suffix, column
-            | combine(samples_order.countLines()) // suffix, column, samples_order
+            | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
             | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
             | groupTuple(by: 0) // suffix, columns
             | combine(samples_order) // suffix, columns, samples_order
