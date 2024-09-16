@@ -192,13 +192,12 @@ workflow generateDensityMatrix {
             row.ag_id,
             file(row.normalized_density_bw)
         ))
-    samples_order = Channel.fromPath(params.index_anndata)
-        | extract_meta_from_anndata
-        | map(it -> it[1])
-        | first()
+    
+    samples_order = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/dnase-mouse0529/matrices/full/output/samples_order.txt')
 
-    out = extract_meta_from_anndata.out // masterlist, samples_order, saf_masterlist 
-        | map(it -> it[0])
+
+
+    out = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/dnase-mouse0529/matrices/full/output/unfiltered_masterlists/masterlist_DHSs_Altius_all_chunkIDs.bed')
         | combine(bams_hotspots)
         | extract_max_density
         | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
