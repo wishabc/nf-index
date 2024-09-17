@@ -65,6 +65,7 @@ process add_normalized_matrices_to_anndata {
     script:
     name = "index+matrices+normalized.anndata.zarr"
     """
+    echo 1
     python3 $moduleDir/bin/convert_to_anndata/add_normalized_matrices_to_anndata.py \
         ${anndata} \
         ${name} \
