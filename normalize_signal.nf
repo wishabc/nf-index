@@ -156,6 +156,7 @@ workflow {
     matrices = extract_from_anndata(anndata)
 
     out = normalizeMatrix(matrices, Channel.empty())
+        | map(it -> tuple([it[0], it[2], it[3]], [it[1], it[4], it[5]]))
 
     add_normalized_matrices_to_anndata(anndata, out)
 }
