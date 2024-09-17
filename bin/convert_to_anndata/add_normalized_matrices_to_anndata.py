@@ -9,8 +9,6 @@ import json
 
 
 def main(adata, matrices, params):
-
-    adata.shape = adata.varm['final_qc_passing_dhs']
     matrices_mapping = {
         os.path.basename(matrix).replace(
             '.only_autosomes.filtered', ''
@@ -18,7 +16,6 @@ def main(adata, matrices, params):
             '.npy', ''
         ): matrix for matrix in matrices
     }
-    
     add_matrices_to_anndata(adata, matrices_mapping)
     for param in params:
         if param.endswith('RDS'):
