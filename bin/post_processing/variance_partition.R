@@ -3,7 +3,7 @@ library(data.table)
 library(reticulate)
 np <- import("numpy")
 
-cat(Sys.time(), "- Finished imports\n")
+print("Finished imports\n")
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 7) {
   stop("At least six input arguments should be supplied", call.=FALSE)
@@ -31,7 +31,7 @@ data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count - 
 #     count=c(nrow(meta), count)
 # )
 
-cat(Sys.time(), "- Data loaded\n")
+print("Data loaded")
 print(dim(data))
 print(dim(meta))
 print(dim(dhs_meta))
@@ -41,7 +41,7 @@ row.names(data) <- row.names(dhs_meta)
 formula <- args[6]
 
 
-cat(Sys.time(), "- Fitting models\n")
+print("Fitting models")
 
 varPart <- fitExtractVarPartModel(data, formula, meta)
 
