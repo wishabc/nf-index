@@ -79,6 +79,9 @@ def convert_to_sparse_if_sufficently_sparse(matrix, threshold=0.7):
 def add_matrices_to_anndata(adata, matrices_mapping):
     for matrix_name, matrix in matrices_mapping.items():
         matrix = np.load(matrix).T
+        if matrix.dtype == np.float64:
+            matrix = matrix.astype(np.float32)
+
         if matrix.shape[0] != adata.shape[0]:
             raise ValueError(f"Matrix {matrix_name} has {matrix.shape[0]} samples, but the number of samples in anndata is {adata.shape[0]}")
         if matrix.shape[1] != adata.shape[1]:
