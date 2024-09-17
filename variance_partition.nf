@@ -52,7 +52,6 @@ workflow variancePartition {
     take:
         data // normalized_matrix, masterlist, samples_order, samples_file
     main:
-        params.chunk_size = 5000
         out = data
             | flatMap(it -> (1..it[1].countLines()))
             | collate(params.chunk_size, remainder=true)
