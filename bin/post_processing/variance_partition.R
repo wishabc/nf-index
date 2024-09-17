@@ -3,6 +3,7 @@ library(data.table)
 library(reticulate)
 np <- import("numpy")
 
+cat(Sys.time(), "- Finished imports\n")
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 7) {
   stop("At least six input arguments should be supplied", call.=FALSE)
