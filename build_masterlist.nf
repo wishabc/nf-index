@@ -259,6 +259,8 @@ workflow buildIndex {
     take:
         peaks
     main:
+        samples_order = get_samples_order()
+        
         chunks = peaks
             | collect(sort: true)
             | collate_and_chunk
@@ -275,8 +277,6 @@ workflow buildIndex {
 
         chunks_order = index
             | get_chunks_order
-
-        samples_order = get_samples_order()
 
         binary_matrix = process_chunk.out[1]
             | combine(chunks_order)
