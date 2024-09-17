@@ -15,7 +15,7 @@ def non_required_arg(value, key) {
 
 process extract_from_anndata {
     conda params.conda
-    label "medmem"
+    label "bigmem"
 
     input:
         val anndata
@@ -59,6 +59,7 @@ process normalize_matrix {
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
 	normalization_params = n ? "--model_params params/${n.baseName}" : ""
 	"""
+    export OMP_NUM_THREADS=${task.cpus}
 	normalize-matrix ${signal_matrix} \
         ${save_dir} \
         --prefix ${pref} \
