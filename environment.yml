@@ -36,4 +36,5 @@ dependencies:
   - bioconductor-rhdf5
   - tqdm
   - h5py
+  - pip
 prefix: /home/sabramov/miniconda3/envs/super-index
