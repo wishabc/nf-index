@@ -69,7 +69,7 @@ process add_normalized_matrices_to_anndata {
         ${anndata} \
         ${name} \
         ${masterlist_vp} \
-        ${formula} \
+        '${formula}' \
         ${matrices} \
         ${normalization_params}
     """
