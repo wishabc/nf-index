@@ -13,7 +13,7 @@ def main(adata, meta, matrices):
         matrix = convert_to_sparse_if_sufficently_sparse(np.load(matrix).T)
         adata.layers[matrix_name] = matrix
 
-    adata.varm['projected_peaks_binary'] = adata.X.sum(axis=0).A1.squeeze()
+    adata.varm['projected_peaks_binary'] = adata.X.to_memory().sum(axis=0).A1.squeeze()
     adata.varm['final_qc_passing_dhs'] = (adata.varm['projected_peaks_binary'] > 0) & adata.varm['autosomal_pseudo_reproduced_dhs']
     return adata
 
