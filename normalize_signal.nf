@@ -126,7 +126,11 @@ workflow normalizeMatrix {
             lowess_params
         )
 
-		out = deseq2(normalization.scale_factors, deseq_params).matrix
+        dat = normalization.scale_factors
+            | combine(matrices)
+            | map(it -> tuple(it[0], it[2], it[3]))
+
+		out = deseq2(dat, deseq_params).matrix
             | combine(deseq2.out.model_params)
             | combine(normalization.log_diffs)
             | combine(normalization.scale_factors)
