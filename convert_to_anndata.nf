@@ -10,7 +10,7 @@ process convert_index_to_anndata {
         path masks
     
     output:
-        path "${name}/**"
+        path("${name}/**", hidden: true, includeInputs: true)
 
     script:
     name = "index.anndata.zarr"
@@ -36,7 +36,7 @@ process add_matrices_to_anndata {
         path matrices
     
     output:
-        path "${name}/**"
+        path("${name}/**", hidden: true, includeInputs: true)
 
     script:
     name = "index+matrices.anndata.zarr"
@@ -60,7 +60,7 @@ process add_normalized_matrices_to_anndata {
         path normalization_params
     
     output:
-        path "${name}/**"
+        path("${name}/**", hidden: true, includeInputs: true)
 
     script:
     name = "index+matrices+normalized.anndata.zarr"

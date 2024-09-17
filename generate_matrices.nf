@@ -220,7 +220,7 @@ workflow {
             file(row.normalized_density_bw)
         ))
 
-    index_anndata = Channel.fromPath(params.index_anndata, type: 'any', relative: true)
+    index_anndata = Channel.fromPath(params.index_anndata, type: 'any', relative: true, hidden: true)
         | collect()
 
     matrices = index_anndata
