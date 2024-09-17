@@ -57,7 +57,7 @@ process add_normalized_matrices_to_anndata {
 
     input:
         val anndata
-        tuple path(matrices), path(normalization_params)
+        tuple path(matrices), path(normalization_params), path(masterlist_vp), val(formula)
     
     output:
         path("${name}/**", hidden: true, includeInputs: true)
@@ -68,6 +68,8 @@ process add_normalized_matrices_to_anndata {
     python3 $moduleDir/bin/convert_to_anndata/add_normalized_matrices_to_anndata.py \
         ${anndata} \
         ${name} \
+        ${masterlist_vp} \
+        ${formula} \
         ${matrices} \
         ${normalization_params}
     """

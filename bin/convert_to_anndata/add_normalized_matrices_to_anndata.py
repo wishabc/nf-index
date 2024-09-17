@@ -8,7 +8,7 @@ from rpy2.robjects import r
 import json
 
 
-def main(adata, matrices, params):
+def main(adata, matrices, params, formula, annotated_masterlist):
     matrices_mapping = {
         os.path.basename(matrix).replace(
             'normalized.only_autosomes.filtered.', ''
@@ -30,13 +30,20 @@ def main(adata, matrices, params):
                 adata.uns[f'norm_params_{key}'] = loaded_params[key]
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
-
+    adata.uns['formula'] = formula
+    adata.var = adata.var.join(annotated_masterlist)
     return adata
 
 
 if __name__ == '__main__':
     adata = read_zarr_backed(sys.argv[1])
-    matrices = sys.argv[3:6]
-    params = sys.argv[6:8]
-    adata = main(adata, matrices, params)
+    annotated_masterlist = pd.read_table(sys.argv[3]).set_index('V4')
+    annotated_masterlist = annotated_masterlist[
+        [x for x in annotated_masterlist.columns if not x.startswith('V')]
+    ]
+    formula = sys.argv[4]
+    matrices = sys.argv[5:8]
+    params = sys.argv[8:10]
+
+    adata = main(adata, matrices, params, formula, annotated_masterlist)
     adata.write_zarr(sys.argv[2])
