@@ -56,9 +56,10 @@ colnames(counts) <- sample_names
 
 # metadata <- read_delim(args[4], delim='\t', col_names=T)
 # #rownames(metadata) <- metadata$id
+colData <- data.frame(row.names=sample_names, sample_ids=sample_names)
 
 print('Making DESeq dataset')
-dds <- DESeqDataSetFromMatrix(countData=counts, colData=sample_names, design=~1)
+dds <- DESeqDataSetFromMatrix(countData=counts, colData=colData, design=~1)
 if (is.null(norm_factors)) {
   print("Calculating size factors")
   dds <- estimateSizeFactors(dds)
