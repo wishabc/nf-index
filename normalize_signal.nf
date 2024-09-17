@@ -59,6 +59,7 @@ process normalize_matrix {
 	n = norm_params.size() == 2 ? file(norm_params[0]) : ""
 	normalization_params = n ? "--model_params params/${n.baseName}" : ""
 	"""
+    export OPENBLAS_NUM_THREADS=${task.cpus}
     export OMP_NUM_THREADS=${task.cpus}
 	normalize-matrix ${signal_matrix} \
         ${save_dir} \
