@@ -136,7 +136,7 @@ workflow normalizeMatrix {
 
         vp = normalized_matrix
             | combine(matrices)
-            | map(it -> tuple(it[0], it[3], it[4], it[5], params.formula))
+            | map(it -> tuple(it[0], it[4], it[5], it[6], params.formula))
             | variancePartition
 
 		out = normalized_matrix
