@@ -11,7 +11,7 @@ import json
 def main(adata, matrices, params):
     matrices_mapping = {
         os.path.basename(matrix).replace(
-            '.only_autosomes.filtered', ''
+            'normalized.only_autosomes.filtered.', ''
         ).replace(
             '.npy', ''
         ): matrix for matrix in matrices
