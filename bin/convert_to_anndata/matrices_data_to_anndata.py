@@ -5,7 +5,7 @@ from helpers import read_zarr_backed, add_matrices_to_anndata
 
 
 def main(adata, meta, matrices):
-    meta['index_peaks_file'] = adata.obs['peaks_file']
+    meta['index_peaks_file'] = adata.obs['peaks_file'][:]
     adata.obs = meta
     matrices_mapping = {
         os.path.basename(matrix).replace('.raw.matrix.npy', ''): matrix 
