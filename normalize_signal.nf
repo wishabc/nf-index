@@ -165,7 +165,6 @@ workflow existingModel {
 
     out = normalizeMatrix(matrices, existing_params)
         
- 
     add_normalized_matrices_to_anndata(anndata, out)
 }
 

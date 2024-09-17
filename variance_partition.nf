@@ -68,9 +68,7 @@ workflow variancePartition {
                 skip: 1
             )
             | sort_bed
-            | combine(
-                data.map(it -> it[5])
-            )
+            | combine(data.map(it -> it[3]))
     emit:
         out  
 }
