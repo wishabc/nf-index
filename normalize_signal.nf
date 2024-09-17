@@ -15,6 +15,7 @@ def non_required_arg(value, key) {
 
 process extract_from_anndata {
     conda params.conda
+    label "medmem"
 
     input:
         val anndata
