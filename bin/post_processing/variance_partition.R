@@ -30,7 +30,7 @@ data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count - 
 #     count=c(nrow(meta), count)
 # )
 
-print('Data loaded')
+cat(Sys.time(), "- Data loaded\n")
 print(dim(data))
 print(dim(meta))
 print(dim(dhs_meta))
@@ -40,7 +40,7 @@ row.names(data) <- row.names(dhs_meta)
 formula <- args[6]
 
 
-print('Fitting model')
+cat(Sys.time(), "- Fitting models\n")
 
 varPart <- fitExtractVarPartModel(data, formula, sorted_metadata)
 
