@@ -8,7 +8,7 @@ process variance_partition {
     scratch true
 
     input:
-        tuple val(start_index), path(masterlist), path(h5file)
+        tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_order), path(samples_file)
     
     output:
         path name
@@ -18,10 +18,10 @@ process variance_partition {
     end_index = start_index + params.chunk_size - 1
     """
     Rscript $moduleDir/bin/variance_partition/variance_partition.R \
-        ${params.samples_file} \
+        ${samples_file} \
         ${start_index} \
         ${params.chunk_size} \
-        ${h5file} \
+        ${norm_matrix} \
         ${masterlist} \
         '${params.formula}' \
         ${name} 
@@ -50,16 +50,14 @@ process sort_bed {
 
 workflow variancePartition {
     take:
-        masterlist
-        h5file
+        data // normalized_matrix, masterlist, samples_order, samples_file
     main:
         params.chunk_size = 5000
-        out = masterlist
-            | flatMap(it -> (1..it.countLines()))
-            | collate(params.chunk_size)
+        out = data
+            | flatMap(it -> (1..it[1].countLines()))
+            | collate(params.chunk_size, remainder=true)
             | map(it -> it[0])
-            | combine(masterlist)
-            | combine(h5file)
+            | data // chunk_start, normalized_matrix, masterlist, samples_order, samples_file
             | variance_partition
             | collectFile(
                 name: "masterlist.vp_annotated.bed",
@@ -73,10 +71,10 @@ workflow variancePartition {
 }
 
 
-workflow {
-    params.h5file = "${params.outdir}/matrices.h5"
-    variancePartition(
-        Channel.fromPath(params.masterlist),
-        Channel.fromPath(params.h5file)
-    )
-}
+// workflow {
+//     params.h5file = "${params.outdir}/matrices.h5"
+//     variancePartition(
+//         Channel.fromPath(params.masterlist),
+//         Channel.fromPath(params.h5file)
+//     )
+// }

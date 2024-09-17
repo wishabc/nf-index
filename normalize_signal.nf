@@ -21,16 +21,18 @@ process extract_from_anndata {
         val anndata
     
     output:
-        tuple path("binary.matrix.npy"), path("counts.matrix.npy"), path(samples_order), path(masterlist)
+        tuple path("binary.matrix.npy"), path("counts.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
 
     script:
     samples_order = "samples_order.txt"
     masterlist = "masterlist.no_header.bed"
+    samples_meta = "samples_meta.txt"
     """
     python3 $moduleDir/bin/convert_to_anndata/extract_from_anndata.py \
         ${anndata} \
         ${masterlist} \
         ${samples_order} \
+        ${samples_meta} \
         --extra_layers binary counts \
         --dhs_mask_name final_qc_passing_dhs
     """
@@ -107,7 +109,7 @@ process deseq2 {
 
 workflow normalizeMatrix {
 	take:
-		matrices  // binary_matrix, count_matrix, samples_order, masterlist
+		matrices  // binary_matrix, count_matrix, samples_order, masterlist, samples_file
 		normalization_params
 
 	main:
@@ -129,8 +131,15 @@ workflow normalizeMatrix {
         dat = normalization.scale_factors
             | combine(matrices)
             | map(it -> tuple(it[0], it[2], it[3]))
+        
+        normalized_matrix = deseq2(dat, deseq_params).matrix
 
-		out = deseq2(dat, deseq_params).matrix
+        vp = normalized_matrix
+            | combine(matrices)
+            | map(it -> tuple(it[0], it[3], it[4], it[5]))
+            | variancePartition
+
+		out = normalized_matrix
             | combine(deseq2.out.model_params)
             | combine(normalization.log_diffs)
             | combine(normalization.scale_factors)

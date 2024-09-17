@@ -26,7 +26,9 @@ process extract_meta_from_anndata {
     python3 $moduleDir/bin/convert_to_anndata/extract_from_anndata.py \
         ${anndata} \
         ${masterlist} \
-        ${samples_order}
+        ${samples_order} \
+        samples_meta.txt
+
     awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' ${masterlist} > ${saf_masterlist}
     """
 }

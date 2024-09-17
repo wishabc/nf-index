@@ -7,11 +7,11 @@ from helpers import read_zarr_backed
 
 
 def main(anndata_obj, extra_keys):
-    samples_order = anndata_obj.obs.index
+    metadata = anndata_obj.obs
     masterlist = anndata_obj.var.reset_index()[['#chr', 'start', 'end', 'dhs_id']]
     
     matrices = {key: anndata_obj.layers[key] for key in extra_keys}
-    return samples_order, masterlist, matrices
+    return metadata, masterlist, matrices
 
 
 def convert_matrix_to_dense(matrix):
@@ -33,6 +33,7 @@ if __name__ == '__main__':
     args.add_argument('zarr', help='Path to zarr object')
     args.add_argument('index', help='Path where to save DHS index')
     args.add_argument('samples_order', help='Path where to save samples order')
+    args.add_argument('samples_meta', help='Path where to save samples metadata')
     args.add_argument('--extra_layers', nargs='+', help='Names of extra layers to extract from anndata', default=[])
     args.add_argument('--extra_layers_suffix', help='Suffix to add to the extra layers names', default='matrix')
     args.add_argument('--dhs_mask_name', help='Name of the varm layer containing DHS mask', default=None)
@@ -41,9 +42,10 @@ if __name__ == '__main__':
     if args.dhs_mask_name is not None:
         anndata = anndata[:, anndata.varm[args.dhs_mask_name]]
     
-    samples_order, index, matrices = main(anndata, args.extra_layers)
+    metadata, index, matrices = main(anndata, args.extra_layers)
     index.to_csv(args.index, sep='\t', index=False, header=False)
-    np.savetxt(args.samples_order, samples_order, fmt='%s')
+    np.savetxt(args.samples_order, metadata.index, fmt='%s')
+    metadata.reset_index().to_csv(args.samples_meta, sep='\t')
 
     for name, matrix in matrices.items():
         np.save(f"{name}.{args.extra_layers_suffix}.npy", convert_matrix_to_dense(matrix.T))

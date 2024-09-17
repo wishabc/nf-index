@@ -1,7 +1,7 @@
 library(variancePartition)
 library(data.table)
-library(rhdf5)
-
+library(reticulate)
+np <- import("numpy")
 
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) < 7) {
@@ -24,13 +24,14 @@ dhs_meta <- dhs_meta[start_index:(start_index + count - 1), ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
-data <- h5read(file_path, 'vst', 
-    start=c(1, start_index), 
-    count=c(nrow(meta), count)
-)
+data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count - 1), ]
+# data <- h5read(file_path, 'vst', 
+#     start=c(1, start_index), 
+#     count=c(nrow(meta), count)
+# )
 data <- t(data)
 
-sample_names <- h5read(file_path, 'sample_names')
+
 colnames(data) <- sample_names
 row.names(data) <- row.names(dhs_meta)
 
