@@ -8,7 +8,7 @@ process variance_partition {
     scratch true
 
     input:
-        tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_order), path(samples_file), val(formula)
+        tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_meta), val(formula)
     
     output:
         path name
@@ -18,12 +18,12 @@ process variance_partition {
     end_index = start_index + params.chunk_size - 1
     """
     Rscript $moduleDir/bin/post_processing/variance_partition.R \
-        ${samples_file} \
+        ${samples_meta} \
         ${start_index} \
         ${params.chunk_size} \
         ${norm_matrix} \
         ${masterlist} \
-        '${params.formula}' \
+        '${formula}' \
         ${name} 
     """
 }
