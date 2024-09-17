@@ -145,6 +145,7 @@ workflow normalizeMatrix {
             | combine(normalization.scale_factors)
             | combine(normalization.model_params)
             | combine(vp)
+            | map(it -> tuple([it[0], it[2], it[3]], [it[1], it[4], it[5]], it[6], it[7]))
 
 	emit:
 		out // deseq2_matrix, deseq2_model_params, log_diffs, scale_factors, lowess_params1, lowess_params2, vp_annotated_masterlist, formula
@@ -163,7 +164,7 @@ workflow existingModel {
     matrices = extract_from_anndata(anndata)
 
     out = normalizeMatrix(matrices, existing_params)
-        | map(it -> tuple([it[0], it[2], it[3]], [it[1], it[4], it[5]], it[6], it[7]))
+        
  
     add_normalized_matrices_to_anndata(anndata, out)
 }
@@ -174,7 +175,6 @@ workflow {
     matrices = extract_from_anndata(anndata)
 
     out = normalizeMatrix(matrices, Channel.empty())
-        | map(it -> tuple([it[0], it[2], it[3]], [it[1], it[4], it[5]]))
 
     add_normalized_matrices_to_anndata(anndata, out)
 }
