@@ -42,8 +42,7 @@ process normalize_matrix {
 	publishDir "${params.outdir}"
 
 	input:
-        path peaks_matrix
-		path signal_matrix
+        tuple path(peaks_matrix), path(signal_matrix)
 		path norm_params, stageAs: "params/*"
 
 	output:
@@ -106,6 +105,7 @@ workflow normalizeMatrix {
 	take:
 		matrices  // binary_matrix, count_matrix, samples_order, masterlist
 		normalization_params
+
 	main:
 
 		lowess_params = normalization_params
