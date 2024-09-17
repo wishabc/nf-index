@@ -17,7 +17,7 @@ process extract_from_anndata {
     conda params.conda
 
     input:
-        path anndata
+        val anndata
     
     output:
         tuple path("binary.matrix.npy"), path("counts.matrix.npy"), path(samples_order), path(masterlist)
