@@ -33,6 +33,8 @@ process extract_from_anndata {
         --dhs_mask_name final_qc_passing_dhs
     """
 }
+
+
 process normalize_matrix {
 	conda params.conda
 	label "bigmem"
@@ -93,7 +95,6 @@ process deseq2 {
 		${signal_matrix} \
 		${scale_factors} \
 		${samples_order} \
-		${params.samples_file} \
 		${prefix} \
 		${normalization_params}
 	"""
@@ -122,6 +123,7 @@ workflow normalizeMatrix {
             | combine(matrices.map(it -> tuple(it[1], it[2])))
 
 		out = deseq2(sf, deseq_params).matrix
+
 
 	emit:
 		out

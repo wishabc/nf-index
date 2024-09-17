@@ -24,17 +24,17 @@ np <- import("numpy")
 args = commandArgs(trailingOnly=TRUE)
 
 # test if there is at least four arguments: if not, return an error
-if (length(args) < 5) {
-  stop("At least five input arguments should be supplied", call.=FALSE)
+if (length(args) < 4) {
+  stop("At least four input arguments should be supplied", call.=FALSE)
 }
 
-prefix <- args[5]
+prefix <- args[4]
 
 params_f <- NULL
 
-if (length(args) >= 6) {
+if (length(args) >= 5) {
   print("Taking existing params")
-  params_f <- args[6]
+  params_f <- args[5]
 }
 
 print("Reading input matrix")
@@ -54,11 +54,11 @@ sample_names <- sample_names$V1
 counts <- as.data.frame(counts, stringsAsFactors = F)
 colnames(counts) <- sample_names
 
-metadata <- read_delim(args[4], delim='\t', col_names=T)
-#rownames(metadata) <- metadata$id
+# metadata <- read_delim(args[4], delim='\t', col_names=T)
+# #rownames(metadata) <- metadata$id
 
 print('Making DESeq dataset')
-dds <- DESeqDataSetFromMatrix(countData=counts, colData=metadata, design=~1)
+dds <- DESeqDataSetFromMatrix(countData=counts, colData=sample_names, design=~1)
 if (is.null(norm_factors)) {
   print("Calculating size factors")
   dds <- estimateSizeFactors(dds)
