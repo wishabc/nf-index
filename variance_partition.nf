@@ -56,7 +56,7 @@ workflow variancePartition {
             | flatMap(it -> (1..it[1].countLines()))
             | collate(params.chunk_size, remainder=true)
             | map(it -> it[0])
-            | data // chunk_start, normalized_matrix, masterlist, samples_order, samples_file
+            | combine(data) // chunk_start, normalized_matrix, masterlist, samples_order, samples_file
             | variance_partition
             | collectFile(
                 name: "masterlist.vp_annotated.bed",
