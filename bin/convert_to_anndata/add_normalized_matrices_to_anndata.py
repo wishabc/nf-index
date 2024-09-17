@@ -30,7 +30,7 @@ def main(adata, matrices, params, formula, annotated_masterlist):
                 adata.uns[f'norm_params_{key}'] = loaded_params[key]
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
-    adata.uns['formula'] = formula
+    adata.uns['vp_formula'] = formula
     adata.var = adata.var.join(annotated_masterlist, how='left')
     return adata
 
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     adata = read_zarr_backed(sys.argv[1])
     annotated_masterlist = pd.read_table(sys.argv[3]).set_index('V4')
     annotated_masterlist = annotated_masterlist[
-        [x for x in annotated_masterlist.columns if not x.startswith('V')]
+        [f"{x}_variance_partition" for x in annotated_masterlist.columns if not x.startswith('V')]
     ]
     formula = sys.argv[4]
     matrices = sys.argv[5:8]
