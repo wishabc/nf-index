@@ -42,7 +42,7 @@ formula <- args[6]
 
 cat(Sys.time(), "- Fitting models\n")
 
-varPart <- fitExtractVarPartModel(data, formula, sorted_metadata)
+varPart <- fitExtractVarPartModel(data, formula, meta)
 
 write.table(varPart , "tmp.txt", sep="\t", row.names=FALSE, quote = FALSE)
 vp <- fread("tmp.txt")
