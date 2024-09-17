@@ -34,7 +34,7 @@ def main(adata, matrices, params):
 
 if __name__ == '__main__':
     adata = read_zarr_backed(sys.argv[1])
-    matrices = sys.argv[2:5]
-    params = sys.argv[5:7]
+    matrices = sys.argv[3:6]
+    params = sys.argv[6:8]
     adata = main(adata, matrices, params)
-    adata.write_zarr(sys.argv[8])
+    adata.write_zarr(sys.argv[2])
