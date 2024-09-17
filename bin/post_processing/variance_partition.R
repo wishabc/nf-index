@@ -31,9 +31,12 @@ data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count - 
 # )
 data <- t(data)
 
+print('Data loaded')
+print(dim(data))
 colnames(data) <- row.names(meta)
 row.names(data) <- row.names(dhs_meta)
 
+print('')
 formula <- args[6]
 
 
