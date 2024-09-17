@@ -6,6 +6,7 @@ process variance_partition {
     conda "/home/sabramov/miniconda3/envs/condR-clone"
     tag "${start_index}"
     scratch true
+    label "medmem"
 
     input:
         tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_meta), val(formula)
@@ -32,6 +33,7 @@ process sort_bed {
 
     conda params.conda
     publishDir params.outdir
+    label "medmem"
 
     input:
         path unsorted_bed
