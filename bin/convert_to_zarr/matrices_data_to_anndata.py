@@ -1,11 +1,9 @@
-import anndata as ad
 import sys
 import pandas as pd
 import numpy as np
 import os
-import gc
+from helpers import read_zarr_backed, convert_to_sparse_if_sufficently_sparse
 
-from index_data_to_anndata import convert_to_sparse_if_sufficently_sparse
 
 def main(adata, meta, matrices):
     meta['index_peak_files'] = adata.obs['peaks_file']
@@ -21,9 +19,9 @@ def main(adata, meta, matrices):
 
 
 if __name__ == '__main__':
-    adata_obj = ad.read(sys.argv[1])
+    adata_obj = read_zarr_backed(sys.argv[1])
     samples_meta = pd.read_table(sys.argv[2]).set_index('ag_id').loc[adata_obj.obs.index]
 
     matrices = sys.argv[4:]
 
-    main(adata_obj, samples_meta, matrices).write(sys.argv[3])
+    main(adata_obj, samples_meta, matrices).write_zarr(sys.argv[3])
