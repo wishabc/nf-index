@@ -33,10 +33,11 @@ data <- t(data)
 
 print('Data loaded')
 print(dim(data))
+print(dim(meta))
+print(dim(dhs_meta))
 colnames(data) <- row.names(meta)
 row.names(data) <- row.names(dhs_meta)
 
-print('')
 formula <- args[6]
 
 
