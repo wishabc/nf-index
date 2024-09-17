@@ -25,4 +25,6 @@ if __name__ == '__main__':
 
     matrices = sys.argv[4:]
 
+    print(adata_obj)
+
     main(adata_obj, samples_meta, matrices).write_zarr(sys.argv[3])
