@@ -31,7 +31,7 @@ def main(adata, matrices, params, formula, annotated_masterlist):
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
     adata.uns['formula'] = formula
-    adata.var = adata.var.join(annotated_masterlist)
+    adata.var = adata.var.join(annotated_masterlist, how='left')
     return adata
 
 
