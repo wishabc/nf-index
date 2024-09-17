@@ -30,7 +30,7 @@ process extract_from_anndata {
         ${anndata} \
         ${masterlist} \
         ${samples_order} \
-        --extra_layers binary,counts \
+        --extra_layers binary counts \
         --dhs_mask_name final_qc_passing_dhs
     """
 }
