@@ -8,7 +8,7 @@ process variance_partition {
     scratch true
 
     input:
-        tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_order), path(samples_file)
+        tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_order), path(samples_file), val(formula)
     
     output:
         path name
@@ -50,13 +50,13 @@ process sort_bed {
 
 workflow variancePartition {
     take:
-        data // normalized_matrix, masterlist, samples_order, samples_file
+        data // normalized_matrix, masterlist, samples_order, samples_file, formula
     main:
         out = data
             | flatMap(it -> (1..it[1].countLines()))
             | collate(params.chunk_size, remainder=true)
             | map(it -> it[0])
-            | combine(data) // chunk_start, normalized_matrix, masterlist, samples_order, samples_file
+            | combine(data) // chunk_start, normalized_matrix, masterlist, samples_order, samples_file, formula
             | variance_partition
             | collectFile(
                 name: "masterlist.vp_annotated.bed",
@@ -65,6 +65,9 @@ workflow variancePartition {
                 skip: 1
             )
             | sort_bed
+            | combine(
+                data.map(it -> it[5])
+            )
     emit:
         out  
 }

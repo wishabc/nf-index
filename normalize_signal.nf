@@ -136,7 +136,7 @@ workflow normalizeMatrix {
 
         vp = normalized_matrix
             | combine(matrices)
-            | map(it -> tuple(it[0], it[3], it[4], it[5]))
+            | map(it -> tuple(it[0], it[3], it[4], it[5], params.formula))
             | variancePartition
 
 		out = normalized_matrix
@@ -144,6 +144,7 @@ workflow normalizeMatrix {
             | combine(normalization.log_diffs)
             | combine(normalization.scale_factors)
             | combine(normalization.model_params)
+            | combine(vp)
 
 	emit:
 		out // deseq2_matrix, deseq2_model_params, log_diffs, scale_factors, lowess_params1, lowess_params2
