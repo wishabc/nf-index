@@ -29,7 +29,6 @@ data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count - 
 #     start=c(1, start_index), 
 #     count=c(nrow(meta), count)
 # )
-data <- t(data)
 
 print('Data loaded')
 print(dim(data))
