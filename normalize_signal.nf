@@ -125,7 +125,7 @@ workflow normalizeMatrix {
 		out = deseq2(normalization.scale_factors, deseq_params).matrix
             | combine(deseq2.out.model_params)
             | combine(normalization.log_diffs)
-            | combine(sf)
+            | combine(normalization.scale_factors)
             | combine(normalization.model_params)
 
 	emit:
