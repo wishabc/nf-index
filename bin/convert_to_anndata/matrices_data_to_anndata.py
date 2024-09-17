@@ -6,7 +6,7 @@ from helpers import read_zarr_backed, convert_to_sparse_if_sufficently_sparse
 
 
 def main(adata, meta, matrices):
-    meta['index_peak_files'] = adata.obs['peaks_file']
+    meta['index_peaks_file'] = adata.obs['peaks_file']
     adata.obs = meta
     for matrix in matrices:
         matrix_name = os.path.basename(matrix).replace('.raw.matrix.npy', '')
