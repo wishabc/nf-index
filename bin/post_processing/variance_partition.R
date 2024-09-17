@@ -31,12 +31,8 @@ data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count - 
 # )
 data <- t(data)
 
-
-colnames(data) <- sample_names
+colnames(data) <- row.names(meta)
 row.names(data) <- row.names(dhs_meta)
-
-# Sort the DataFrame according to the sample_names
-sorted_metadata <- meta[sample_names, ]
 
 formula <- args[6]
 
@@ -48,4 +44,4 @@ varPart <- fitExtractVarPartModel(data, formula, sorted_metadata)
 write.table(varPart , "tmp.txt", sep="\t", row.names=FALSE, quote = FALSE)
 vp <- fread("tmp.txt")
 stopifnot(all(identical(row.names(varPart), row.names(dhs_meta))))
-write.table(cbind(dhs_meta, vp) , args[7], sep="\t", row.names=FALSE, quote = FALSE)
+write.table(cbind(dhs_meta, vp), args[7], sep="\t", row.names=FALSE, quote = FALSE)
