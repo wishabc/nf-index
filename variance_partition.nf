@@ -55,7 +55,6 @@ workflow variancePartition {
         out = data
             | flatMap(it -> (1..it[1].countLines()))
             | collate(params.chunk_size, remainder=true)
-            | view()
             | map(it -> it[0])
             | combine(data) // chunk_start, normalized_matrix, masterlist, samples_order, samples_file, formula
             | variance_partition
