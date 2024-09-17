@@ -50,7 +50,7 @@ process sort_bed {
 
 workflow variancePartition {
     take:
-        data // normalized_matrix, masterlist, samples_order, samples_file, formula
+        data // normalized_matrix, masterlist, samples_file, formula
     main:
         out = data
             | view()
