@@ -53,6 +53,7 @@ workflow variancePartition {
         data // normalized_matrix, masterlist, samples_order, samples_file, formula
     main:
         out = data
+            | view()
             | flatMap(it -> (1..it[1].countLines()))
             | collate(params.chunk_size, remainder=true)
             | map(it -> it[0])
