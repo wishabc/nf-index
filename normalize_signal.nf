@@ -2,6 +2,7 @@
 nextflow.enable.dsl = 2
 
 include { variancePartition } from "./variance_partition"
+include { add_normalized_matrices_to_anndata } from "./convert_to_anndata"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""
@@ -116,17 +117,19 @@ workflow normalizeMatrix {
 			| filter { it.name =~ /params\.RDS/ }
 			| ifEmpty(file("empty.params"))
 
-		sf = normalize_matrix(
+		normalization = normalize_matrix(
             matrices.map(it -> tuple(it[0], it[1])),
             lowess_params
-        ).scale_factors
-            | combine(matrices.map(it -> tuple(it[1], it[2])))
+        )
 
-		out = deseq2(sf, deseq_params).matrix
-
+		out = deseq2(normalization.scale_factors, deseq_params).matrix
+            | combine(deseq2.out.model_params)
+            | combine(normalization.log_diffs)
+            | combine(sf)
+            | combine(normalization.model_params)
 
 	emit:
-		out
+		out // deseq2_matrix, deseq2_model_params, log_diffs, scale_factors, lowess_params1, lowess_params2
 }
 
 // Re-use existing model from other run (e.g. different samples)
@@ -138,16 +141,21 @@ workflow existingModel {
 
     existing_params = Channel.fromPath("${params.template_run_dir}/params/*")
 
-    matrices = Channel.fromPath(params.matrices_anndata)
-        | extract_from_anndata 
+    anndata = Channel.of(params.matrices_anndata)
+    matrices = extract_from_anndata(anndata)
 
     out = normalizeMatrix(matrices, existing_params)
+        | map(it -> tuple([it[0], it[2], it[3]], [it[1], it[4], it[5]]))
+ 
+    add_normalized_matrices_to_anndata(anndata, out)
 }
 
 // De-novo normalization
 workflow {
-    matrices = Channel.fromPath(params.matrices_anndata)
-        | extract_from_anndata
+    anndata = Channel.of(params.matrices_anndata)
+    matrices = extract_from_anndata(anndata)
 
     out = normalizeMatrix(matrices, Channel.empty())
+
+    add_normalized_matrices_to_anndata(anndata, out)
 }

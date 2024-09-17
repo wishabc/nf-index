@@ -56,8 +56,7 @@ process add_normalized_matrices_to_anndata {
 
     input:
         val anndata
-        path matrices
-        path normalization_params
+        tuple path(matrices), path(normalization_params)
     
     output:
         path("${name}/**", hidden: true, includeInputs: true)
@@ -65,10 +64,10 @@ process add_normalized_matrices_to_anndata {
     script:
     name = "index+matrices+normalized.anndata.zarr"
     """
-    python3 $moduleDir/bin/convert_to_anndata/matrices_data_to_anndata.py \
+    python3 $moduleDir/bin/convert_to_anndata/add_normalized_matrices_to_anndata.py \
         ${anndata} \
-        ${params.samples_file} \
         ${name} \
-        ${matrices}
+        ${matrices} \
+        ${normalization_params}
     """
 }

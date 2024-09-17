@@ -74,3 +74,18 @@ def convert_to_sparse_if_sufficently_sparse(matrix, threshold=0.7):
     else:
         print("Matrix is sufficiently dense; keeping the current format.")
         return matrix
+    
+
+def add_matrices_to_anndata(adata, matrices_mapping):
+    for matrix_name, matrix in matrices_mapping.items():
+        matrix = np.load(matrix).T
+        if matrix.shape[0] != adata.shape[0]:
+            raise ValueError(f"Matrix {matrix_name} has {matrix.shape[0]} samples, but the number of samples in anndata is {adata.shape[0]}")
+        if matrix.shape[1] != adata.shape[1]:
+            mask = adata.varm['final_qc_passing_dhs']
+            data = np.empty(adata.shape, dtype=matrix.dtype)
+            data[:] = np.nan
+            data[:, mask] = matrix
+            matrix = data
+
+        adata.layers[matrix_name] = convert_to_sparse_if_sufficently_sparse(matrix)

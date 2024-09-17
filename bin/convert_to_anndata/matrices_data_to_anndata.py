@@ -1,17 +1,18 @@
 import sys
 import pandas as pd
-import numpy as np
 import os
-from helpers import read_zarr_backed, convert_to_sparse_if_sufficently_sparse
+from helpers import read_zarr_backed, add_matrices_to_anndata
 
 
 def main(adata, meta, matrices):
     meta['index_peaks_file'] = adata.obs['peaks_file']
     adata.obs = meta
-    for matrix in matrices:
-        matrix_name = os.path.basename(matrix).replace('.raw.matrix.npy', '')
-        matrix = convert_to_sparse_if_sufficently_sparse(np.load(matrix).T)
-        adata.layers[matrix_name] = matrix
+    matrices_mapping = {
+        os.path.basename(matrix).replace('.raw.matrix.npy', ''): matrix 
+        for matrix in matrices
+        }
+    add_matrices_to_anndata(adata, matrices_mapping)
+
 
     adata.varm['projected_peaks_binary'] = adata.X.to_memory().sum(axis=0).A1.squeeze()
     adata.varm['final_qc_passing_dhs'] = (adata.varm['projected_peaks_binary'] > 0) & adata.varm['autosomal_pseudo_reproduced_dhs']
