@@ -41,6 +41,7 @@ process add_matrices_to_anndata {
     script:
     name = "index+matrices.anndata.zarr"
     """
+    echo 1
     python3 $moduleDir/bin/convert_to_anndata/matrices_data_to_anndata.py \
         ${index_anndata} \
         ${params.samples_file} \

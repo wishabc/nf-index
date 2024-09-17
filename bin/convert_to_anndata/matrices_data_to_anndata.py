@@ -22,7 +22,12 @@ def main(adata, meta, matrices):
 
 if __name__ == '__main__':
     adata_obj = read_zarr_backed(sys.argv[1])
-    samples_meta = pd.read_table(sys.argv[2]).set_index('ag_id').loc[adata_obj.obs.index]
+    samples_meta = pd.read_table(sys.argv[2]).set_index('ag_id')
+    missing_indices = adata_obj.obs.index.difference(samples_meta.index)
+    if len(missing_indices) > 0:
+        print(f"Warning: Missing indices: {missing_indices}")
+    
+    samples_meta = samples_meta.loc[adata_obj.obs.index]
 
     matrices = sys.argv[4:]
 
