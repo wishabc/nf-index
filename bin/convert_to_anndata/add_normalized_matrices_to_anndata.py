@@ -24,7 +24,7 @@ def main(adata, matrices, params):
         elif param.endswith('json'):
             with open(param) as f:
                 adata.uns['lowess_params'] = json.load(f)
-        elif param.endswith('npy'):
+        elif param.endswith('npz'):
             adata.uns['norm_values'] = np.load(param)
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
