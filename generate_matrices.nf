@@ -13,7 +13,7 @@ process extract_meta_from_anndata {
     label "medmem"
 
     input:
-        path anndata
+        val anndata
 
     output:
         tuple path(masterlist), path(samples_order), path(saf_masterlist)
@@ -220,8 +220,7 @@ workflow {
             file(row.normalized_density_bw)
         ))
 
-    index_anndata = Channel.fromPath("${params.index_anndata}/**", type: 'any', relative: true, hidden: true)
-        | collect(sort: true)
+    index_anndata = Channel.of(params.index_anndata)
 
     matrices = index_anndata
         | extract_meta_from_anndata

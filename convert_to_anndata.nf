@@ -32,7 +32,7 @@ process add_matrices_to_anndata {
     publishDir "${params.outdir}/zarr"
 
     input:
-        path index_anndata
+        val index_anndata
         path matrices
     
     output:
@@ -55,7 +55,7 @@ process add_normalized_matrices_to_anndata {
     publishDir "${params.outdir}/zarr"
 
     input:
-        path anndata
+        val anndata
         path matrices
         path normalization_params
     
