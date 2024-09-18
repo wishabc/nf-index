@@ -3,12 +3,13 @@ import sys
 from helpers import read_zarr_backed
 import base64
 import json
+import pandas as pd
 
 
 def main(anndata_obj):
     deseq_params = base64.b64decode(anndata_obj.uns['deseq_params'])
     
-    norm_json = anndata_obj.uns['lowess_params']
+    norm_json = pd.json_normalize(anndata_obj.uns['lowess_params'])
     norm_arrays = {}
     for key in anndata_obj.uns.keys():
         if key.startswith('norm_params_'):
