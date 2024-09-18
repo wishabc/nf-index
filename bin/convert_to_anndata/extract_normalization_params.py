@@ -43,6 +43,6 @@ if __name__ == '__main__':
         f.write(deseq_params)
     
     with open(f'{savedir}/lowess_params.json', 'w') as f:
-        json.dump(norm_json, f, cls=NpEncoder)
+        json.dump(norm_json, f, cls=NpEncoder, indent=2)
     
     np.savez_compressed(f'{savedir}/lowess_params.npz', **norm_arrays)
