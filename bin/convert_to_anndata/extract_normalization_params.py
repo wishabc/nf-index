@@ -6,10 +6,21 @@ import json
 import pandas as pd
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+    
+
 def main(anndata_obj):
     deseq_params = base64.b64decode(anndata_obj.uns['deseq_params'])
     
-    norm_json = pd.json_normalize(anndata_obj.uns['lowess_params'])
+    norm_json = anndata_obj.uns['lowess_params']
     norm_arrays = {}
     for key in anndata_obj.uns.keys():
         if key.startswith('norm_params_'):
@@ -30,6 +41,6 @@ if __name__ == '__main__':
         f.write(deseq_params)
     
     with open(f'{savedir}/lowess_params.json', 'w') as f:
-        json.dump(norm_json, f)
+        json.dump(norm_json, f, cls=NpEncoder)
     
     np.savez_compressed(f'{savedir}/lowess_params.npz', **norm_arrays)
