@@ -180,7 +180,7 @@ workflow existingModel {
     }
 
     existing_params = Channel.of(params.template_anndata)
-        | extract_normalization_params
+        | extract_normalization_params_from_template
         | flatten()
 
     anndata = Channel.of(params.matrices_anndata)
