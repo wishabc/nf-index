@@ -172,12 +172,14 @@ process extract_normalization_params {
 
 // Re-use existing model from other run (e.g. different samples)
 workflow existingModel {
-    params.template_run_dir = "/path/to/previous/run"
-    if (!file(params.template_run_dir).exists()) {
-        error "Template directory ${params.template_run_dir} does not exist!"
+    params.template_anndata = "/path/to/previous/anndata_with_params"
+    if (!file(params.template_anndata).exists()) {
+        error "Template anndata: ${params.template_anndata} does not exist!"
     }
 
-    existing_params = Channel.fromPath("${params.template_run_dir}/params/*")
+    existing_params = Channel.of(params.template_anndata)
+        | extract_normalization_params
+        | flatten()
 
     anndata = Channel.of(params.matrices_anndata)
     matrices = extract_from_anndata(anndata)
