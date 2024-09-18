@@ -42,7 +42,9 @@ process extract_from_anndata {
 process normalize_matrix {
 	conda params.conda
 	label "bigmem"
-	publishDir "${params.outdir}"
+	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
+    publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params*"
+    publishDir "${params.outdir}/qc", pattern: "${prefix}*.pdf"
 
 	input:
         tuple path(peaks_matrix), path(signal_matrix)
