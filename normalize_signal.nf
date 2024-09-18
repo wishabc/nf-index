@@ -151,9 +151,9 @@ workflow normalizeMatrix {
 		out // deseq2_matrix, deseq2_model_params, log_diffs, scale_factors, lowess_params1, lowess_params2, vp_annotated_masterlist, formula
 }
 
-process extract_normalization_params {
+process extract_normalization_params_from_template {
     conda params.conda
-    label "bigmem"
+    label "medmem"
 
     input:
         val anndata
