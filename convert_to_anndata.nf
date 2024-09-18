@@ -53,14 +53,14 @@ process add_matrices_to_anndata {
 process add_normalized_matrices_to_anndata {
     conda params.conda
     label "highmem"
-    publishDir "${params.outdir}/zarr"
+    publishDir "${params.outdir}"
 
     input:
         val anndata
         tuple path(matrices), path(normalization_params), path(masterlist_vp), val(formula)
     
     output:
-        path("${name}/**", hidden: true, includeInputs: true)
+        path(name, type: 'dir')
 
     script:
     name = "index+matrices+normalized.anndata.zarr"
