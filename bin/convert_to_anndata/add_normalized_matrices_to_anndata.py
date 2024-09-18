@@ -4,7 +4,7 @@ import numpy as np
 import os
 from helpers import read_zarr_backed, add_matrices_to_anndata
 import json
-
+import base64
 
 def main(adata, matrices, params, formula, annotated_masterlist):
     matrices_mapping = {
@@ -18,7 +18,7 @@ def main(adata, matrices, params, formula, annotated_masterlist):
     for param in params:
         if param.endswith('RDS'):
             with open(param, 'rb') as f:
-                adata.uns['deseq_params'] = f.read()
+                adata.uns['deseq_params'] = base64.b64encode(f.read()).decode('utf-8')
         elif param.endswith('json'):
             with open(param) as f:
                 adata.uns['lowess_params'] = json.load(f)
