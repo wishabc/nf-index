@@ -10,7 +10,7 @@ def main(anndata_obj):
     
     norm_json = anndata_obj.uns['lowess_params']
     norm_arrays = {}
-    for key in anndata.obj.uns.keys():
+    for key in anndata_obj.uns.keys():
         if key.startswith('norm_params_'):
             real_key = key.replace('norm_params_', '')
             norm_arrays[real_key] = anndata_obj.uns[key]
