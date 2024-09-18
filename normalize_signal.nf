@@ -175,6 +175,8 @@ workflow existingModel {
     params.template_anndata = "/path/to/previous/anndata_with_params"
     if (!file(params.template_anndata).exists()) {
         error "Template anndata: ${params.template_anndata} does not exist!"
+    } else {
+        print "Using existing model from ${params.template_anndata}"
     }
 
     existing_params = Channel.of(params.template_anndata)
