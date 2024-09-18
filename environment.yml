@@ -34,7 +34,6 @@ dependencies:
   - bioconductor-deseq2
   - bioconductor-variancepartition
   - bioconductor-rhdf5
-  - rpy2
   - tqdm
   - h5py
   - pip

@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 import os
 from helpers import read_zarr_backed, add_matrices_to_anndata
-import rpy2.robjects as ro
-from rpy2.robjects import r
 import json
 
 
@@ -19,8 +17,8 @@ def main(adata, matrices, params, formula, annotated_masterlist):
     add_matrices_to_anndata(adata, matrices_mapping)
     for param in params:
         if param.endswith('RDS'):
-            #adata.uns['deseq_params'] = r.readRDS(param)
-            adata.uns['deseq_params'] = param
+            with open(param, 'rb') as f:
+                adata.uns['deseq_params'] = f.read()
         elif param.endswith('json'):
             with open(param) as f:
                 adata.uns['lowess_params'] = json.load(f)
