@@ -151,6 +151,25 @@ workflow normalizeMatrix {
 		out // deseq2_matrix, deseq2_model_params, log_diffs, scale_factors, lowess_params1, lowess_params2, vp_annotated_masterlist, formula
 }
 
+process extract_normalization_params {
+    conda params.conda
+    label "bigmem"
+
+    input:
+        val anndata
+
+    output:
+        path("params/*")
+
+    script:
+    """
+    mkdir params
+    python3 $moduleDir/bin/convert_to_anndata/extract_normalization_params.py \
+        ${anndata} \
+        params
+    """
+}
+
 // Re-use existing model from other run (e.g. different samples)
 workflow existingModel {
     params.template_run_dir = "/path/to/previous/run"
