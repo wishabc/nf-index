@@ -85,7 +85,7 @@ def add_matrices_to_anndata(adata, matrices_mapping):
         if matrix.shape[0] != adata.shape[0]:
             raise ValueError(f"Matrix {matrix_name} has {matrix.shape[0]} samples, but the number of samples in anndata is {adata.shape[0]}")
         if matrix.shape[1] != adata.shape[1]:
-            mask = adata.varm['final_qc_passing_dhs']
+            mask = adata.var['final_qc_passing_dhs']
             assert mask.sum() == matrix.shape[1]
             data = np.empty(adata.shape, dtype=matrix.dtype)
             data[:] = np.nan

@@ -7,7 +7,6 @@ from helpers import read_zarr_backed, add_matrices_to_anndata
 def main(adata, meta, matrices):
     meta['index_peaks_file'] = adata.obs['peaks_file']
     adata.obs = meta
-    print(adata)
     matrices_mapping = {
         os.path.basename(matrix).replace('.raw.matrix.npy', ''): matrix 
         for matrix in matrices
@@ -15,8 +14,8 @@ def main(adata, meta, matrices):
     add_matrices_to_anndata(adata, matrices_mapping)
 
 
-    adata.varm['projected_peaks_binary'] = adata.layers['binary'].to_memory().sum(axis=0).A1.squeeze()
-    adata.varm['final_qc_passing_dhs'] = (adata.varm['projected_peaks_binary'] > 0) & adata.varm['autosomal_pseudo_reproduced_dhs']
+    adata.var['projected_peaks_binary'] = adata.layers['binary'].to_memory().sum(axis=0).A1.squeeze()
+    adata.varm['final_qc_passing_dhs'] = (adata.var['projected_peaks_binary'] > 0) & adata.var['autosomal_pseudo_reproduced_dhs']
     return adata
 
 
