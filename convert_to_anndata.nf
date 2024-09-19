@@ -10,7 +10,7 @@ process convert_index_to_anndata {
         path masks
     
     output:
-        path("${name}/**", hidden: true, includeInputs: true)
+        path(name, type: 'dir')
 
     script:
     name = "index.anndata.zarr"
@@ -36,12 +36,11 @@ process add_matrices_to_anndata {
         path matrices
     
     output:
-        path("${name}/**", hidden: true, includeInputs: true)
+        path(name, type: 'dir')
 
     script:
     name = "index+matrices.anndata.zarr"
     """
-    echo 1
     python3 $moduleDir/bin/convert_to_anndata/matrices_data_to_anndata.py \
         ${index_anndata} \
         ${params.samples_file} \
