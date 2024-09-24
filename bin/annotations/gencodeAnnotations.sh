@@ -5,6 +5,8 @@ masterlist=$1
 gencode=$2
 chromSize=$3
 outfile=$4
+species=`echo ${chromSize} | rev | cut -f1 -d'/' | rev | cut -f1 -d'-'`
+
 ##################################
 #Parse Gencode File (utr updated)#
 ##################################
@@ -47,7 +49,14 @@ awk '{if($4 == "gene") print}' gencode.bed > gene.bed
 awk '{if($4 == "exon") print}' gencode.bed > exon.bed
 awk '{if($4 == "CDS") print}' gencode.bed > cds.bed
 awk '{if($4 == "promoter") print}' gencode.bed > promoter.bed
-awk '{if($4 == "five_prime_utr" || $4 == "three_prime_utr") print}' gencode.bed > utr.bed
+
+#Check which species since mouse doesn't have the 5' and 3' UTR difference
+if [ ${species} != "mm10" ]
+then
+        awk '{if($4 == "five_prime_utr" || $4 == "three_prime_utr") print}' gencode.bed > utr.bed
+else
+        awk '{if($4 == "UTR") print}' gencode.bed > utr.bed
+fi
 
 bedops --ec -m utr.bed exon.bed promoter.bed cds.bed \
     | bedops --ec -d gene.bed - \
