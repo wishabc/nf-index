@@ -233,6 +233,7 @@ process annotate_masterlist {
         simple_annotations.txt
     
     bash $moduleDir/bin/annotations/gencodeAnnotations.sh \
+	${params.species} \
         ${masterlist} \
         ${params.gencode} \
         ${params.chrom_sizes} \

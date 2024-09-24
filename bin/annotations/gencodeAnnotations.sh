@@ -1,11 +1,11 @@
 #!/bin/bash
 
 #Path to relevant Masterlist Files
-masterlist=$1
-gencode=$2
-chromSize=$3
-outfile=$4
-species=`echo ${chromSize} | rev | cut -f1 -d'/' | rev | cut -f1 -d'-'`
+species=$1
+masterlist=$2
+gencode=$3
+chromSize=$4
+outfile=$5
 
 ##################################
 #Parse Gencode File (utr updated)#
@@ -51,7 +51,7 @@ awk '{if($4 == "CDS") print}' gencode.bed > cds.bed
 awk '{if($4 == "promoter") print}' gencode.bed > promoter.bed
 
 #Check which species since mouse doesn't have the 5' and 3' UTR difference
-if [ ${species} != "mm10" ]
+if [ ${species} != "mouse" ]
 then
         awk '{if($4 == "five_prime_utr" || $4 == "three_prime_utr") print}' gencode.bed > utr.bed
 else
