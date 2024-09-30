@@ -162,6 +162,7 @@ def read_weights(weights_path, shape, sample_names=None, ext=None):
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
 
 
+# Internal function to run NMF decomposition as part of pipeline
 def main(nmf_input_data: NMFInputData, **extra_params):
     mat, samples_m, peaks_m, W_weights, H_weights, *_ = nmf_input_data
 

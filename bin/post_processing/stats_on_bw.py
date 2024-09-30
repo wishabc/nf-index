@@ -1,14 +1,15 @@
-import pyBigWig
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import sys
+from genome_tools.data.extractors import bigwig_extractor as BigwigExtractor
+from genome_tools.genomic_interval import genomic_interval as GenomicInterval
 
 
 def extract_data(bw_path, interval):
-    with pyBigWig.open(bw_path) as bw:
-        data = np.nan_to_num(bw.values(interval[0], interval[1], interval[2], numpy=True))
+    with BigwigExtractor(bw_path) as bw:
+        data = np.nan_to_num(bw[interval])
     return data
 
 
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     bw_paths = met['normalized_density_bw'].values
     str_interval = sys.argv[1]
     chrom, start, end = str_interval.split('_')
-    interval = (chrom, int(start), int(end))
+    interval = GenomicInterval(chrom, int(start), int(end))
     funcs = {'mean': np.mean, 'std': np.std, 'median': np.median, 'min': np.min, 'max': np.max}
     results = main(bw_paths, interval, funcs)
     for fname, data in results.items():
