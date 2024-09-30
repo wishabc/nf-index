@@ -2,12 +2,8 @@ import anndata as ad
 import sys
 import pandas as pd
 import numpy as np
-import scipy.sparse as sp
 import os
 from helpers import convert_to_sparse_if_sufficently_sparse
-
-
-
     
 
 def main(rows_meta, cols_meta, matrix, masks):
@@ -27,6 +23,8 @@ def main(rows_meta, cols_meta, matrix, masks):
     
 
     adata.obs['n_peaks'] = adata.X.sum(axis=1).A1.squeeze()
+    adata.obs['final_qc_passing_sample'] = 1
+
     adata.var['n_contributing_samples'] = adata.X.sum(axis=0).A1.squeeze()
     adata.var['autosomal_pseudo_reproduced_dhs'] = adata.var['autosomal_dhs'] & adata.var['pseudo_reproduced_dhs']
 

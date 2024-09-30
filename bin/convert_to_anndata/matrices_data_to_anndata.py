@@ -1,7 +1,8 @@
 import sys
 import pandas as pd
 import os
-from helpers import read_zarr_backed, add_matrices_to_anndata
+from helpers import add_matrices_to_anndata
+from nmf_tools.data.anndata_loader import read_zarr_backed
 
 
 def main(adata, meta, matrices):

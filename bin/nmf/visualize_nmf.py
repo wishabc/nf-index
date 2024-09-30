@@ -6,6 +6,7 @@ from tqdm import tqdm
 import os
 
 from order_by_template import get_component_data, define_colors
+from perform_NMF import NMFInputData, parse_nmf_args
 
 def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colors=None):
     assert len(metadata) == matrix.shape[1]
@@ -187,7 +188,7 @@ def plot_barplots(matrix, component_data=None, n=10_000, normalize=True, ax=None
     return plot_stacked(H_dsp, colors, ax=ax, **kwargs)
 
 
-def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotations, vis_path, component_data=None):
+def main(nmf_data: NMFInputData, W, H, vis_path, component_data=None):
     if component_data is None:
         component_data = get_component_data(W)
 
@@ -195,6 +196,11 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     relative_W = W / W.sum(axis=0)
     relative_W = relative_W[component_data['index'], :]
 
+    metadata = nmf_data.samples_metadata
+    samples_mask = nmf_data.samples_mask
+    peaks_mask = nmf_data.peaks_mask
+    binary_matrix = nmf_data.matrix
+    dhs_meta = nmf_data.dhs_metadata
 
     for i, row in component_data.iterrows():
         weights = np.ones(W.shape[0])
@@ -280,19 +286,19 @@ def main(binary_matrix, W, H, metadata, samples_mask, peaks_mask, dhs_annotation
     plt.close(fig)
 
 
-    if dhs_annotations is not None:
-        ax = plot_dist_tss(H, dhs_annotations, component_data)
+    if 'dist_tss' in dhs_meta.columns:
+        ax = plot_dist_tss(H, dhs_meta['dist_tss'], component_data)
         plt.savefig(f'{vis_path}/Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
         plt.close(fig)
 
 
 
-def plot_dist_tss(H, index, component_data, ax=None):
+def plot_dist_tss(H, dist_tss, component_data, ax=None):
     max_component = np.argmax(H, axis=0)
     if ax is None:
         fig, ax = plt.subplots(figsize=(2, 2))
     for i, row in component_data.iterrows():
-        data = np.abs(index['dist_tss'][max_component == row['index']])
+        data = np.abs(dist_tss[max_component == row['index']])
         ax.plot(np.sort(data), np.linspace(0, 1, len(data)), color=row['color'])
     ax.set_xlim(-50, 5000)
     ax.set_xlabel('Distance to TSS')
@@ -302,47 +308,36 @@ def plot_dist_tss(H, index, component_data, ax=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
-    parser.add_argument('matrix', help='Path to matrix to run NMF on')
-    parser.add_argument('sample_names', help='Path to file with sample names')
+    parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
     parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('H', help='H matrix of perform NMF decomposition')
-    parser.add_argument('metadata', help='Path to metadata file')
+
+    # Visualizations from matrix
+    parser.add_argument('matrix', help='Path to matrix to run NMF on')
+    parser.add_argument('sample_names', help='Path to file with sample names')
+    parser.add_argument('samples_metadata', help='Path to metadata file')
     parser.add_argument('dhs_meta', help='Path to DHS index')
-    parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
+    parser.add_argument('--dhs_annotations', help='Path to DHS annotations. Required to plot distance to tss plot. Expected to have dist_tss column.', default=None)
+
+    # Visualizations from anndata
+    parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names, dhs_meta and metadata fields', default=None)
+    
     parser.add_argument('--samples_mask', help='Mask of used samples, numpy array')
     parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array')
-    #parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
-    parser.add_argument('--dhs_annotations', help='Path to DHS annotations. Required to plot distance to tss plot. Expected to have dist_tss column.', default=None)
+
     args = parser.parse_args()
 
-    mat = np.load(args.matrix).astype(float)
-
-    sample_names = np.loadtxt(args.sample_names, dtype=str)
-
-    samples_m = np.loadtxt(args.samples_mask).astype(bool)
-    peaks_m = np.loadtxt(args.peaks_mask).astype(bool)
-
-    metadata = pd.read_table(args.metadata)
-    # Reformat metadata to handle DNase columns
-    id_col = 'id' if 'id' in metadata.columns else 'ag_id'
-    assert id_col in metadata.columns, f'No id or ag_id column found in metadata. Available columns: {metadata.columns}'
-    if 'sample_label' not in metadata.columns:
-        metadata['sample_label'] = metadata.apply(
+    nmf_data = parse_nmf_args(args)
+    
+    if 'sample_label' not in nmf_data.samples_metadata.columns:
+        nmf_data.samples_metadata['sample_label'] = nmf_data.samples_metadata.apply(
             lambda row: f"{row['core_ontology_term']} {row['SPOT1_score']:.1f}",
             axis=1
         )
-    
-    metadata = metadata.set_index(id_col).loc[sample_names]
 
     W = np.load(args.W).T
     H = np.load(args.H).T
-    dhs_meta = pd.read_table(args.dhs_meta, header=None, usecols=np.arange(4), names=['chr', 'start', 'end', 'dhs_id'])
-    if args.dhs_annotations is not None and os.path.exists(args.dhs_annotations):
-        dhs_annotations = pd.read_table(args.dhs_annotations)
-        dhs_annotations = dhs_annotations[dhs_annotations['dhs_id'].isin(dhs_meta['dhs_id'].to_numpy())]
-    else:
-        dhs_annotations = None
 
-    main(mat, W, H, metadata, samples_m, peaks_m, dhs_annotations, args.outpath)
+    main(nmf_data, W, H, args.outpath)
 

@@ -1,9 +1,8 @@
 import numpy as np
 import sys
-from helpers import read_zarr_backed
 import base64
 import json
-import pandas as pd
+from nmf_tools.data.anndata_loader import read_zarr_backed
 
 
 class NpEncoder(json.JSONEncoder):
