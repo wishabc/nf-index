@@ -26,10 +26,6 @@ row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
 data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count - 1), ]
-# data <- h5read(file_path, 'vst', 
-#     start=c(1, start_index), 
-#     count=c(nrow(meta), count)
-# )
 
 print("Data loaded")
 print(dim(data))
