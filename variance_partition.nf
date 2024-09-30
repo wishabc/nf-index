@@ -3,7 +3,7 @@ nextflow.enable.dsl = 2
 
 
 process variance_partition {
-    conda "/home/sabramov/miniconda3/envs/condR-clone"
+
     tag "${start_index}"
     scratch true
     label "medmem"
