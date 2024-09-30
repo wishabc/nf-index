@@ -5,10 +5,12 @@ import numpy as np
 import pandas as pd
 import sys
 
+
 def extract_data(bw_path, interval):
     with pyBigWig.open(bw_path) as bw:
         data = np.nan_to_num(bw.values(interval[0], interval[1], interval[2], numpy=True))
     return data
+
 
 def main(bw_paths, interval, funcs):
 

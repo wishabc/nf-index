@@ -45,7 +45,6 @@ print("Fitting models")
 
 varPart <- fitExtractVarPartModel(data, formula, meta)
 
-write.table(varPart , "tmp.txt", sep="\t", row.names=FALSE, quote = FALSE)
-vp <- fread("tmp.txt")
-stopifnot(all(identical(row.names(varPart), row.names(dhs_meta))))
-write.table(cbind(dhs_meta, vp), args[7], sep="\t", row.names=FALSE, quote = FALSE)
+vp_df <- as.data.frame(varPart)
+stopifnot(all(identical(row.names(vp_df), row.names(dhs_meta))))
+write.table(cbind(dhs_meta, vp_df), args[7], sep="\t", row.names=FALSE, quote = FALSE)

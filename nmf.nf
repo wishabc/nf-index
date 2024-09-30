@@ -17,7 +17,7 @@ process fit_nmf {
 
 	script:
 	"""
-    python3 $moduleDir/bin/post_processing/perform_NMF.py \
+    python3 $moduleDir/bin/nmf/perform_NMF.py \
         ${matrix_path} \
         ${sample_names} \
         ${dhs_meta} \
@@ -46,7 +46,7 @@ process visualize_nmf {
 
 	script:
 	"""
-    python3 $moduleDir/bin/post_processing/visualize_nmf.py \
+    python3 $moduleDir/bin/nmf/visualize_nmf.py \
         ${binary_matrix} \
         ${sample_names} \
         ${W} \
@@ -71,7 +71,7 @@ process add_metadata {
     script:
     name = "${file(params.nmf_params_list).baseName}+matrices.tsv"
     """
-    python3 $moduleDir/bin/post_processing/add_metadata.py \
+    python3 $moduleDir/bin/nmf/add_metadata.py \
         ${params.nmf_params_list} \
         ${params.outdir}/nmf \
         ${name}
