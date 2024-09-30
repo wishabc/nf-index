@@ -206,8 +206,8 @@ def main(nmf_input_data: NMFInputData, **extra_params):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Run NMF decomposition on a DHS x samples matrix')
-    parser.add_argument('prefix', help='Prefix for the output file')
     parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
+    parser.add_argument('prefix', help='Prefix for the output file')
 
     # Reading from npy matrix arguments
     parser.add_argument('--matrix', help='Path to matrix to run NMF on')

@@ -313,17 +313,18 @@ if __name__ == '__main__':
     parser.add_argument('H', help='H matrix of perform NMF decomposition')
 
     # Visualizations from matrix
-    parser.add_argument('matrix', help='Path to matrix to run NMF on')
-    parser.add_argument('sample_names', help='Path to file with sample names')
-    parser.add_argument('samples_metadata', help='Path to metadata file')
-    parser.add_argument('dhs_meta', help='Path to DHS index')
+    parser.add_argument('--matrix', help='Path to matrix to run NMF on')
+    parser.add_argument('--sample_names', help='Path to file with sample names')
+    parser.add_argument('--dhs_meta', help='Path to DHS metadata file')
+    parser.add_argument('--samples_metadata', help='Path to metadata file')
     parser.add_argument('--dhs_annotations', help='Path to DHS annotations. Required to plot distance to tss plot. Expected to have dist_tss column.', default=None)
 
     # Visualizations from anndata
     parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names, dhs_meta and metadata fields', default=None)
     
-    parser.add_argument('--samples_mask', help='Mask of used samples, numpy array')
-    parser.add_argument('--peaks_mask', help='Mask of used samples, numpy array')
+    # Optional arguments for both modes
+    parser.add_argument('--samples_mask', help='Binary mask for samples used to construct initial embedding, numpy array')
+    parser.add_argument('--peaks_mask', help='Binary mask for peaks used to construct initial embedding, numpy array')
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
 
     args = parser.parse_args()

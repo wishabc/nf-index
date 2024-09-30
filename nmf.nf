@@ -18,11 +18,11 @@ process fit_nmf {
 	script:
 	"""
     python3 $moduleDir/bin/nmf/perform_NMF.py \
-        ${matrix_path} \
-        ${sample_names} \
-        ${dhs_meta} \
-        ${prefix} \
         ${n_components} \
+        ${prefix} \
+        --matrix ${matrix_path} \
+        --sample_names ${sample_names} \
+        --dhs_meta ${dhs_meta} \
         ${non_required_arg(weights_path, '--samples_weights')} \
         ${non_required_arg(samples_mask, '--samples_mask')} \
         ${non_required_arg(peaks_mask, '--peaks_mask')} \
@@ -39,7 +39,7 @@ process visualize_nmf {
     errorStrategy 'ignore'
 
 	input:
-        tuple val(prefix), val(n_components), path(binary_matrix), path(sample_names), path(masterlist), path(W), path(H), path(peaks_mask), path(samples_mask)
+        tuple val(prefix), val(n_components), path(binary_matrix), path(sample_names), path(dhs_meta), path(W), path(H), path(peaks_mask), path(samples_mask)
 
 	output:
         tuple val(prefix), path("*.pdf")
@@ -47,16 +47,16 @@ process visualize_nmf {
 	script:
 	"""
     python3 $moduleDir/bin/nmf/visualize_nmf.py \
-        ${binary_matrix} \
-        ${sample_names} \
+        ${n_components} \
         ${W} \
         ${H} \
-        ${params.samples_file} \
-        ${masterlist} \
-        ${n_components} \
+        --outpath ./ \
+        --matrix ${matrix_path} \
+        --sample_names ${sample_names} \
+        --dhs_meta ${dhs_meta} \
+        --samples_metadata ${params.samples_file} \
         --peaks_mask ${peaks_mask} \
         --samples_mask ${samples_mask} \
-        --outpath ./ \
         ${non_required_arg(params.dhs_annotations, '--dhs_annotations')}
 	"""
 }
