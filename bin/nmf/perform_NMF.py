@@ -23,13 +23,14 @@ def initialize_model(n_components, extra_params, is_weighted=False):
               if key in params and extra_params[key] != params[key]
         }
         params.update(extra_params)
-        print("Overwritten params:", overwritten)
+        if overwritten:
+            print("Overwritten params:", overwritten)
     
     return WeightedNMF(**params) if is_weighted else NMF(**params)
 
 
 def run_NMF(model: NMF, X, W_weights=None, H_weights=None):
-    assert W_weights is None == H_weights is None
+    assert (W_weights is None) == (H_weights is None), 'Both weights should be provided or none'
     if W_weights is not None:
         assert len(W_weights.shape) == 1 and len(H_weights.shape) == 1, 'Weights should be 1D arrays'
         W = model.fit_transform(X.T, W_weights=W_weights[:, None], H_weights=H_weights[None, :])
@@ -131,7 +132,7 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
     else:
         peaks_m = np.ones(matrix.shape[0], dtype=bool)
     
-    if args.samples_weights or args.peaks_weights:
+    if args.samples_weights is not None or args.peaks_weights is not None:
         W_weights_vector = read_weights(args.samples_weights, matrix.shape[1], samples_metadata.index)
         H_weights_vector = read_weights(args.peaks_weights, matrix.shape[0], dhs_metadata.index)
     else:
