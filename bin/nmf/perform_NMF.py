@@ -135,11 +135,8 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
     else:
         peaks_m = np.ones(matrix.shape[0], dtype=bool)
     
-    if args.samples_weights is not None or args.peaks_weights is not None:
-        W_weights_vector = read_weights(args.samples_weights, matrix.shape[1], samples_metadata.index)
-        H_weights_vector = read_weights(args.peaks_weights, matrix.shape[0], dhs_metadata.index)
-    else:
-        H_weights_vector = W_weights_vector = None
+    W_weights_vector = read_weights(args.samples_weights, matrix.shape[1], samples_metadata.index)
+    H_weights_vector = read_weights(args.peaks_weights, matrix.shape[0], dhs_metadata.index)
     
     return NMFInputData(
         matrix=matrix,
@@ -153,7 +150,6 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
 
 
 def read_weights(weights_path, shape, sample_names=None):
-    weights_vector = np.ones(shape, dtype=float)
     if weights_path is not None:
         if os.path.splitext(weights_path)[-1] == 'npy':
             weights_vector = np.load(weights_path)
@@ -162,6 +158,8 @@ def read_weights(weights_path, shape, sample_names=None):
             if sample_names is not None:
                 weights_df = weights_df.loc[sample_names]
             weights_vector = weights_df['weight'].to_numpy()
+    else:
+        weights_vector = np.ones(shape, dtype=float)
     
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
 
