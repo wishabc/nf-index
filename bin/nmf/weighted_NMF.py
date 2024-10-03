@@ -329,12 +329,14 @@ def _multiplicative_update_h(
 
     return H
 
+
 def get_wX(X, W_weights, H_weights):
     if sp.issparse(X):
-        wX = X.multiply(W_weights.squeeze()).T.multiply(H_weights.squeeze()).T
+        wX = X.multiply(H_weights.squeeze()).T.multiply(W_weights.squeeze()).T
     else:
         wX = X * W_weights * H_weights
     return wX
+
 
 def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, H_weights=None):
     beta = _beta_loss_to_float(beta)
