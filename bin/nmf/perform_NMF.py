@@ -223,8 +223,8 @@ if __name__ == '__main__':
     parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names and dhs_meta fields', default=None)
 
     # Optional arguments for both modes
-    parser.add_argument('--samples_mask', help='Mask of used samples, numpy array', default=None)
-    parser.add_argument('--peaks_mask', help='Mask of used peaks, numpy array', default=None)
+    parser.add_argument('--samples_mask', help='Mask of used samples, txt indicator', default=None)
+    parser.add_argument('--peaks_mask', help='Mask of used peaks, txt indicator', default=None)
     parser.add_argument('--project_masked_peaks', action='store_true', help='Project peaks for all masked samples', default=False)
     parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--peaks_weights', help='Path to peaks weights (for weighted NMF)', default=None)
