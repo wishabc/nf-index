@@ -1,23 +1,87 @@
 import time
 import numpy as np
-from sklearn.decomposition import NMF
-from sklearn.decomposition._nmf import _beta_loss_to_float
+
+from sklearn.decomposition._nmf import _BaseNMF, _beta_loss_to_float, _fit_coordinate_descent
 import numpy as np
 import scipy.sparse as sp
 import time
 import warnings
 
 
+#from ._cdnmf_fast import _update_cdnmf_fast
 from sklearn._config import config_context
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.extmath import safe_sparse_dot, squared_norm
-from sklearn.utils.validation import check_is_fitted, check_non_negative
+from sklearn.utils.validation import (
+    check_is_fitted,
+    check_non_negative,
+)
+from sklearn.utils._param_validation import StrOptions
 
 
 EPSILON = np.finfo(np.float32).eps
 
+class NMF(_BaseNMF):
+    _parameter_constraints: dict = {
+        **_BaseNMF._parameter_constraints,
+        "solver": [StrOptions({"mu", "cd"})],
+        "shuffle": ["boolean"],
+    }
 
-class WeightedNMF(NMF):
+    def __init__(
+        self,
+        n_components=None,
+        *,
+        init=None,
+        solver="cd",
+        beta_loss="frobenius",
+        tol=1e-4,
+        max_iter=200,
+        random_state=None,
+        alpha_W=0.0,
+        alpha_H="same",
+        l1_ratio=0.0,
+        verbose=0,
+        shuffle=False,
+    ):
+        super().__init__(
+            n_components=n_components,
+            init=init,
+            beta_loss=beta_loss,
+            tol=tol,
+            max_iter=max_iter,
+            random_state=random_state,
+            alpha_W=alpha_W,
+            alpha_H=alpha_H,
+            l1_ratio=l1_ratio,
+            verbose=verbose,
+        )
+
+        self.solver = solver
+        self.shuffle = shuffle
+
+    def _check_params(self, X):
+        super()._check_params(X)
+
+        # solver
+        if self.solver != "mu" and self.beta_loss not in (2, "frobenius"):
+            # 'mu' is the only solver that handles other beta losses than 'frobenius'
+            raise ValueError(
+                f"Invalid beta_loss parameter: solver {self.solver!r} does not handle "
+                f"beta_loss = {self.beta_loss!r}"
+            )
+        if self.solver == "mu" and self.init == "nndsvd":
+            warnings.warn(
+                (
+                    "The multiplicative update ('mu') solver cannot update "
+                    "zeros present in the initialization, and so leads to "
+                    "poorer results when used jointly with init='nndsvd'. "
+                    "You may try init='nndsvda' or init='nndsvdar' instead."
+                ),
+                UserWarning,
+            )
+
+        return self
 
     def fit_transform(self, X, y=None, W=None, H=None, W_weights=None, H_weights=None):
 
@@ -41,23 +105,10 @@ class WeightedNMF(NMF):
         self.n_iter_ = n_iter
 
         return W
-    
-    def transform(self, X, W_weights=None, H_weights=None):
-        check_is_fitted(self)
-        X = self._validate_data(
-            X, accept_sparse=("csr", "csc"), dtype=[np.float64, np.float32], reset=False
-        )
-
-        with config_context(assume_finite=True):
-            W, *_ = self._fit_transform(X, H=self.components_, update_H=False, W_weights=W_weights, H_weights=H_weights)
-
-        return W
 
     def _fit_transform(self, X, y=None, W=None, H=None, update_H=True, W_weights=None, H_weights=None):
-        if W_weights is None and H_weights is None:
-            return super()._fit_transform(X, y, W, H, update_H=update_H)
         check_non_negative(X, "NMF (input X)")
-        
+
         # check parameters
         self._check_params(X)
 
@@ -74,7 +125,21 @@ class WeightedNMF(NMF):
         l1_reg_W, l1_reg_H, l2_reg_W, l2_reg_H = self._compute_regularization(X)
 
         if self.solver == "cd":
-            raise NotImplementedError
+            W, H, n_iter = _fit_coordinate_descent(
+                X,
+                W,
+                H,
+                self.tol,
+                self.max_iter,
+                l1_reg_W,
+                l1_reg_H,
+                l2_reg_W,
+                l2_reg_H,
+                update_H=update_H,
+                verbose=self.verbose,
+                shuffle=self.shuffle,
+                random_state=self.random_state,
+            )
         elif self.solver == "mu":
             W, H, n_iter, *_ = _fit_multiplicative_update(
                 X,
@@ -105,6 +170,18 @@ class WeightedNMF(NMF):
             )
 
         return W, H, n_iter
+
+    # TODO: fix transform method to accept weights
+    def transform(self, X):
+        check_is_fitted(self)
+        X = self._validate_data(
+            X, accept_sparse=("csr", "csc"), dtype=[np.float64, np.float32], reset=False
+        )
+
+        with config_context(assume_finite=True):
+            W, *_ = self._fit_transform(X, H=self.components_, update_H=False)
+
+        return W
 
 
 def _fit_multiplicative_update(
@@ -218,8 +295,7 @@ def _fit_multiplicative_update(
     if verbose and (tol == 0 or n_iter % 10 != 0):
         end_time = time.time()
         print(
-            "Epoch %02d reached after %.3f seconds." % (n_iter, end_time - start_time),
-            flush=True
+            "Epoch %02d reached after %.3f seconds." % (n_iter, end_time - start_time)
         )
 
     return W, H, n_iter
@@ -264,7 +340,65 @@ def _multiplicative_update_w(
         else:
             denominator = np.dot(W_weights * W, HHt)
     else:
-        raise NotImplementedError
+        if W_weights is not None:
+            raise NotImplementedError
+        # Numerator
+        # if X is sparse, compute WH only where X is non zero
+        WH_safe_X = _special_sparse_dot(W, H, X)
+        if sp.issparse(X):
+            WH_safe_X_data = WH_safe_X.data
+            X_data = X.data
+        else:
+            WH_safe_X_data = WH_safe_X
+            X_data = X
+            # copy used in the Denominator
+            WH = WH_safe_X.copy()
+            if beta_loss - 1.0 < 0:
+                WH[WH < EPSILON] = EPSILON
+
+        # to avoid taking a negative power of zero
+        if beta_loss - 2.0 < 0:
+            WH_safe_X_data[WH_safe_X_data < EPSILON] = EPSILON
+
+        if beta_loss == 1:
+            np.divide(X_data, WH_safe_X_data, out=WH_safe_X_data)
+        elif beta_loss == 0:
+            # speeds up computation time
+            # refer to /numpy/numpy/issues/9363
+            WH_safe_X_data **= -1
+            WH_safe_X_data **= 2
+            # element-wise multiplication
+            WH_safe_X_data *= X_data
+        else:
+            WH_safe_X_data **= beta_loss - 2
+            # element-wise multiplication
+            WH_safe_X_data *= X_data
+
+        # here numerator = dot(X * (dot(W, H) ** (beta_loss - 2)), H.T)
+        numerator = safe_sparse_dot(WH_safe_X, H.T)
+
+        # Denominator
+        if beta_loss == 1:
+            if H_sum is None:
+                H_sum = np.sum(H, axis=1)  # shape(n_components, )
+            denominator = H_sum[np.newaxis, :]
+
+        else:
+            # computation of WHHt = dot(dot(W, H) ** beta_loss - 1, H.T)
+            if sp.issparse(X):
+                # memory efficient computation
+                # (compute row by row, avoiding the dense matrix WH)
+                WHHt = np.empty(W.shape)
+                for i in range(X.shape[0]):
+                    WHi = np.dot(W[i, :], H)
+                    if beta_loss - 1 < 0:
+                        WHi[WHi < EPSILON] = EPSILON
+                    WHi **= beta_loss - 1
+                    WHHt[i, :] = np.dot(WHi, H.T)
+            else:
+                WH **= beta_loss - 1
+                WHHt = np.dot(WH, H.T)
+            denominator = WHHt
 
     # Add L1 and L2 regularization
     if l1_reg_W > 0:
@@ -298,7 +432,63 @@ def _multiplicative_update_h(
             denominator = np.linalg.multi_dot([W.T, W_weights * W, H * H_weights])
 
     else:
-        raise NotImplementedError
+        # Numerator
+        WH_safe_X = _special_sparse_dot(W, H, X)
+        if sp.issparse(X):
+            WH_safe_X_data = WH_safe_X.data
+            X_data = X.data
+        else:
+            WH_safe_X_data = WH_safe_X
+            X_data = X
+            # copy used in the Denominator
+            WH = WH_safe_X.copy()
+            if beta_loss - 1.0 < 0:
+                WH[WH < EPSILON] = EPSILON
+
+        # to avoid division by zero
+        if beta_loss - 2.0 < 0:
+            WH_safe_X_data[WH_safe_X_data < EPSILON] = EPSILON
+
+        if beta_loss == 1:
+            np.divide(X_data, WH_safe_X_data, out=WH_safe_X_data)
+        elif beta_loss == 0:
+            # speeds up computation time
+            # refer to /numpy/numpy/issues/9363
+            WH_safe_X_data **= -1
+            WH_safe_X_data **= 2
+            # element-wise multiplication
+            WH_safe_X_data *= X_data
+        else:
+            WH_safe_X_data **= beta_loss - 2
+            # element-wise multiplication
+            WH_safe_X_data *= X_data
+
+        # here numerator = dot(W.T, (dot(W, H) ** (beta_loss - 2)) * X)
+        numerator = safe_sparse_dot(W.T, WH_safe_X)
+
+        # Denominator
+        if beta_loss == 1:
+            W_sum = np.sum(W, axis=0)  # shape(n_components, )
+            W_sum[W_sum == 0] = 1.0
+            denominator = W_sum[:, np.newaxis]
+
+        # beta_loss not in (1, 2)
+        else:
+            # computation of WtWH = dot(W.T, dot(W, H) ** beta_loss - 1)
+            if sp.issparse(X):
+                # memory efficient computation
+                # (compute column by column, avoiding the dense matrix WH)
+                WtWH = np.empty(H.shape)
+                for i in range(X.shape[1]):
+                    WHi = np.dot(W, H[:, i])
+                    if beta_loss - 1 < 0:
+                        WHi[WHi < EPSILON] = EPSILON
+                    WHi **= beta_loss - 1
+                    WtWH[:, i] = np.dot(W.T, WHi)
+            else:
+                WH **= beta_loss - 1
+                WtWH = np.dot(W.T, WH)
+            denominator = WtWH
 
     # Add L1 and L2 regularization
     if l1_reg_H > 0:
@@ -343,7 +533,12 @@ def _beta_divergence(X, W, H, beta, square_root=False, W_weights=None, H_weights
     if beta == 2:
         # Avoid the creation of the dense np.dot(W, H) if X is sparse.
         if sp.issparse(X):
-            raise NotImplementedError
+            if W_weights is not None or H_weights is not None:
+                raise NotImplementedError()
+            norm_X = np.dot(X.data, X.data)
+            norm_WH = trace_dot(np.linalg.multi_dot([W.T, W, H]), H)
+            cross_prod = trace_dot((X * H.T), W)
+            res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
         else:
             if W_weights is None:
                 res = squared_norm(X - np.dot(W, H)) / 2.0
@@ -355,12 +550,64 @@ def _beta_divergence(X, W, H, beta, square_root=False, W_weights=None, H_weights
             return np.sqrt(res * 2)
         else:
             return res
+    if W_weights is not None:
+        raise NotImplementedError()
+    if sp.issparse(X):
+        # compute np.dot(W, H) only where X is nonzero
+        WH_data = _special_sparse_dot(W, H, X).data
+        X_data = X.data
     else:
-        raise NotImplementedError
+        WH = np.dot(W, H)
+        WH_data = WH.ravel()
+        X_data = X.ravel()
+
+    # do not affect the zeros: here 0 ** (-1) = 0 and not infinity
+    indices = X_data > EPSILON
+    WH_data = WH_data[indices]
+    X_data = X_data[indices]
+
+    # used to avoid division by zero
+    WH_data[WH_data < EPSILON] = EPSILON
+
+    # generalized Kullback-Leibler divergence
+    if beta == 1:
+        # fast and memory efficient computation of np.sum(np.dot(W, H))
+        sum_WH = np.dot(np.sum(W, axis=0), np.sum(H, axis=1))
+        # computes np.sum(X * log(X / WH)) only where X is nonzero
+        div = X_data / WH_data
+        res = np.dot(X_data, np.log(div))
+        # add full np.sum(np.dot(W, H)) - np.sum(X)
+        res += sum_WH - X_data.sum()
+
+    # Itakura-Saito divergence
+    elif beta == 0:
+        div = X_data / WH_data
+        res = np.sum(div) - np.prod(X.shape) - np.sum(np.log(div))
+
+    # beta-divergence, beta not in (0, 1, 2)
+    else:
+        if sp.issparse(X):
+            # slow loop, but memory efficient computation of :
+            # np.sum(np.dot(W, H) ** beta)
+            sum_WH_beta = 0
+            for i in range(X.shape[1]):
+                sum_WH_beta += np.sum(np.dot(W, H[:, i]) ** beta)
+
+        else:
+            sum_WH_beta = np.sum(WH**beta)
+
+        sum_X_WH = np.dot(X_data, WH_data ** (beta - 1))
+        res = (X_data**beta).sum() - beta * sum_X_WH
+        res += sum_WH_beta * (beta - 1)
+        res /= beta * (beta - 1)
+
+    if square_root:
+        res = max(res, 0)  # avoid negative number due to rounding errors
+        return np.sqrt(2 * res)
+    else:
+        return res
 
 
-
-# Defunc
 def random_initialize_u_v(X, n_components,random_state = 0):
     n_features, n_samples = X.shape
     mean = np.mean(X)
@@ -378,6 +625,4 @@ def random_initialize_u_v(X, n_components,random_state = 0):
     ## set all zeroes (if there are any) to epsmin
     epsmin = np.finfo(type(X[0,0])).eps
     V[V==0]=epsmin
-    U[U==0]=epsmin                    
-
-    return U,V
+    U[U==0]=epsmin 
