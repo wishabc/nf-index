@@ -126,12 +126,12 @@ def parse_args_matrix(args):
 
 def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
     if args.samples_mask is not None:
-        samples_m = np.load(args.samples_mask)
+        samples_m = np.loadtxt(args.samples_mask, dtype=bool)
     else:
         samples_m = np.ones(matrix.shape[1], dtype=bool)
     
     if args.peaks_mask is not None:
-        peaks_m = np.load(args.peaks_mask).astype(bool)
+        peaks_m = np.loadtxt(args.peaks_mask, dtype=bool)
     else:
         peaks_m = np.ones(matrix.shape[0], dtype=bool)
     
@@ -152,11 +152,11 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
     )
 
 
-def read_weights(weights_path, shape, sample_names=None, ext=None):
+def read_weights(weights_path, shape, sample_names=None):
     weights_vector = np.ones(shape, dtype=float)
-    if weights_path:
-        if ext == 'npy':
-            weights_vector = np.load(weights_path)  
+    if weights_path is not None:
+        if os.path.splitext(weights_path)[-1] == 'npy':
+            weights_vector = np.load(weights_path)
         else:
             weights_df = pd.read_table(weights_path).set_index('id')
             if sample_names is not None:
