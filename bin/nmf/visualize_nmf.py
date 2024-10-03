@@ -202,23 +202,23 @@ def main(nmf_data: NMFInputData, W, H, vis_path, component_data=None):
     binary_matrix = nmf_data.matrix
     dhs_meta = nmf_data.dhs_metadata
 
-    for i, row in component_data.iterrows():
-        weights = np.ones(W.shape[0])
-        weights[i] = W.shape[0]
+    # for i, row in component_data.iterrows():
+    #     weights = np.ones(W.shape[0])
+    #     weights[i] = W.shape[0]
 
-        agst = np.argsort(relative_W + weights[:, None], axis=0)[::-1, :]
-        print((agst[0] == i).all())
+    #     agst = np.argsort(relative_W + weights[:, None], axis=0)[::-1, :]
+    #     print((agst[0] == i).all())
 
-        _, fig = barplot_at_scale(
-            relative_W,
-            metadata.iloc[:, :],
-            colors=component_data['color'],
-            order=np.argsort(relative_W[i, :])[::-1],
-            agst=agst
-        )
-        comp_name = row["name"].replace("/", "_").replace(' ', '_')
-        fig.savefig(f'{vis_path}/Detailed_barplot.{comp_name}.pdf', transparent=True, bbox_inches='tight')
-        plt.close(fig)
+    #     _, fig = barplot_at_scale(
+    #         relative_W,
+    #         metadata.iloc[:, :],
+    #         colors=component_data['color'],
+    #         order=np.argsort(relative_W[i, :])[::-1],
+    #         agst=agst
+    #     )
+    #     comp_name = row["name"].replace("/", "_").replace(' ', '_')
+    #     fig.savefig(f'{vis_path}/Detailed_barplot.{comp_name}.pdf', transparent=True, bbox_inches='tight')
+    #     plt.close(fig)
 
     ######### Plot samples #########
     if samples_mask.sum() < samples_mask.shape[0]:
