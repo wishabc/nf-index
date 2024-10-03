@@ -135,13 +135,10 @@ def _fit_multiplicative_update(
     else:
         gamma = 1.0
 
-    if W_weights is None and H_weights is None:
+    if W_weights is None:
         wX = X
     else:
-        if sp.issparse(X):
-            wX = X.multiply(W_weights).multiply(H_weights)
-        else:
-            wX = X * W_weights * H_weights
+        wX = get_wX(X, W_weights, H_weights)
 
     # used for the convergence criterion
     error_at_init = _beta_divergence(
@@ -332,6 +329,12 @@ def _multiplicative_update_h(
 
     return H
 
+def get_wX(X, W_weights, H_weights):
+    if sp.issparse(X):
+        wX = X.multiply(W_weights.squeeze()).T.multiply(H_weights.squeeze()).T
+    else:
+        wX = X * W_weights * H_weights
+    return wX
 
 def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, H_weights=None):
     beta = _beta_loss_to_float(beta)
@@ -352,13 +355,10 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
                 cross_prod = trace_dot((X * H.T), W)
             else:
                 if wX is None:
-                    if sp.issparse(X):
-                        wX = X.multiply(W_weights).multiply(H_weights)
-                    else:
-                        wX = X * W_weights * H_weights
-
+                    wX = get_wX(X, W_weights, H_weights)
                 sqrt_wW = W * np.sqrt(W_weights)
                 sqrt_wH = H * np.sqrt(H_weights)
+
                 norm_X = np.dot(wX.data, X.data)
                 norm_WH = trace_dot(np.linalg.multi_dot([sqrt_wW.T, sqrt_wW, sqrt_wH]), sqrt_wH)
                 cross_prod = trace_dot((wX @ H.T), W)
