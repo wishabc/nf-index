@@ -115,12 +115,11 @@ def parse_args_matrix(args):
     else:
         samples_metadata = pd.DataFrame(index=sample_names)
     
-    if hasattr(args, 'dhs_annotations') \
-        and (args.dhs_annotation is not None) \
-        and os.path.exists(args.dhs_annotations) \
-        and ('dist_tss' not in dhs_meta.columns):
-        dhs_annotations = pd.read_table(args.dhs_annotations).set_index('dhs_id')
-        dhs_meta['dist_tss'] = dhs_annotations['dist_tss']
+    if hasattr(args, 'dhs_annotations') and ('dist_tss' not in dhs_meta.columns):
+        da = args.dhs_annotations
+        if da is not None and os.path.exists(da):
+            dhs_annotations = pd.read_table(args.dhs_annotations).set_index('dhs_id')
+            dhs_meta['dist_tss'] = dhs_annotations['dist_tss']
     
     return parse_optional_args(args, mat, dhs_metadata=dhs_meta, samples_metadata=samples_metadata)
 
