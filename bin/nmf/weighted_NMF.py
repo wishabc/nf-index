@@ -346,7 +346,10 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
         if W_weights is None:
             wX = X
         else:
-            wX = X * W_weights * H_weights
+            if sp.issparse(X):
+                wX = X.multiply(W_weights).multiply(H_weights)
+            else:
+                wX = X * W_weights * H_weights
 
     # Frobenius norm
     if beta == 2:
