@@ -10,7 +10,7 @@ process fit_nmf {
     label "highmem"
 
 	input:
-		tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(dhs_meta), val(weights_path), val(peaks_mask), val(samples_mask), val(peaks_weights), val(extra_params)
+		tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(dhs_meta), val(samples_weights), val(peaks_mask), val(samples_mask), val(peaks_weights), val(extra_params)
 
 	output:
         tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(dhs_meta), path("${prefix}.W.npy"), path("${prefix}.H.npy"), path("${prefix}.non_zero_peaks_mask.txt"), path("${prefix}.samples_mask.txt")
@@ -23,7 +23,7 @@ process fit_nmf {
         --matrix ${matrix_path} \
         --sample_names ${sample_names} \
         --dhs_meta ${dhs_meta} \
-        ${non_required_arg(weights_path, '--samples_weights')} \
+        ${non_required_arg(samples_weights, '--samples_weights')} \
         ${non_required_arg(samples_mask, '--samples_mask')} \
         ${non_required_arg(peaks_mask, '--peaks_mask')} \
         ${non_required_arg(peaks_weights, '--peaks_weights')} \
