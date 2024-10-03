@@ -135,9 +135,12 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
     else:
         peaks_m = np.ones(matrix.shape[0], dtype=bool)
     
-    W_weights_vector = read_weights(args.samples_weights, matrix.shape[1], samples_metadata.index)
-    H_weights_vector = read_weights(args.peaks_weights, matrix.shape[0], dhs_metadata.index)
-    
+    if hasattr(args, 'samples_weights') and hasattr(args, 'peaks_weights'):
+        W_weights_vector = read_weights(args.samples_weights, matrix.shape[1], samples_metadata.index)
+        H_weights_vector = read_weights(args.peaks_weights, matrix.shape[0], dhs_metadata.index)
+    else:
+        W_weights_vector = H_weights_vector = None
+  
     return NMFInputData(
         matrix=matrix,
         samples_mask=samples_m,
