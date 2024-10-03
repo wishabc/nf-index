@@ -39,7 +39,7 @@ process visualize_nmf {
     errorStrategy 'ignore'
 
 	input:
-        tuple val(prefix), val(n_components), path(binary_matrix), path(sample_names), path(dhs_meta), path(W), path(H), path(peaks_mask), path(samples_mask)
+        tuple val(prefix), val(n_components), path(matrix_path), path(sample_names), path(dhs_meta), path(W), path(H), path(peaks_mask), path(samples_mask)
 
 	output:
         tuple val(prefix), path("*.pdf")
