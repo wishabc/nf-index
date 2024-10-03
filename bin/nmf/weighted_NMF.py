@@ -342,15 +342,6 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
     W = np.atleast_2d(W)
     H = np.atleast_2d(H)
 
-    if wX is None:
-        if W_weights is None:
-            wX = X
-        else:
-            if sp.issparse(X):
-                wX = X.multiply(W_weights).multiply(H_weights)
-            else:
-                wX = X * W_weights * H_weights
-
     # Frobenius norm
     if beta == 2:
         # Avoid the creation of the dense np.dot(W, H) if X is sparse.
@@ -360,6 +351,12 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
                 norm_WH = trace_dot(np.linalg.multi_dot([W.T, W, H]), H)
                 cross_prod = trace_dot((X * H.T), W)
             else:
+                if wX is None:
+                    if sp.issparse(X):
+                        wX = X.multiply(W_weights).multiply(H_weights)
+                    else:
+                        wX = X * W_weights * H_weights
+
                 sqrt_wW = W * np.sqrt(W_weights)
                 sqrt_wH = H * np.sqrt(H_weights)
                 norm_X = np.dot(wX.data, X.data)
