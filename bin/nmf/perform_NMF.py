@@ -7,11 +7,12 @@ from weighted_NMF import WeightedNMF
 from collections import namedtuple
 from nmf_tools.data.anndata_loader import read_zarr_backed
 import os
+import scipy.sparse as sp
 
 NMFInputData = namedtuple('NMFInputData', ['matrix', 'samples_mask', 'peaks_mask', 'samples_weights', 'peaks_weights', 'samples_metadata', 'dhs_metadata'])
 
 
-def initialize_model(n_components, extra_params, is_weighted=False):
+def initialize_model(n_components, extra_params=None, is_weighted=False):
     params = dict(n_components=n_components,
                     solver='mu', beta_loss='frobenius',
                     random_state=0, init="nndsvda",
@@ -31,11 +32,12 @@ def initialize_model(n_components, extra_params, is_weighted=False):
 
 def run_NMF(model: NMF, X, W_weights=None, H_weights=None):
     assert (W_weights is None) == (H_weights is None), 'Both or neither weights should be provided'
+    X = sp.coo_matrix(X.T).tocsr()
     if W_weights is not None:
         assert len(W_weights.shape) == 1 and len(H_weights.shape) == 1, 'Weights should be 1D arrays'
-        W = model.fit_transform(X.T, W_weights=W_weights[:, None], H_weights=H_weights[None, :])
+        W = model.fit_transform(X, W_weights=W_weights[:, None], H_weights=H_weights[None, :])
     else:
-        W = model.fit_transform(X.T)
+        W = model.fit_transform(X)
 
     H = model.components_ # components x peaks
     return W, H, model
@@ -45,7 +47,8 @@ def project_samples(data, model, H, W_weights=None, H_weights=None):
     # data: peaks x samples
     # H: components x peaks
     # NMF: samples x peaks = samples x components * components x peaks
-    params = dict(X=data.T, H=H, update_H=False)
+    X = sp.coo_matrix(data.T).tocsr()
+    params = dict(X=X, H=H, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
         params = {**params,
@@ -60,7 +63,8 @@ def project_peaks(data, model, W, W_weights=None, H_weights=None):
     # data: peaks x samples
     # W: samples x components
     # NMF: peaks x samples = peaks x components * components x samples
-    params = dict(X=data, H=W.T, update_H=False)
+    X = sp.coo_matrix(data).tocsr()
+    params = dict(X=X, H=W.T, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
         params = {**params,

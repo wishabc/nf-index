@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from sklearn.decomposition import NMF
-from sklearn.decomposition._nmf import _beta_loss_to_float
+from sklearn.decomposition._nmf import _beta_loss_to_float, trace_dot
 import numpy as np
 import scipy.sparse as sp
 import time
@@ -32,7 +32,7 @@ class WeightedNMF(NMF):
             W, H, n_iter = self._fit_transform(X, W=W, H=H, W_weights=W_weights, H_weights=H_weights)
 
         self.reconstruction_err_ = _beta_divergence(
-            X, W, H, self._beta_loss, square_root=True, 
+            X, W, H, self._beta_loss, square_root=True, wX=None,
             W_weights=W_weights, H_weights=H_weights
         )
 
@@ -135,21 +135,23 @@ def _fit_multiplicative_update(
     else:
         gamma = 1.0
 
+    if W_weights is None and H_weights is None:
+        wX = X
+    else:
+        if sp.issparse(X):
+            wX = X.multiply(W_weights).multiply(H_weights)
+        else:
+            wX = X * W_weights * H_weights
+
     # used for the convergence criterion
     error_at_init = _beta_divergence(
-        X, W, H, beta_loss, square_root=True, 
+        X, W, H, beta_loss, square_root=True, wX=wX,
         W_weights=W_weights, H_weights=H_weights
     )
     previous_error = error_at_init
 
     H_sum, HHt, XHt = None, None, None
-    if W_weights is None and H_weights is None:
-        wX = X
-    else:
-        if sp.issparse(X):
-            wX = X.multiply(W_weights)
-        else:
-            wX = X * W_weights * H_weights
+
     for n_iter in range(1, max_iter + 1):
         # update W
         # H_sum, HHt and XHt are saved and reused if not update_H
@@ -199,6 +201,7 @@ def _fit_multiplicative_update(
             error = _beta_divergence(
                 X, W, H, beta_loss,
                 square_root=True,
+                wX=wX,
                 W_weights=W_weights,
                 H_weights=H_weights
             )
@@ -330,7 +333,7 @@ def _multiplicative_update_h(
     return H
 
 
-def _beta_divergence(X, W, H, beta, square_root=False, W_weights=None, H_weights=None):
+def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, H_weights=None):
     beta = _beta_loss_to_float(beta)
 
     # The method can be called with scalars
@@ -339,17 +342,35 @@ def _beta_divergence(X, W, H, beta, square_root=False, W_weights=None, H_weights
     W = np.atleast_2d(W)
     H = np.atleast_2d(H)
 
+    if wX is None:
+        if W_weights is None:
+            wX = X
+        else:
+            wX = X * W_weights * H_weights
+
     # Frobenius norm
     if beta == 2:
         # Avoid the creation of the dense np.dot(W, H) if X is sparse.
         if sp.issparse(X):
-            raise NotImplementedError
+            if W_weights is None:
+                norm_X = np.dot(X.data, X.data)
+                norm_WH = trace_dot(np.linalg.multi_dot([W.T, W, H]), H)
+                cross_prod = trace_dot((X * H.T), W)
+            else:
+                sqrt_wW = W * np.sqrt(W_weights)
+                sqrt_wH = H * np.sqrt(H_weights)
+                norm_X = np.dot(wX.data, X.data)
+                norm_WH = trace_dot(np.linalg.multi_dot([sqrt_wW.T, sqrt_wW, sqrt_wH]), sqrt_wH)
+                cross_prod = trace_dot((wX @ H.T), W)
+
+            res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
         else:
             if W_weights is None:
                 res = squared_norm(X - np.dot(W, H)) / 2.0
             else:
-                K = np.ravel((X - np.dot(W, H)) * np.sqrt(W_weights) * np.sqrt(H_weights))
-                res = np.dot(K, K) / 2.0
+                res = squared_norm(
+                    (X - np.dot(W, H)) * np.sqrt(W_weights) * np.sqrt(H_weights)
+                ) / 2.0
 
         if square_root:
             return np.sqrt(res * 2)
@@ -357,27 +378,3 @@ def _beta_divergence(X, W, H, beta, square_root=False, W_weights=None, H_weights
             return res
     else:
         raise NotImplementedError
-
-
-
-# Defunc
-def random_initialize_u_v(X, n_components,random_state = 0):
-    n_features, n_samples = X.shape
-    mean = np.mean(X)
-    random_number_generator = np.random.RandomState(random_state)
-    ## estimate density by partitioning mean across components
-    est = np.sqrt(mean/n_components)
-
-    ## generate entries of U/V using randn, scale by est
-    U = est*random_number_generator.randn(n_features,n_components)
-    np.abs(U,U) ## mutate in-place absolute value
-
-    V = est*random_number_generator.randn(n_components,n_samples)
-    np.abs(V,V) ## mutate in-place absolute value
-
-    ## set all zeroes (if there are any) to epsmin
-    epsmin = np.finfo(type(X[0,0])).eps
-    V[V==0]=epsmin
-    U[U==0]=epsmin                    
-
-    return U,V
