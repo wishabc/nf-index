@@ -332,7 +332,7 @@ def _multiplicative_update_h(
 
 def get_wX(X, W_weights, H_weights):
     if sp.issparse(X):
-        wX = X.multiply(H_weights.squeeze()).T.multiply(W_weights.squeeze()).T
+        wX = X.multiply(H_weights.squeeze()).T.multiply(W_weights.squeeze()).T.tocsr()
     else:
         wX = X * W_weights * H_weights
     return wX
