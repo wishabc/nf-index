@@ -228,6 +228,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    print('Parsing arguments')
     nmf_data = parse_nmf_args(args)
     if args.extra_params is not None:
         with open(args.extra_params) as f:
