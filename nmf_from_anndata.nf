@@ -62,7 +62,7 @@ workflow {
     Channel.fromPath(params.nmf_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
-            "${row.prefix}.${row.n_components}",
+            row.prefix,
             row.n_components,
             file(row.anndata_path),
             row?.samples_weights,
@@ -71,6 +71,7 @@ workflow {
             row?.peaks_weights,
             row?.extra_params
             ))
+        | distinct { it[0] }
         | fit_nmf
         | visualize_nmf
     add_metadata()
@@ -83,10 +84,11 @@ workflow visualize {
     Channel.fromPath(params.nmf_params_list)
         | splitCsv(header:true, sep:'\t')
 		| map(row -> tuple(
-            "${row.prefix}.${row.n_components}",
+            row.prefix,
             row.n_components,
             file(row.anndata_path),
             ))
+        | distinct { it[0] }
         | map( 
             it -> tuple(
                 *it[0..(it.size()-1)],
