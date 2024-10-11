@@ -150,7 +150,7 @@ workflow normalizeMatrix {
             | map(it -> tuple([it[0], it[2], it[3]], [it[1], it[4], it[5]], it[6], it[7]))
 
 	emit:
-		out // deseq2_matrix, deseq2_model_params, log_diffs, scale_factors, lowess_params1, lowess_params2, vp_annotated_masterlist, formula
+		out // deseq2_matrix, log_diffs, scale_factors, deseq2_model_params, lowess_params1, lowess_params2, vp_annotated_masterlist, formula
 }
 
 process extract_normalization_params_from_template {

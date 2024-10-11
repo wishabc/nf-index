@@ -51,7 +51,7 @@ def add_matrices_to_anndata(adata, matrices_mapping):
         if matrix.shape[1] != adata.shape[1]:
             mask = adata.var['final_qc_passing_dhs']
             assert mask.sum() == matrix.shape[1]
-            data = np.empty(adata.shape, dtype=matrix.dtype)
+            data = np.empty(adata.shape, dtype=np.float32)
             data[:] = np.nan
             data[:, mask] = matrix
             matrix = data
