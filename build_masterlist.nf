@@ -7,6 +7,7 @@ include { convert_index_to_anndata } from "./convert_to_anndata"
 process collate_and_chunk {
     conda params.conda
     label "highmem"
+    scratch true
     
     input:
         path "peaks/peaks*.starch"
