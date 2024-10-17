@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import base64
 import json
-from nmf_tools.data.anndata_loader import read_zarr_backed
+from genome_tools.data.anndata import read_zarr_backed
 
 
 class NpEncoder(json.JSONEncoder):

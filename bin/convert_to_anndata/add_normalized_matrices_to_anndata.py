@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from helpers import add_matrices_to_anndata
-from nmf_tools.data.anndata_loader import read_zarr_backed
+from genome_tools.data.anndata import read_zarr_backed
 import json
 import base64
 

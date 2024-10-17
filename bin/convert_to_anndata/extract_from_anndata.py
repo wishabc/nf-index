@@ -2,7 +2,7 @@ import dask.array as da
 import scipy.sparse as sp
 import numpy as np
 import argparse
-from nmf_tools.data.anndata_loader import read_zarr_backed
+from genome_tools.data.anndata import read_zarr_backed
 
 
 def main(anndata_obj, extra_keys):
