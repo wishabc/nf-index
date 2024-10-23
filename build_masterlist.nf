@@ -19,8 +19,7 @@ process collate_and_chunk {
     """
     > tmp.bed
     for f in peaks/*; 
-        do zcat \$f \
-            | grep -v '#chr' >> tmp.bed;
+        do zcat \$f | grep -v '#chr' >> tmp.bed;
     done
 
     sort-bed tmp.bed \
