@@ -17,9 +17,11 @@ process collate_and_chunk {
 
     script:
     """
-    > tmp.bed
+    
     for f in peaks/*; 
-        do zcat \$f | grep -v '#chr' >> tmp.bed;
+        do zcat \$f \
+            | grep -v '#chr' \
+            | awk -v OFS='\t' '{print \$0,\$6}' >> tmp.bed; # add mock
     done
 
     sort-bed tmp.bed \
