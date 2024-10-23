@@ -110,13 +110,13 @@ for TYPE in ${TYPES}; do
     }' "${FILE_INDEXIDS}" > "${FILE_BED12}"
   fi
 
-  if ! [[ -f "$FILE_BIGBED" ]] ; then
-    echo "Converting BED file to BIGBED file"
-    #bedToBigBed -type=bed12 "${FILE_BED12}" "$CHROM_FILE" "${FILE_BIGBED}"
-    bedToBigBed -type=bed12 "${FILE_BED12}" <(cut -f1,3 "$CHROM_FILE") "${FILE_BIGBED}"
-  fi
+#   if ! [[ -f "$FILE_BIGBED" ]] ; then
+#     echo "Converting BED file to BIGBED file"
+#     #bedToBigBed -type=bed12 "${FILE_BED12}" "$CHROM_FILE" "${FILE_BIGBED}"
+#     bedToBigBed -type=bed12 "${FILE_BED12}" <(cut -f1,3 "$CHROM_FILE") "${FILE_BIGBED}"
+#   fi
 
-  echo "Load this track in the UCSC browser using the following:"
-  echo "track type=bigBed name=master_list_${NAME}_${TYPE} useScore=1 visibility=2 itemRgb='On' bigDataUrl=https://[username:password@URL]/${FILE_BIGBED}"
+#   echo "Load this track in the UCSC browser using the following:"
+#   echo "track type=bigBed name=master_list_${NAME}_${TYPE} useScore=1 visibility=2 itemRgb='On' bigDataUrl=https://[username:password@URL]/${FILE_BIGBED}"
 
 done
