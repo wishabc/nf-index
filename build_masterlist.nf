@@ -19,7 +19,7 @@ process collate_and_chunk {
     """
     
     for f in peaks/*; 
-        do unstarch \$f >> tmp.bed;
+        do zcat \$f | grep -v '#chr' >> tmp.bed;
     done
 
     sort-bed tmp.bed \
