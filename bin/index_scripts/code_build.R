@@ -43,8 +43,8 @@ dir.create("peaks_all", showWarnings=FALSE, recursive=TRUE)
 #for (chunk in chunks) {
   # Load in data per chunk, each separated by at least 10kb
   peaks <- read.delim(paste(filepath,chunk,sep='/'), header=FALSE, as.is=T)
-  #colnames(peaks) <- c("seqname", "start", "end", "ID", "score", "density_summit", "sampleID", "wavelet_summit")
-  colnames(peaks) <- c("seqname", "start", "end", "sampleID", "score", "density_summit", "wavelet_summit")
+  #colnames(peaks) <- c("seqname", "start", "end", "ID", "score", "sampleID", "wavelet_summit")
+  colnames(peaks) <- c("seqname", "start", "end", "sampleID", "score", "wavelet_summit")
   peaks <- peaks[order(peaks$wavelet_summit),] # Order peaks by wavelet summit first
 
   DHSs <- NULL; # Final list of delineated DHSs
