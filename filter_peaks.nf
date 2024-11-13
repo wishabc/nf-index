@@ -14,16 +14,16 @@ process convert_to_numpy {
         tuple val(prefix), path(matrix)
 
     output:
-        tuple val(prefix), path(name)
+        tuple val(prefix), path("${file_prefix}*")
 
     script:
-    name = "${prefix}.raw.matrix.npy"
+    file_prefix = "${prefix}.raw.matrix"
     dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
     fmt = prefix.contains('binary') ? 'sparse' : 'binary'
     """
     python3 $moduleDir/bin/convert_to_numpy.py \
         ${matrix} \
-        ${name} \
+        ${file_prefix} \
         --dtype ${dtype} \
         --fmt ${fmt}
     """
