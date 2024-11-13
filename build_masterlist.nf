@@ -20,8 +20,8 @@ process collate_and_chunk {
     
     for f in peaks/*; 
         do zcat \$f \
-            | grep -v '#chr' \
-            | awk -v OFS='\t' '{print \$0,\$6}' >> tmp.bed; # add mock
+            | cut -f1-7 \
+            | grep -v '#chr' >> tmp.bed; # add mock
     done
 
     sort-bed tmp.bed \
