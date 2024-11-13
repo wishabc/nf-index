@@ -19,11 +19,13 @@ process convert_to_numpy {
     script:
     name = "${prefix}.raw.matrix.npy"
     dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
+    fmt = prefix.contains('binary') ? 'sparse' : 'binary'
     """
     python3 $moduleDir/bin/convert_to_numpy.py \
         ${matrix} \
         ${name} \
-        --dtype ${dtype}
+        --dtype ${dtype} \
+        --fmt ${fmt}
     """
 }
 

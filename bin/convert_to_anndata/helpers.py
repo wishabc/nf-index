@@ -38,6 +38,30 @@ def convert_to_sparse_if_sufficently_sparse(matrix, threshold=0.7):
     else:
         print("Matrix is sufficiently dense; keeping the current format.")
         return matrix
+
+
+def load_from_file(filepath):
+    """
+    Load data from a .npz or .npy file, inferring if the .npz contains a sparse matrix.
+    
+    Parameters:
+    filepath (str): Path to the .npy or .npz file.
+    
+    Returns:
+    np.ndarray or scipy.sparse.spmatrix: Loaded data as a NumPy array (for .npy files) 
+                                         or a SciPy sparse matrix (for .npz sparse files).
+    """
+    if filepath.endswith('.npy'):
+        # Load as a dense NumPy array
+        return np.load(filepath)
+    elif filepath.endswith('.npz'):
+        # Attempt to load as a sparse matrix
+        try:
+            return sp.load_npz(filepath)
+        except (OSError, IOError):
+            return dict(np.load(filepath))
+    else:
+        raise ValueError("Unsupported file format. Expected formats are .npy or .npz ")
     
 
 def add_matrices_to_anndata(adata, matrices_mapping):

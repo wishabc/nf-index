@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 import numpy as np
 import os
-from helpers import convert_to_sparse_if_sufficently_sparse
+from helpers import convert_to_sparse_if_sufficently_sparse, load_from_file
     
 
 def main(rows_meta, cols_meta, matrix, masks):
@@ -34,7 +34,9 @@ def main(rows_meta, cols_meta, matrix, masks):
 if __name__ == '__main__':
     annotated_masterlist = pd.read_table(sys.argv[1]).set_index('dhs_id')
     samples_order = np.loadtxt(sys.argv[2], dtype=str)
-    matrix = convert_to_sparse_if_sufficently_sparse(np.load(sys.argv[3]).T)
+    
+    matrix = load_from_file(sys.argv[3]).T
+    matrix = convert_to_sparse_if_sufficently_sparse(matrix)
 
     samples_meta = pd.read_table(sys.argv[4]).set_index('ag_id').loc[samples_order]
 

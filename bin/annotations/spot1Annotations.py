@@ -3,12 +3,13 @@
 #Load Dependencies
 import pandas as pd
 import numpy as np
+from scipy.sparse import load_npz
 import sys
 import gc
 
 
 #Load in Binary Matrix and Metadata for subsampled SPOT score
-b = np.load(sys.argv[1]).astype(float)
+b = load_npz(sys.argv[1]).astype(float)
 samples_order = np.loadtxt(sys.argv[2], dtype=str)
 
 metadata = pd.read_table(sys.argv[3]).set_index('ag_id').loc[samples_order]
