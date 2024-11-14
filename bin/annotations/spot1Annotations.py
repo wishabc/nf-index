@@ -49,6 +49,7 @@ def convert_to_sparse_if_sufficently_sparse(matrix, threshold=0.7):
 
 #Load in Binary Matrix and Metadata for subsampled SPOT score
 b = np.load(sys.argv[1])
+print('Loaded Binary Matrix')
 b = convert_to_sparse_if_sufficently_sparse(b).astype(float)
 samples_order = np.loadtxt(sys.argv[2], dtype=str)
 
@@ -60,6 +61,8 @@ b = b.multiply(spot1[None, :])
 
 #Replace 0's with nan's for computation
 b = np.where(b != 0, b, np.nan)
+
+print('Calculating SPOT1 Metrics')
 
 #Calculate metrics across rows
 spot1_std = np.nanstd(b, axis=1)
