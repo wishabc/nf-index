@@ -56,7 +56,7 @@ metadata = pd.read_table(sys.argv[3]).set_index('ag_id').loc[samples_order]
 
 #Make sure the spot1 scores and matrix are matrix compatible
 spot1 = metadata['SPOT1_score'].to_numpy()
-b *= spot1[None, :]
+b = b.multiply(spot1[None, :])
 
 #Replace 0's with nan's for computation
 b = np.where(b != 0, b, np.nan)
