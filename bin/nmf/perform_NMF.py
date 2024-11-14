@@ -90,7 +90,12 @@ def parse_args_anndata(args):
     anndata = read_zarr_backed(args.from_anndata)
     anndata = anndata[anndata.obs['final_qc_passing_sample'], anndata.var['final_qc_passing_dhs']]
     matrix = anndata.layers['binary'].T.todense()
-    return parse_optional_args(args, matrix, anndata.obs, anndata.var)
+    return parse_optional_args(
+        args,
+        matrix,
+        samples_metadata=anndata.obs,
+        dhs_metadata=anndata.var
+    )
 
 
 def parse_args_matrix(args):
@@ -174,7 +179,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
 
     samples_masked_matrix = mat[:, samples_m]
     non_zero_rows = samples_masked_matrix.sum(axis=1) > 0
-
+    print(non_zero_rows.shape, peaks_m.shape)
     peaks_mask = peaks_m & non_zero_rows
 
     matrix_samples_peaks_slice = mat[peaks_mask, :][:, samples_m]
