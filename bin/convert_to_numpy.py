@@ -35,7 +35,7 @@ if __name__ == '__main__':
     out_path = args.outpath
     logger.info('Starting processing')
 
-    dtype = dict(zip(('int', 'float', 'bool'), (np.uint32, np.float32, bool)))[args.dtype]
+    dtype = dict(zip(('int', 'float', 'bool'), (np.int32, np.float32, bool)))[args.dtype]
     matrix_dense = read_matrix(input_path, dtype=dtype)
     logger.info(f'Matrix size: {matrix_dense.shape}. '
                 f'Density: {(matrix_dense != 0).sum() / matrix_dense.size}'

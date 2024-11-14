@@ -20,15 +20,12 @@ metadata = pd.read_table(sys.argv[3]).set_index('ag_id').loc[samples_order]
 spot1 = metadata['SPOT1_score'].to_numpy(dtype=np.float32)
 b *= spot1[None, :]
 
-#Replace 0's with nan's for computation
-b = np.where(b != 0, b, np.nan)
-
+b[b == 0] = np.nan
 print('Calculating SPOT1 Metrics')
 
 #Calculate metrics across rows
 spot1_std = np.nanstd(b, axis=1)
 spot1_mean = np.nanmean(b, axis=1)
-
 spot1_q = np.nanpercentile(b, [0, 0.25, 0.5, 0.75, 1], axis=1)
 
 del b
