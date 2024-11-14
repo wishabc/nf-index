@@ -48,8 +48,9 @@ def convert_to_sparse_if_sufficently_sparse(matrix, threshold=0.7):
 
 
 #Load in Binary Matrix and Metadata for subsampled SPOT score
+print('Loading Binary matrix')
 b = np.load(sys.argv[1])
-print('Loaded Binary Matrix')
+print('Loaded Binary matrix')
 b = convert_to_sparse_if_sufficently_sparse(b).astype(float)
 samples_order = np.loadtxt(sys.argv[2], dtype=str)
 
