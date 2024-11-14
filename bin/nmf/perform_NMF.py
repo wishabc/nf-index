@@ -87,14 +87,17 @@ def parse_nmf_args(args) -> NMFInputData:
 
 
 def parse_args_anndata(args):
-    anndata = read_zarr_backed(args.from_anndata)
-    anndata = anndata[anndata.obs['final_qc_passing_sample'], anndata.var['final_qc_passing_dhs']]
-    matrix = anndata.layers['binary'].T.todense()
+    adata = read_zarr_backed(args.from_anndata)
+    adata = adata[
+        adata.obs['final_qc_passing_sample'],
+        adata.var['final_qc_passing_dhs']
+    ]
+    matrix = adata.layers['binary'].T.toarray()
     return parse_optional_args(
         args,
         matrix,
-        samples_metadata=anndata.obs,
-        dhs_metadata=anndata.var
+        samples_metadata=adata.obs,
+        dhs_metadata=adata.var
     )
 
 
