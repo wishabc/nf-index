@@ -5,9 +5,10 @@ import json
 from sklearn.decomposition import NMF
 from weighted_NMF import WeightedNMF
 from collections import namedtuple
-from nmf_tools.data.anndata_loader import read_zarr_backed
+from genome_tools.data.anndata import read_zarr_backed
 import os
 import scipy.sparse as sp
+
 
 NMFInputData = namedtuple('NMFInputData', ['matrix', 'samples_mask', 'peaks_mask', 'samples_weights', 'peaks_weights', 'samples_metadata', 'dhs_metadata'])
 
