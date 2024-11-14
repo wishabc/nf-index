@@ -17,7 +17,7 @@ samples_order = np.loadtxt(sys.argv[2], dtype=str)
 metadata = pd.read_table(sys.argv[3]).set_index('ag_id').loc[samples_order]
 
 #Make sure the spot1 scores and matrix are matrix compatible
-spot1 = metadata['SPOT1_score'].to_numpy()
+spot1 = metadata['SPOT1_score'].to_numpy(dtype=np.float32)
 b *= spot1[None, :]
 
 #Replace 0's with nan's for computation
