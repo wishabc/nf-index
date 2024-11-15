@@ -66,6 +66,7 @@ def project_peaks(data, model, W, W_weights=None, H_weights=None):
     # NMF: peaks x samples = peaks x components * components x samples
     X = sp.coo_matrix(data).tocsr()
     params = dict(X=X, H=W.T, update_H=False)
+    print(X.shape, H_weights.shape, W_weights.shape)
     if W_weights is not None:
         assert H_weights is not None
         params = {**params,
