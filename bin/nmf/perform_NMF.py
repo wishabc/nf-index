@@ -193,6 +193,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
     samples_masked_matrix = mat[:, samples_m]
     print(samples_masked_matrix.shape, mat.shape)
     non_zero_rows = samples_masked_matrix.sum(axis=1) > 0
+    print(non_zero_rows.sum())
     peaks_mask = peaks_m & non_zero_rows
 
     matrix_samples_peaks_slice = mat[peaks_mask, :][:, samples_m]
@@ -202,10 +203,16 @@ def main(nmf_input_data: NMFInputData, **extra_params):
         print('Using weighted NMF')
         W_weights_slice = W_weights[samples_m]
         H_weights_slice = H_weights[peaks_m]
-        model = initialize_model(n_components=args.n_components, extra_params=extra_params, is_weighted=True)
+        is_weighted = True
     else:
         W_weights_slice = H_weights_slice = None
-        model = initialize_model(n_components=args.n_components, extra_params=extra_params, is_weighted=False)
+        is_weighted = False
+
+    model = initialize_model(
+        n_components=args.n_components,
+        extra_params=extra_params,
+        is_weighted=is_weighted
+    )
     
     print('Fitting NMF model', flush=True)
     W_np, H_np, model = run_NMF(
