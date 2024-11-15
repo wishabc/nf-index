@@ -340,7 +340,7 @@ if __name__ == '__main__':
         if 'SPOT1_score' not in nmf_data.samples_metadata.columns and 'core_ontology_term' not in nmf_data.samples_metadata.columns:
             raise ValueError('sample_label column is missing in samples metadata')
         print('Assuming sample_label is core_ontology_term + SPOT1_score')
-        nmf_data.samples_metadata.loc['sample_label'] = (
+        nmf_data.samples_metadata.loc[:, 'sample_label'] = (
             nmf_data.samples_metadata['core_ontology_term'].astype(str) + " " + 
             nmf_data.samples_metadata['SPOT1_score'].astype(str).str[:3]
         )
