@@ -6,8 +6,9 @@ from tqdm import tqdm
 from order_by_template import get_component_data, define_colors
 from perform_NMF import NMFInputData, parse_nmf_args
 
+
 def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colors=None):
-    assert len(metadata) == matrix.shape[1]
+    assert len(metadata) == matrix.shape[1], f'Metadata ({len(metadata)}) should have the same number of samples as the matrix ({matrix.shape[1]})'
     
     if agst is None:
         agst = np.argsort(matrix, axis=0)[::-1, :]
@@ -186,7 +187,13 @@ def plot_barplots(matrix, component_data=None, n=10_000, normalize=True, ax=None
     return plot_stacked(H_dsp, colors, ax=ax, **kwargs)
 
 
-def main(nmf_data: NMFInputData, W, H, vis_path, component_data=None):
+def main(
+        nmf_data: NMFInputData,
+        W: np.ndarray,
+        H: np.ndarray,
+        vis_path,
+        component_data=None
+    ):
     if component_data is None:
         component_data = get_component_data(W)
 

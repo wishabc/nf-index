@@ -8,9 +8,19 @@ from collections import namedtuple
 from genome_tools.data.anndata import read_zarr_backed
 import os
 import scipy.sparse as sp
+import dataclasses
 
 
-NMFInputData = namedtuple('NMFInputData', ['matrix', 'samples_mask', 'peaks_mask', 'samples_weights', 'peaks_weights', 'samples_metadata', 'dhs_metadata'])
+
+@dataclasses.dataclass
+class NMFInputData:
+    matrix: np.ndarray
+    samples_mask: np.ndarray
+    peaks_mask: np.ndarray
+    samples_weights: np.ndarray
+    peaks_weights: np.ndarray
+    samples_metadata: pd.DataFrame
+    dhs_metadata: pd.DataFrame
 
 
 def initialize_model(n_components, extra_params=None, is_weighted=False):
@@ -188,7 +198,12 @@ def read_weights(weights_path, shape, sample_names=None):
 
 # Internal function to run NMF decomposition as part of pipeline
 def main(nmf_input_data: NMFInputData, **extra_params):
-    mat, samples_m, peaks_m, W_weights, H_weights, *_ = nmf_input_data
+    mat = nmf_input_data.matrix
+    samples_m = nmf_input_data.samples_mask
+    peaks_m = nmf_input_data.peaks_mask
+    W_weights = nmf_input_data.samples_weights
+    H_weights = nmf_input_data.peaks_weights
+
 
     samples_masked_matrix = mat[:, samples_m]
     print(samples_masked_matrix.shape, mat.shape)
