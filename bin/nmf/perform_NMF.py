@@ -53,10 +53,10 @@ def project_samples(data, model, H, W_weights=None, H_weights=None):
     params = dict(X=X, H=H, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
-        params = {**params,
+        params.update({
             'H_weights': H_weights[None, :],
             'W_weights': W_weights[:, None]
-        }
+        })
     W, *_ = model._fit_transform(**params)
     return W # samples x components 
 
@@ -91,8 +91,8 @@ def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)
     adata = adata[
-        adata.obs['final_qc_passing_sample'],
-        adata.var['final_qc_passing_dhs']
+        adata.obs['final_qc_passing_sample'].astype(bool),
+        adata.var['final_qc_passing_dhs'].astype(bool)
     ]
     matrix = adata.layers['binary'].T.toarray()
     return parse_optional_args(
@@ -202,7 +202,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
     if W_weights is not None or H_weights is not None:
         print('Using weighted NMF')
         W_weights_slice = W_weights[samples_m]
-        H_weights_slice = H_weights[peaks_m]
+        H_weights_slice = H_weights[peaks_mask]
         is_weighted = True
     else:
         W_weights_slice = H_weights_slice = None
