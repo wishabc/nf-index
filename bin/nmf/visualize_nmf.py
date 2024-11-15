@@ -1,9 +1,7 @@
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import argparse
 from tqdm import tqdm
-import os
 
 from order_by_template import get_component_data, define_colors
 from perform_NMF import NMFInputData, parse_nmf_args
@@ -335,7 +333,7 @@ if __name__ == '__main__':
         if 'SPOT1_score' not in nmf_data.samples_metadata.columns and 'core_ontology_term' not in nmf_data.samples_metadata.columns:
             raise ValueError('sample_label column is missing in samples metadata')
         print('Assuming sample_label is core_ontology_term + SPOT1_score')
-        nmf_data.samples_metadata['sample_label'] = nmf_data.samples_metadata.apply(
+        nmf_data.samples_metadata.loc['sample_label'] = nmf_data.samples_metadata.apply(
             lambda row: f"{row['core_ontology_term']} {row['SPOT1_score']:.1f}",
             axis=1
         )
