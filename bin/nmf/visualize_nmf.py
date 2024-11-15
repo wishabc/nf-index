@@ -341,7 +341,7 @@ if __name__ == '__main__':
             raise ValueError('sample_label column is missing in samples metadata')
         print('Assuming sample_label is core_ontology_term + SPOT1_score')
         nmf_data.samples_metadata['sample_label'] = (
-            nmf_data.samples_metadata['core_ontology_term'] + " " + 
+            nmf_data.samples_metadata['core_ontology_term'].astype(str) + " " + 
             nmf_data.samples_metadata['SPOT1_score'].astype(str).str[:3]
         )
 
