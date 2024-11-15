@@ -108,8 +108,8 @@ def parse_args_anndata(args):
     return parse_optional_args(
         args,
         matrix,
-        samples_metadata=adata.obs,
-        dhs_metadata=adata.var
+        samples_metadata=adata.obs.copy(),
+        dhs_metadata=adata.var.copy()
     )
 
 
