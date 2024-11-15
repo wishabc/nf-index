@@ -191,6 +191,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
     mat, samples_m, peaks_m, W_weights, H_weights, *_ = nmf_input_data
 
     samples_masked_matrix = mat[:, samples_m]
+    print(samples_masked_matrix.shape, mat.shape)
     non_zero_rows = samples_masked_matrix.sum(axis=1) > 0
     peaks_mask = peaks_m & non_zero_rows
 
