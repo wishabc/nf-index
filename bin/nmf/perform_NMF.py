@@ -88,6 +88,7 @@ def parse_nmf_args(args) -> NMFInputData:
 
 
 def parse_args_anndata(args):
+    print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)
     adata = adata[
         adata.obs['final_qc_passing_sample'],
@@ -146,8 +147,16 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
         peaks_m = np.ones(matrix.shape[0], dtype=bool)
     
     if hasattr(args, 'samples_weights') and hasattr(args, 'peaks_weights'):
-        W_weights_vector = read_weights(args.samples_weights, matrix.shape[1], samples_metadata.index)
-        H_weights_vector = read_weights(args.peaks_weights, matrix.shape[0], dhs_metadata.index)
+        W_weights_vector = read_weights(
+            args.samples_weights,
+            matrix.shape[1],
+            samples_metadata.index
+        )
+        H_weights_vector = read_weights(
+            args.peaks_weights,
+            matrix.shape[0],
+            dhs_metadata.index
+        )
     else:
         W_weights_vector = H_weights_vector = None
   
@@ -183,10 +192,10 @@ def main(nmf_input_data: NMFInputData, **extra_params):
 
     samples_masked_matrix = mat[:, samples_m]
     non_zero_rows = samples_masked_matrix.sum(axis=1) > 0
-    print(non_zero_rows.shape, peaks_m.shape)
     peaks_mask = peaks_m & non_zero_rows
 
     matrix_samples_peaks_slice = mat[peaks_mask, :][:, samples_m]
+    print(matrix_samples_peaks_slice.shape)
 
     if W_weights is not None or H_weights is not None:
         print('Using weighted NMF')
