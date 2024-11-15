@@ -31,11 +31,12 @@ def initialize_model(n_components, extra_params=None, is_weighted=False):
     return WeightedNMF(**params) if is_weighted else NMF(**params)
 
 
-def run_NMF(model: NMF, X, W_weights=None, H_weights=None):
+def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=None):
     assert (W_weights is None) == (H_weights is None), 'Both or neither weights should be provided'
     X = sp.coo_matrix(X.T).tocsr()
     if W_weights is not None:
-        assert len(W_weights.shape) == 1 and len(H_weights.shape) == 1, 'Weights should be 1D arrays'
+        assert W_weights.ndim == 1 and H_weights.ndim == 1, 'Weights should be 1D arrays'
+        print(X.shape, W_weights.shape, H_weights.shape)
         W = model.fit_transform(X, W_weights=W_weights[:, None], H_weights=H_weights[None, :])
     else:
         W = model.fit_transform(X)
@@ -66,7 +67,6 @@ def project_peaks(data, model, W, W_weights=None, H_weights=None):
     # NMF: peaks x samples = peaks x components * components x samples
     X = sp.coo_matrix(data).tocsr()
     params = dict(X=X, H=W.T, update_H=False)
-    print(X.shape, H_weights.shape, W_weights.shape)
     if W_weights is not None:
         assert H_weights is not None
         params = {**params,
