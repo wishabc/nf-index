@@ -21,7 +21,9 @@ process collate_and_chunk {
     for f in peaks/*; 
         do zcat \$f \
             | cut -f1-7 \
-            | grep -v '#chr' >> tmp.bed; # add mock
+            | grep -v chrX \
+            | grep -v chrY \
+            | grep -v '#chr' >> tmp.bed;
     done
 
     sort-bed tmp.bed \
@@ -222,7 +224,7 @@ process annotate_masterlist {
     script:
     name = "masterlist_DHSs_all_chunks.Altius.annotated.bed"
     """
-     python $moduleDir/bin/annotations/spot1Annotations.py \
+    python $moduleDir/bin/annotations/spot1Annotations.py \
         ${binary_matrix} \
         ${samples_order} \
         ${params.samples_file} \
