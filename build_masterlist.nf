@@ -224,7 +224,7 @@ process annotate_masterlist {
     script:
     name = "masterlist_DHSs_all_chunks.Altius.annotated.bed"
     """
-    #python $moduleDir/bin/annotations/spot1Annotations.py \
+    #python3 $moduleDir/bin/annotations/spot1Annotations.py \
     #    ${binary_matrix} \
     #    ${samples_order} \
     #    ${params.samples_file} \
@@ -250,7 +250,7 @@ process annotate_masterlist {
         ${params.mappable_file} \
         gc_content.txt
 
-    # spot1_metrics.txt \
+    # spot1_metrics.txt
     echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end" \
         | cat - ${masterlist} \
         | paste - \
