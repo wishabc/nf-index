@@ -212,7 +212,7 @@ process annotate_masterlist {
     conda params.conda
     publishDir "${params.outdir}", pattern: "${name}"
     scratch true
-    label "highmem"
+    label "medmem"
     errorStrategy 'ignore'
 
     input: 
