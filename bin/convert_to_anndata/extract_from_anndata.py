@@ -39,7 +39,10 @@ if __name__ == '__main__':
     args = args.parse_args()
     anndata = read_zarr_backed(args.zarr)
     if args.dhs_mask_name is not None:
-        anndata = anndata[:, anndata.var[args.dhs_mask_name]]
+        mask = anndata.var[args.dhs_mask_name]
+    else:
+        mask = np.ones(anndata.var.shape[0], dtype=bool)
+    anndata = anndata[:, mask]
     
     metadata, index, matrices = main(anndata, args.extra_layers)
     index.to_csv(args.index, sep='\t', index=False, header=False)
