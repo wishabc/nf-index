@@ -21,8 +21,6 @@ process collate_and_chunk {
     for f in peaks/*; 
         do zcat \$f \
             | cut -f1-7 \
-            | grep -v chrX \
-            | grep -v chrY \
             | grep -v '#chr' >> tmp.bed;
     done
 
