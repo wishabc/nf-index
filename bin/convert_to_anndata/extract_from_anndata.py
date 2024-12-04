@@ -29,7 +29,7 @@ def convert_matrix_to_dense(matrix):
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser('Extract data from anndata object containing DHS information')
-    args.add_argument('zarr', help='Path to zarr object')
+    args.add_argument('anndata', help='Path to anndata zarr object')
     args.add_argument('index', help='Path where to save DHS index')
     args.add_argument('samples_order', help='Path where to save samples order')
     args.add_argument('samples_meta', help='Path where to save samples metadata')
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     args.add_argument('--extra_layers_suffix', help='Suffix to add to the extra layers names', default='matrix')
     args.add_argument('--dhs_mask_name', help='Name of the var layer containing DHS mask', default=None)
     args = args.parse_args()
-    anndata = read_zarr_backed(args.zarr)
+    anndata = read_zarr_backed(args.anndata)
     if args.dhs_mask_name is not None:
         mask = anndata.var[args.dhs_mask_name]
     else:
