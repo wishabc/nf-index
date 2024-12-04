@@ -1,12 +1,12 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-
 process variance_partition {
 
     tag "${start_index}"
     scratch true
     label "medmem"
+    conda params.conda
 
     input:
         tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_meta), val(formula)
