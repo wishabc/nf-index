@@ -1,9 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { convert_to_numpy } from "./filter_peaks"
-include { add_matrices_to_anndata } from "./convert_to_anndata"
-
+include { add_matrices_to_anndata; convert_to_numpy } from "./converters"
 
 params.conda = "$moduleDir/environment.yml"
 

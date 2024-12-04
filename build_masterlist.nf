@@ -1,8 +1,7 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { filterAndConvertToNumpy } from "./filter_peaks"
-include { convert_index_to_anndata } from "./convert_to_anndata"
+include { convert_to_numpy; convert_index_to_anndata } from "./converters"
 
 process collate_and_chunk {
     conda params.conda
@@ -288,11 +287,9 @@ workflow buildIndex {
             | write_rows
             | groupTuple()
             | collect_chunks // prefix, matrix
-            | combine(index)
-            | combine(Channel.of('filter_median'))
-            | filterAndConvertToNumpy
+            | convert_to_numpy
         
-        out = binary_matrix[1] // prefix, np_matrix
+        out = binary_matrix // prefix, np_matrix
             | map(it -> it[1])
             | combine(samples_order)
             | combine(index)
@@ -300,7 +297,6 @@ workflow buildIndex {
 
     emit:
         out
-        binary_matrix[0]
 }
 
 workflow annotateMasterlist {
@@ -314,18 +310,10 @@ workflow annotateMasterlist {
 }
 
 workflow {
-    index_data = Channel.fromPath(params.samples_file)
+    Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row.peaks_file))
         | buildIndex
-    
-    masks = index_data[1] | collect(sort: true, flat: true)
-
-    annotated_masterlist = index_data[0]
         | annotate_masterlist // matrix, samples_order, annotated_index
-
-    convert_index_to_anndata(
-        annotated_masterlist,
-        index_data[1] | collect(sort: true, flat: true)
-    )
+        | convert_index_to_anndata
 }

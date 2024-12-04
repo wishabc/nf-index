@@ -6,27 +6,14 @@ import os
 from helpers import convert_to_sparse_if_sufficently_sparse, load_from_file
     
 
-def main(rows_meta, cols_meta, matrix, masks):
+def main(rows_meta, cols_meta, matrix):
     adata = ad.AnnData(X=matrix, obs=cols_meta[['peaks_file']], var=rows_meta)
-    for mask_name, mask in masks.items():
-        if mask_name == 'blacklist_rows':
-            mask_name = 'non_blacklisted_dhs'
-            mask = ~mask
-        elif mask_name == 'filtered.autosomes':
-            mask_name = 'autosomal_dhs'
-        elif mask_name == 'filtered_DHS':
-            mask_name = 'pseudo_reproduced_dhs'
-        else:
-            continue
-
-        adata.var[mask_name] = mask
-    
 
     adata.obs['n_peaks'] = adata.X.sum(axis=1).A1.squeeze()
     adata.obs['final_qc_passing_sample'] = 1
 
+    adata.var['autosomal_dhs'] = adata.var['#chr'].str.contains('chr[1-9]', regex=True)
     adata.var['n_contributing_samples'] = adata.X.sum(axis=0).A1.squeeze()
-    adata.var['autosomal_pseudo_reproduced_dhs'] = adata.var['autosomal_dhs'] & adata.var['pseudo_reproduced_dhs']
 
     return adata
 
@@ -40,12 +27,5 @@ if __name__ == '__main__':
 
     samples_meta = pd.read_table(sys.argv[4]).set_index('ag_id').loc[samples_order]
 
-    row_masks = {}
-    for row_mask in sys.argv[6:]:
-        row_mask_name = os.path.basename(row_mask).replace('.mask.txt', '').replace('binary.index.', '')
-        mask = np.loadtxt(row_mask, dtype=bool)
-        row_masks[row_mask_name] = mask
-
-
-    adata_obj = main(annotated_masterlist, samples_meta, matrix, row_masks)
+    adata_obj = main(annotated_masterlist, samples_meta, matrix)
     adata_obj.write_zarr(sys.argv[5])

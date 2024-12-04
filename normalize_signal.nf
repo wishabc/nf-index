@@ -2,7 +2,7 @@
 nextflow.enable.dsl = 2
 
 include { variancePartition } from "./variance_partition"
-include { add_normalized_matrices_to_anndata } from "./convert_to_anndata"
+include { add_normalized_matrices_to_anndata } from "./converters"
 
 params.conda = "$moduleDir/environment.yml"
 params.sample_weights = ""

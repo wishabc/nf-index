@@ -1,4 +1,26 @@
 
+process convert_to_numpy {
+    conda params.conda
+    publishDir "${params.outdir}/raw_matrices"
+    label "highmem"
+    tag "${prefix}"
+
+    input:
+        tuple val(prefix), path(matrix)
+
+    output:
+        tuple val(prefix), path(name)
+
+    script:
+    name = "${prefix}.raw.matrix.npy"
+    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
+    """
+    python3 $moduleDir/bin/convert_to_numpy.py \
+        ${matrix} \
+        ${name} \
+        --dtype ${dtype}
+    """
+}
 
 process convert_index_to_anndata {
     conda params.conda
@@ -7,7 +29,6 @@ process convert_index_to_anndata {
 
     input:
         tuple path(binary_matrix), path(samples_order), path(masterlist)
-        path masks
     
     output:
         path(name, type: 'dir')
@@ -20,8 +41,7 @@ process convert_index_to_anndata {
         ${samples_order} \
         ${binary_matrix} \
         ${params.samples_file} \
-        ${name} \
-        ${masks}
+        ${name}
     """
 }
 
@@ -64,7 +84,6 @@ process add_normalized_matrices_to_anndata {
     script:
     name = "index+matrices+normalized.anndata.zarr"
     """
-    echo 1
     python3 $moduleDir/bin/convert_to_anndata/add_normalized_matrices_to_anndata.py \
         ${anndata} \
         ${name} \
