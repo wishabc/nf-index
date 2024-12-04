@@ -53,6 +53,7 @@ process generate_binary_counts {
         | grep -v "^#" \
         | bedmap --fraction-either 0.5 \
         --indicator \
+        --sweep-all \
         ${masterlist} \
         - > ${name}
     """
