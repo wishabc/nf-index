@@ -50,6 +50,7 @@ process generate_binary_counts {
     name = "${id}.${suffix}.txt"
     """
     zcat ${peaks_file} \
+        | grep -v "^#" \
         | bedmap --fraction-either 0.5 \
         --indicator \
         ${masterlist} \
