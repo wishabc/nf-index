@@ -49,10 +49,11 @@ process generate_binary_counts {
     suffix = 'binary'
     name = "${id}.${suffix}.txt"
     """
-    bedmap --fraction-either 0.5 \
+    zcat ${peaks_file} \
+        | bedmap --fraction-either 0.5 \
         --indicator \
         ${masterlist} \
-        ${peaks_file} > ${name}
+        - > ${name}
     """
 }
 
