@@ -1,7 +1,7 @@
 library(variancePartition)
 library(data.table)
 library(reticulate)
-np <- import("numpy")
+np <- import("numpy", convert=FALSE)
 
 print("Finished imports")
 args = commandArgs(trailingOnly=TRUE)
