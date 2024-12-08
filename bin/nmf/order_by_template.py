@@ -201,13 +201,10 @@ def define_colors(n_components):
         colornames = list(set(colornames) - set(comp_colors))
         count = maxassigned
         np.random.seed(100)
-        myrandint = np.random.randint(len(colornames))
         while (count < n_components):
             new_color = colornames[np.random.randint(len(colornames))]
             trialcount = 0
             while ((new_color in component_colors) and (trialcount < 100)):
-                #print('what am i doing here')
-                newcolor = colornames[np.random.randint(0, len(colornames))]
                 trialcount += 1
             #print('new color', count, new_color)
             component_colors.append(new_color)

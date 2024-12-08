@@ -4,7 +4,6 @@ import argparse
 import json
 from sklearn.decomposition import NMF
 from weighted_NMF import WeightedNMF
-from collections import namedtuple
 from genome_tools.data.anndata import read_zarr_backed
 import os
 import scipy.sparse as sp
@@ -99,12 +98,11 @@ def parse_nmf_args(args) -> NMFInputData:
 
 def parse_args_anndata(args):
     print('Reading AnnData')
-    adata = read_zarr_backed(args.from_anndata)
-    adata = adata[
-        adata.obs['final_qc_passing_sample'].astype(bool),
-        adata.var['final_qc_passing_dhs'].astype(bool)
-    ]
+    adata = read_zarr_backed(args.from_anndata)[:, :]
     matrix = adata.layers['binary'].T.toarray()
+
+    args.samples_mask = adata.obs[args.samples_mask_column].to_numpy().astype(bool)
+    args.peaks_mask = adata.var[args.dhs_mask_column].to_numpy().astype(bool)
     return parse_optional_args(
         args,
         matrix,
@@ -145,18 +143,11 @@ def parse_args_matrix(args):
     return parse_optional_args(args, mat, dhs_metadata=dhs_meta, samples_metadata=samples_metadata)
 
 
-def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
-    if args.samples_mask is not None:
-        samples_m = np.loadtxt(args.samples_mask, dtype=bool)
-    else:
-        samples_m = np.ones(matrix.shape[1], dtype=bool)
+def parse_optional_args(args, matrix, samples_metadata, dhs_metadata) -> NMFInputData:
+    samples_m = read_mask(args.samples_mask)
+    peaks_m = read_mask(args.peaks_mask)
     
-    if args.peaks_mask is not None:
-        peaks_m = np.loadtxt(args.peaks_mask, dtype=bool)
-    else:
-        peaks_m = np.ones(matrix.shape[0], dtype=bool)
-    
-    if hasattr(args, 'samples_weights') and hasattr(args, 'peaks_weights'):
+    if hasattr(args, 'samples_weights'):
         W_weights_vector = read_weights(
             args.samples_weights,
             matrix.shape[1],
@@ -180,6 +171,13 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata):
         samples_metadata=samples_metadata
     )
 
+def read_mask(mask) -> np.ndarray:
+    if mask is None:
+        mask = np.ones(mask, dtype=bool)
+    elif isinstance(mask, str):
+        mask = np.loadtxt(mask, dtype=bool)
+    return mask
+
 
 def read_weights(weights_path, shape, sample_names=None):
     if weights_path is not None:
@@ -200,7 +198,7 @@ def read_weights(weights_path, shape, sample_names=None):
 def main(nmf_input_data: NMFInputData, **extra_params):
     mat = nmf_input_data.matrix
     samples_m = nmf_input_data.samples_mask
-    peaks_m = nmf_input_data.peaks_mask
+
     W_weights = nmf_input_data.samples_weights
     H_weights = nmf_input_data.peaks_weights
 
@@ -209,7 +207,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
     print(samples_masked_matrix.shape, mat.shape)
     non_zero_rows = samples_masked_matrix.sum(axis=1) > 0
     print(non_zero_rows.sum())
-    peaks_mask = peaks_m & non_zero_rows
+    peaks_mask = nmf_input_data.peaks_mask & non_zero_rows
 
     matrix_samples_peaks_slice = mat[peaks_mask, :][:, samples_m]
     print(matrix_samples_peaks_slice.shape)
@@ -237,16 +235,24 @@ def main(nmf_input_data: NMFInputData, **extra_params):
         H_weights=H_weights_slice,
     )
     if samples_m.shape[0] > samples_m.sum():
-        assert W_weights is None
         print('Projecting samples')
         if args.project_masked_peaks and (non_zero_rows.sum() != mat[:, samples_m].shape[0]):
-            H_np = project_peaks(mat[:, samples_m][non_zero_rows, :], model, W_np)
-            W_np = project_samples(mat[non_zero_rows, :], model, H_np)
+            H_np = project_peaks(
+                mat[:, samples_m][non_zero_rows, :],
+                model,
+                W_np,
+                W_weights_slice,
+                H_weights
+            )
+            W_np = project_samples(
+                mat[non_zero_rows, :],
+                model,
+                H_np,
+                W_weights,
+                H_weights
+            )
         else:
-            W_np = project_samples(mat[peaks_mask, :], model, H_np)
-
-    if peaks_mask.shape[0] > peaks_mask.sum():
-        H_np = project_peaks(mat, model, W_np, W_weights, H_weights)
+            W_np = project_samples(mat[peaks_mask, :], model, H_np, W_weights, H_weights_slice)
 
     return W_np, H_np, peaks_mask
 
@@ -260,13 +266,15 @@ if __name__ == '__main__':
     parser.add_argument('--matrix', help='Path to matrix to run NMF on')
     parser.add_argument('--sample_names', help='Path to file with sample names')
     parser.add_argument('--dhs_meta', help='Path to DHS metadata file')
-
-    # Reading from anndata argument
-    parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names and dhs_meta fields', default=None)
-
-    # Optional arguments for both modes
     parser.add_argument('--samples_mask', help='Mask of used samples, txt indicator', default=None)
     parser.add_argument('--peaks_mask', help='Mask of used peaks, txt indicator', default=None)
+
+    # Reading from anndata argument
+    parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names and dhs_meta fields.', default=None)
+    parser.add_argument('--samples_mask_column', help='Column in samples metadata to use as mask', default='final_qc_passing_samples')
+    parser.add_argument('--dhs_mask_column', help='Column in dhs metadata to use as mask', default='final_qc_passing_dhs')
+
+    # Optional arguments for both modes
     parser.add_argument('--project_masked_peaks', action='store_true', help='Project peaks for all masked samples', default=False)
     parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--peaks_weights', help='Path to peaks weights (for weighted NMF)', default=None)
