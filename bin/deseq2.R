@@ -73,7 +73,7 @@ if (is.null(norm_factors)) {
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
   # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
-  # dispersionFunction is not saved otherwise
+  # dispersionFunction is not getting saved otherwise
   baseMean <- rowMeans(counts(dds, normalized=TRUE))
   if (sum(baseMean > 5) < 1000) {
     stop("less than 'nsub' rows with mean normalized count > 5, 

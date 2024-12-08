@@ -16,7 +16,7 @@ def main(adata, meta, matrices):
 
 
     adata.var['projected_peaks_binary'] = adata.layers['binary'].sum(axis=0).A1.squeeze()
-    adata.var['final_qc_passing_dhs'] = (adata.var['projected_peaks_binary'] > 0) & adata.var['autosomal_pseudo_reproduced_dhs']
+    adata.var['final_qc_passing_dhs'] = (adata.var['projected_peaks_binary'] > 0) & adata.var['autosomal_dhs']
     return adata
 
 
