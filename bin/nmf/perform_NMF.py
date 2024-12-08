@@ -101,7 +101,7 @@ def parse_nmf_args(args) -> NMFInputData:
 def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)[:, :10_000]
-    matrix = adata.layers['binary'].T.toarray()
+    matrix = adata.layers['binary'].T.toarray().astype(np.float32)
 
     args.samples_mask = adata.obs[args.samples_mask_column].to_numpy().astype(bool)
     args.peaks_mask = adata.var[args.dhs_mask_column].to_numpy().astype(bool)
