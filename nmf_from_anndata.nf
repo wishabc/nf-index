@@ -22,7 +22,7 @@ process fit_nmf {
         ${n_components} \
         ${prefix} \
         --from_anndata ${anndata_path} \
-        --samples_mask_column is_cancer \
+        --samples_mask_column reference_sample \
         --peaks_mask_column final_qc_passing_dhs \
         ${non_required_arg(weights_path, '--samples_weights')} \
         ${non_required_arg(samples_mask, '--samples_mask')} \
