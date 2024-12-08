@@ -51,6 +51,8 @@ def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=Non
         W = model.fit_transform(X)
 
     H = model.components_ # components x peaks
+    W = W.astype(X.dtype)
+    H = H.astype(X.dtype)
     return W, H, model
 
 
@@ -143,7 +145,7 @@ def parse_args_matrix(args):
     return parse_optional_args(args, mat, dhs_metadata=dhs_meta, samples_metadata=samples_metadata)
 
 
-def parse_optional_args(args, matrix, samples_metadata, dhs_metadata) -> NMFInputData:
+def parse_optional_args(args, matrix: np.ndarray, samples_metadata, dhs_metadata) -> NMFInputData:
     samples_m = read_mask(args.samples_mask)
     peaks_m = read_mask(args.peaks_mask)
     
@@ -152,12 +154,12 @@ def parse_optional_args(args, matrix, samples_metadata, dhs_metadata) -> NMFInpu
             args.samples_weights,
             matrix.shape[1],
             samples_metadata.index
-        )
+        ).astype(matrix.dtype)
         H_weights_vector = read_weights(
             args.peaks_weights,
             matrix.shape[0],
             dhs_metadata.index
-        )
+        ).astype(matrix.dtype)
     else:
         W_weights_vector = H_weights_vector = None
   
