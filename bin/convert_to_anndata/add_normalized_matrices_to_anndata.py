@@ -7,7 +7,7 @@ from genome_tools.data.anndata import read_zarr_backed
 import json
 import base64
 
-def main(adata, matrices, params, formula, annotated_masterlist):
+def main(adata, matrices, params, formula, annotated_masterlist, mask_name='autosomes_mask'):
     matrices_mapping = {
         os.path.basename(matrix).replace(
             'normalized.only_autosomes.filtered.', ''
@@ -15,7 +15,7 @@ def main(adata, matrices, params, formula, annotated_masterlist):
             '.npy', ''
         ): matrix for matrix in matrices
     }
-    add_matrices_to_anndata(adata, matrices_mapping)
+    add_matrices_to_anndata(adata, matrices_mapping, mask_name)
     for param in params:
         if param.endswith('RDS'):
             with open(param, 'rb') as f:
@@ -42,8 +42,9 @@ if __name__ == '__main__':
     ]
     annotated_masterlist.rename(columns={x: f'{x}_variance_partition' for x in annotated_masterlist.columns}, inplace=True)
     formula = sys.argv[4]
-    matrices = sys.argv[5:8]
-    params = sys.argv[8:]
+    mask_name = sys.argv[5]
+    matrices = sys.argv[6:9]
+    params = sys.argv[9:]
 
-    adata = main(adata, matrices, params, formula, annotated_masterlist)
+    adata = main(adata, matrices, params, formula, annotated_masterlist, mask_name=mask_name)
     adata.write_zarr(sys.argv[2])

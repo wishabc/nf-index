@@ -64,7 +64,7 @@ def load_from_file(filepath):
         raise ValueError("Unsupported file format. Expected formats are .npy or .npz ")
     
 
-def add_matrices_to_anndata(adata, matrices_mapping):
+def add_matrices_to_anndata(adata, matrices_mapping, mask_name=None):
     for matrix_name, matrix in matrices_mapping.items():
         matrix = np.load(matrix).T
         if matrix.dtype == np.float64:
@@ -72,8 +72,8 @@ def add_matrices_to_anndata(adata, matrices_mapping):
 
         if matrix.shape[0] != adata.shape[0]:
             raise ValueError(f"Matrix {matrix_name} has {matrix.shape[0]} samples, but the number of samples in anndata is {adata.shape[0]}")
-        if matrix.shape[1] != adata.shape[1]:
-            mask = adata.var['final_qc_passing_dhs']
+        if matrix.shape[1] != adata.shape[1] and mask_name is not None:
+            mask = adata.var[mask_name]
             assert mask.sum() == matrix.shape[1]
             data = np.empty(adata.shape, dtype=np.float32)
             data[:] = np.nan

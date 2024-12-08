@@ -89,6 +89,7 @@ process add_normalized_matrices_to_anndata {
         ${name} \
         ${masterlist_vp} \
         '${formula}' \
+        autosomal_dhs \
         ${matrices} \
         ${normalization_params}
     """
