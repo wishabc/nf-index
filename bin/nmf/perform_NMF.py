@@ -10,6 +10,8 @@ import scipy.sparse as sp
 import dataclasses
 
 
+dtype = np.float64
+
 
 @dataclasses.dataclass
 class NMFInputData:
@@ -101,7 +103,7 @@ def parse_nmf_args(args) -> NMFInputData:
 def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)[:, :] # to avoid csr dataset
-    matrix = adata.layers['binary'].T.toarray().astype(np.float32)
+    matrix = adata.layers['binary'].T.toarray().astype(dtype)
 
     args.samples_mask = adata.obs[args.samples_mask_column].to_numpy().astype(bool)
     args.peaks_mask = adata.var[args.dhs_mask_column].to_numpy().astype(bool)
@@ -115,7 +117,7 @@ def parse_args_anndata(args):
 
 def parse_args_matrix(args):
     print('Reading matrix')
-    mat = np.load(args.matrix).astype(np.float32)
+    mat = np.load(args.matrix).astype(dtype)
 
     sample_names = np.loadtxt(args.sample_names, dtype=str)
 
@@ -155,6 +157,7 @@ def parse_optional_args(args, matrix: np.ndarray, samples_metadata, dhs_metadata
             matrix.shape[1],
             samples_metadata.index
         ).astype(matrix.dtype)
+
         H_weights_vector = read_weights(
             args.peaks_weights,
             matrix.shape[0],
@@ -181,7 +184,7 @@ def read_mask(mask) -> np.ndarray:
     return mask
 
 
-def read_weights(weights_path, shape, sample_names=None):
+def read_weights(weights_path, shape, sample_names=None) -> np.ndarray:
     if weights_path is not None:
         if os.path.splitext(weights_path)[-1] == 'npy':
             weights_vector = np.load(weights_path)
