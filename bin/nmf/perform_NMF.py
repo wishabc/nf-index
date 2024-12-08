@@ -41,10 +41,12 @@ def initialize_model(n_components, extra_params=None, is_weighted=False):
     
     return WeightedNMF(**params) if is_weighted else NMF(**params)
 
+def data_to_sparse(X: np.ndarray) -> sp.csr_matrix:
+    return sp.coo_matrix(X.T).tocsr()
 
 def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=None):
     assert (W_weights is None) == (H_weights is None), 'Both or neither weights should be provided'
-    X = sp.coo_matrix(X.T).tocsr()
+    X = data_to_sparse(X)
     if W_weights is not None:
         assert W_weights.ndim == 1 and H_weights.ndim == 1, 'Weights should be 1D arrays'
         print(X.shape, W_weights.shape, H_weights.shape)
@@ -58,11 +60,11 @@ def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=Non
     return W, H, model
 
 
-def project_samples(data, model, H, W_weights=None, H_weights=None):
+def project_samples(model, data, H, W_weights=None, H_weights=None):
     # data: peaks x samples
     # H: components x peaks
     # NMF: samples x peaks = samples x components * components x peaks
-    X = sp.coo_matrix(data.T).tocsr()
+    X = data_to_sparse(data)
     params = dict(X=X, H=H, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
@@ -74,11 +76,11 @@ def project_samples(data, model, H, W_weights=None, H_weights=None):
     return W # samples x components 
 
 
-def project_peaks(data, model, W, W_weights=None, H_weights=None):
+def project_peaks(model, data, W, W_weights=None, H_weights=None):
     # data: peaks x samples
     # W: samples x components
     # NMF: peaks x samples = peaks x components * components x samples
-    X = sp.coo_matrix(data).tocsr()
+    X = data_to_sparse(X)
     params = dict(X=X, H=W.T, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
@@ -243,21 +245,27 @@ def main(nmf_input_data: NMFInputData, **extra_params):
         print('Projecting samples')
         if args.project_masked_peaks and (non_zero_rows.sum() != mat[:, samples_m].shape[0]):
             H_np = project_peaks(
-                mat[:, samples_m][non_zero_rows, :],
                 model,
+                mat[:, samples_m][non_zero_rows, :],
                 W_np,
                 W_weights_slice,
                 H_weights
             )
             W_np = project_samples(
-                mat[non_zero_rows, :],
                 model,
+                mat[non_zero_rows, :],
                 H_np,
                 W_weights,
                 H_weights
             )
         else:
-            W_np = project_samples(mat[peaks_mask, :], model, H_np, W_weights, H_weights_slice)
+            W_np = project_samples(
+                model,
+                mat[peaks_mask, :],
+                H_np,
+                W_weights,
+                H_weights_slice
+            )
 
     return W_np, H_np, peaks_mask
 
