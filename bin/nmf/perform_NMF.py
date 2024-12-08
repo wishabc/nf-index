@@ -100,7 +100,7 @@ def parse_nmf_args(args) -> NMFInputData:
 
 def parse_args_anndata(args):
     print('Reading AnnData')
-    adata = read_zarr_backed(args.from_anndata)[:, :]
+    adata = read_zarr_backed(args.from_anndata)[:, :10_000]
     matrix = adata.layers['binary'].T.toarray()
 
     args.samples_mask = adata.obs[args.samples_mask_column].to_numpy().astype(bool)
