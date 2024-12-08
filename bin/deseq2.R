@@ -84,9 +84,15 @@ if (is.null(params_f)) {
   dds.sub <- dds[baseMean > 5,]
   baseMean <- baseMean[baseMean > 5]
   o <- order(baseMean)
-  idx <- o[round(seq(from=1, to=length(o), length=1000))]
-  dds.sub <- dds.sub[idx,]
+  ## Changed compared to https://github.com/mikelove/DESeq2/blob/master/R/vst.R ##
+  ## Use evenly spaced values of baseMean to estimate the dispersion trend instead of ranks
+  baseMean_sorted <- baseMean[o] 
+  points <- seq(from = baseMean_sorted[1], to = baseMean_sorted[length(baseMean_sorted)], length.out = 1000)
+  idx_sorted <- findInterval(points, baseMean_sorted)
 
+  idx_original <- o[idx_sorted]
+  dds.sub <- dds.sub[idx_original,]
+  ###
   # estimate dispersion trend
   dds.sub <- estimateDispersionsGeneEst(dds.sub, quiet=TRUE)
   dds.sub <- estimateDispersionsFit(dds.sub, fitType="parametric", quiet=TRUE)
