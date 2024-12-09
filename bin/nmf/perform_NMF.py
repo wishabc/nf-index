@@ -290,8 +290,8 @@ def setup_parser():
 
     # Reading from anndata argument
     parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names and dhs_meta fields.', default=None)
-    parser.add_argument('--samples_mask_column', help='Column in samples metadata to use as mask', default='final_qc_passing_samples', default=None)
-    parser.add_argument('--dhs_mask_column', help='Column in dhs metadata to use as mask', default='final_qc_passing_dhs', default=None)
+    parser.add_argument('--samples_mask_column', help='Column in samples metadata to use as mask', default=None)
+    parser.add_argument('--dhs_mask_column', help='Column in dhs metadata to use as mask', default=None)
 
     # Optional arguments for both modes
     parser.add_argument('--project_masked_peaks', action='store_true', help='Project peaks for all masked samples', default=False)
