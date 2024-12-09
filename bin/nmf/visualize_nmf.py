@@ -4,7 +4,7 @@ import argparse
 from tqdm import tqdm
 
 from order_by_template import get_component_data, define_colors
-from perform_NMF import NMFInputData, parse_nmf_args
+from perform_NMF import NMFInputData, parse_nmf_args, setup_parser
 
 
 def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colors=None):
@@ -82,8 +82,6 @@ def plot_component(data, labels, color, ax=None, top_count=15):
 
 def plot_nmf(basis, annotations, top_count=15, component_data=None, common_scale=False):
     n_components = basis.shape[0]
-
-    #bar_graph_sort_order = get_barsortorder(basis)
 
     ncols = int(np.ceil(np.sqrt(n_components)))
     nrows = int(np.ceil(n_components / ncols))
@@ -229,13 +227,13 @@ def main(
     if samples_mask.sum() < samples_mask.shape[0]:
         print('Reference samples set')
         ax, _, _ = plot_barplots(W[:, samples_mask], component_data)
-        plt.savefig(f'{vis_path}/Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
+        plt.savefig(f'{vis_path}.Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
         plt.close(ax.get_figure())
     
 
     print('All samples')
     ax, _, _ = plot_barplots(W, component_data)
-    plt.savefig(f'{vis_path}/Barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}.Barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
 
@@ -243,24 +241,24 @@ def main(
     if peaks_mask.sum() < peaks_mask.shape[0]:
         print('Reference peaks set')
         ax, _, _ = plot_barplots(H[:, peaks_mask], component_data, normalize=True)
-        plt.savefig(f'{vis_path}/Barplot_reference_train_DHSs.pdf', transparent=True, bbox_inches='tight')
+        plt.savefig(f'{vis_path}.Barplot_reference_train_DHSs.pdf', transparent=True, bbox_inches='tight')
         plt.close(ax.get_figure())
 
     print('All peaks')
     ax, _, _ = plot_barplots(H, component_data)
-    plt.savefig(f'{vis_path}/Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}.Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
     print('All peaks not normalized')
     ax, _, _ = plot_barplots(H, component_data, normalize=False)
-    plt.savefig(f'{vis_path}/Barplot_all_DHSs.not_norm.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}.Barplot_all_DHSs.not_norm.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
     #Only reproduced DHSs
     print('>3 peaks supproting a DHS')
     reproduced_peaks = binary_matrix.sum(axis=1) > 3
     ax, _, _ = plot_barplots(H[:, reproduced_peaks], component_data, normalize=True)
-    plt.savefig(f'{vis_path}/Barplot_DHS_supported_by_4+samples.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}.Barplot_DHS_supported_by_4+samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(ax.get_figure())
 
     print('Detailed barplot all samples')
@@ -277,23 +275,23 @@ def main(
                 'r' if s else 'k' for s in s_mask
             ]
         )
-    plt.savefig(f'{vis_path}/Detailed_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.savefig(f'{vis_path}.Detailed_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
 
     print('Top 20 samples per component')
     annotations = metadata["sample_label"].values
     fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data)
-    plt.savefig(f'{vis_path}/Top20_all_samples_barplot.pdf', bbox_inches='tight', transparent=True)
+    plt.savefig(f'{vis_path}.Top20_all_samples_barplot.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
 
     fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data, common_scale=True)
-    plt.savefig(f'{vis_path}/Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
+    plt.savefig(f'{vis_path}.Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
 
 
     if 'dist_tss' in dhs_meta.columns:
         ax = plot_dist_tss(H, dhs_meta['dist_tss'], component_data)
-        plt.savefig(f'{vis_path}/Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
+        plt.savefig(f'{vis_path}.Distance_to_tss.pdf', bbox_inches='tight', transparent=True)
         plt.close(fig)
 
 
@@ -313,23 +311,9 @@ def plot_dist_tss(H, dist_tss, component_data, ax=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
-    parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
+    parser = setup_parser()
     parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('H', help='H matrix of perform NMF decomposition')
-
-    # Visualizations from matrix
-    parser.add_argument('--matrix', help='Path to matrix to run NMF on')
-    parser.add_argument('--sample_names', help='Path to file with sample names')
-    parser.add_argument('--dhs_meta', help='Path to DHS metadata file')
-    parser.add_argument('--samples_metadata', help='Path to metadata file')
-    parser.add_argument('--dhs_annotations', help='Path to DHS annotations. Required to plot distance to tss plot. Expected to have dist_tss column.', default=None)
-
-    # Visualizations from anndata
-    parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names, dhs_meta and metadata fields', default=None)
-    
-    # Optional arguments for both modes
-    parser.add_argument('--samples_mask', help='Binary mask for samples used to construct initial embedding, numpy array')
-    parser.add_argument('--peaks_mask', help='Binary mask for peaks used to construct initial embedding, numpy array')
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
 
     args = parser.parse_args()
@@ -347,6 +331,6 @@ if __name__ == '__main__':
 
     W = np.load(args.W).T # NMF components x samples
     H = np.load(args.H).T # NMF components x peaks
-
-    main(nmf_data, W, H, args.outpath)
+    outprefix = f"{args.outpath}/{args.prefix}"
+    main(nmf_data, W, H, outprefix)
 

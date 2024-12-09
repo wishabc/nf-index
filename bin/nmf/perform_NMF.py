@@ -76,7 +76,7 @@ def project_samples(model, data, H, W_weights=None, H_weights=None):
     return W # samples x components 
 
 
-def project_peaks(model, data, W, W_weights=None, H_weights=None):
+def project_peaks(model, X, W, W_weights=None, H_weights=None):
     # data: peaks x samples
     # W: samples x components
     # NMF: peaks x samples = peaks x components * components x samples
@@ -106,9 +106,9 @@ def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)[:, :] # to avoid csr dataset
     matrix = adata.layers['binary'].T.toarray().astype(dtype)
+    args.samples_mask = mask_from_metadata(adata.obs, args.samples_mask_column)
+    args.peaks_mask = mask_from_metadata(adata.var, args.dhs_mask_column)
 
-    args.samples_mask = adata.obs[args.samples_mask_column].to_numpy().astype(bool)
-    args.peaks_mask = adata.var[args.dhs_mask_column].to_numpy().astype(bool)
     return parse_optional_args(
         args,
         matrix,
@@ -147,6 +147,12 @@ def parse_args_matrix(args):
             dhs_meta['dist_tss'] = dhs_annotations['dist_tss']
     
     return parse_optional_args(args, mat, dhs_metadata=dhs_meta, samples_metadata=samples_metadata)
+
+
+def mask_from_metadata(metadata, column_name):
+    if column_name is not None:
+        return metadata[column_name].to_numpy().astype(bool)
+    return np.ones(metadata.shape[0], dtype=bool)
 
 
 def parse_optional_args(args, matrix: np.ndarray, samples_metadata, dhs_metadata) -> NMFInputData:
@@ -270,7 +276,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
     return W_np, H_np, peaks_mask
 
 
-if __name__ == '__main__':
+def setup_parser():
     parser = argparse.ArgumentParser('Run NMF decomposition on a DHS x samples matrix')
     parser.add_argument('n_components', help='Number of components to use in NMF', type=int)
     parser.add_argument('prefix', help='Prefix for the output file')
@@ -284,15 +290,19 @@ if __name__ == '__main__':
 
     # Reading from anndata argument
     parser.add_argument('--from_anndata', help='Path to AnnData file. If provided, ignore matrix, sample_names and dhs_meta fields.', default=None)
-    parser.add_argument('--samples_mask_column', help='Column in samples metadata to use as mask', default='final_qc_passing_samples')
-    parser.add_argument('--dhs_mask_column', help='Column in dhs metadata to use as mask', default='final_qc_passing_dhs')
+    parser.add_argument('--samples_mask_column', help='Column in samples metadata to use as mask', default='final_qc_passing_samples', default=None)
+    parser.add_argument('--dhs_mask_column', help='Column in dhs metadata to use as mask', default='final_qc_passing_dhs', default=None)
 
     # Optional arguments for both modes
     parser.add_argument('--project_masked_peaks', action='store_true', help='Project peaks for all masked samples', default=False)
     parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--peaks_weights', help='Path to peaks weights (for weighted NMF)', default=None)
     parser.add_argument('--extra_params', help='Path to json with NMF params (overwrites default settings)', default=None)
+    return parser
 
+
+if __name__ == '__main__':
+    parser = setup_parser()
     args = parser.parse_args()
 
     print('Parsing arguments')

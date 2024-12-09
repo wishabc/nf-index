@@ -49,12 +49,15 @@ process visualize_nmf {
 	"""
     python3 $moduleDir/bin/nmf/visualize_nmf.py \
         ${n_components} \
+        ${prefix} \
         ${W} \
         ${H} \
         --outpath ./ \
         --from_anndata ${anndata_path} \
         --peaks_mask ${peaks_mask} \
         --samples_mask ${samples_mask} \
+        --samples_mask_column reference_sample \
+        --dhs_mask_column autosomal_dhs \
 	"""
 }
 
