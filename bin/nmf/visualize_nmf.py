@@ -310,12 +310,13 @@ def plot_dist_tss(H, dist_tss, component_data, ax=None):
 
 
 if __name__ == '__main__':
+    print('Visualizing NMF results')
     parser = argparse.ArgumentParser('Matrix normalization using lowess')
     parser = setup_parser()
+    print('Adding options to parser')
     parser.add_argument('W', help='W matrix of perform NMF decomposition')
     parser.add_argument('H', help='H matrix of perform NMF decomposition')
     parser.add_argument('--outpath', help='Path to save visualizations', default='./')
-
     args = parser.parse_args()
 
     nmf_data = parse_nmf_args(args)
