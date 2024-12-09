@@ -204,7 +204,7 @@ def main(
     peaks_mask = nmf_data.peaks_mask
 
     binary_matrix = nmf_data.matrix[peaks_mask, :]
-    dhs_meta = nmf_data.dhs_metadata
+    dhs_meta = nmf_data.dhs_metadata[peaks_mask]
 
     # for i, row in component_data.iterrows():
     #     weights = np.ones(W.shape[0])
