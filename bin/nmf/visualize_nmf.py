@@ -202,7 +202,8 @@ def main(
     metadata = nmf_data.samples_metadata
     samples_mask = nmf_data.samples_mask
     peaks_mask = nmf_data.peaks_mask
-    binary_matrix = nmf_data.matrix
+
+    binary_matrix = nmf_data.matrix[peaks_mask, :]
     dhs_meta = nmf_data.dhs_metadata
 
     # for i, row in component_data.iterrows():
@@ -238,12 +239,6 @@ def main(
 
 
     ######## Plot peaks #########
-    if peaks_mask.sum() < peaks_mask.shape[0]:
-        print('Reference peaks set')
-        ax, _, _ = plot_barplots(H[:, peaks_mask], component_data, normalize=True)
-        plt.savefig(f'{vis_path}.Barplot_reference_train_DHSs.pdf', transparent=True, bbox_inches='tight')
-        plt.close(ax.get_figure())
-
     print('All peaks')
     ax, _, _ = plot_barplots(H, component_data)
     plt.savefig(f'{vis_path}.Barplot_all_DHSs.pdf', transparent=True, bbox_inches='tight')
