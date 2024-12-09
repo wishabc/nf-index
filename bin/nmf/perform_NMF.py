@@ -159,7 +159,7 @@ def parse_optional_args(args, matrix: np.ndarray, samples_metadata, dhs_metadata
     samples_m = read_mask(args.samples_mask)
     peaks_m = read_mask(args.peaks_mask)
     
-    if hasattr(args, 'samples_weights'):
+    if args.samples_weights is not None or args.peaks_weights is not None:
         W_weights_vector = read_weights(
             args.samples_weights,
             matrix.shape[1],
