@@ -10,7 +10,7 @@ import scipy.sparse as sp
 import dataclasses
 
 
-dtype = np.float64
+dtype = np.float32
 
 
 @dataclasses.dataclass
@@ -205,9 +205,9 @@ def read_weights(weights_path, shape, sample_names=None) -> np.ndarray:
             weights_df = pd.read_table(weights_path).set_index('id')
             if sample_names is not None:
                 weights_df = weights_df.loc[sample_names]
-            weights_vector = weights_df['weight'].to_numpy()
+            weights_vector = weights_df['weight'].to_numpy().astype(dtype=dtype)
     else:
-        weights_vector = np.ones(shape, dtype=float)
+        weights_vector = np.ones(shape, dtype=dtype)
     
     return weights_vector / weights_vector.sum() * weights_vector.shape[0]
 
