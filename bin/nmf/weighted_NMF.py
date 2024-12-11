@@ -345,8 +345,8 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
     # The method can be called with scalars
     if not sp.issparse(X):
         X = np.atleast_2d(X)
-    W = np.atleast_2d(W)
-    H = np.atleast_2d(H)
+    W = np.atleast_2d(W).astype(np.float64)
+    H = np.atleast_2d(H).astype(np.float64)
 
     # Frobenius norm
     if beta == 2:
@@ -355,7 +355,7 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
             if W_weights is None:
                 norm_X = np.dot(X.data, X.data)
                 norm_WH = trace_dot(np.linalg.multi_dot([W.T, W, H]), H)
-                cross_prod = trace_dot((X * H.T), W)
+                cross_prod = trace_dot((X @ H.T), W)
             else:
                 if wX is None:
                     wX = get_wX(X, W_weights, H_weights)
@@ -364,7 +364,7 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
 
                 norm_X = np.dot(wX.data, X.data)
                 norm_WH = trace_dot(np.linalg.multi_dot([sqrt_wW.T, sqrt_wW, sqrt_wH]), sqrt_wH)
-                cross_prod = trace_dot((wX * H.T), W)
+                cross_prod = trace_dot((wX @ H.T), W)
 
             res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
 
