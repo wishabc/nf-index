@@ -1,11 +1,13 @@
 #!/bin/bash
-PEAKS_FILE="$1"
-CUTCOUNTS_FILE="$2"
-DISTANCE="$3"
-SUM_CUTCOUNTS="$4"
-SAMPLE_ID="$5"
-CHROM_SIZES="$6"
-DFOUT="$7"
+
+SAMPLE_ID="$1"
+DISTANCE="$2"
+
+PEAKS_FILE="$3"
+CUTCOUNTS_FILE="$4"
+
+CHROM_SIZES="$5"
+DFOUT="$6"
 
 
 if ! [[ "$DISTANCE" =~ ^[0-9]+$ ]]; then
@@ -26,4 +28,4 @@ zgrep -v '^#' "$PEAKS_FILE" \
         -v sample_id=$SAMPLE_ID \
         -v distance=$DISTANCE \
         '{length_sum += $3 - $2; signal_sum += $4}
-         END {print length_sum, signal_sum, distance, total_cutcounts, sample_id}'
+         END {print length_sum, signal_sum, distance, sample_id}' >> $DFOUT
