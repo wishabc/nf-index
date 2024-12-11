@@ -364,7 +364,7 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
 
                 norm_X = np.dot(wX.data, X.data)
                 norm_WH = trace_dot(np.linalg.multi_dot([sqrt_wW.T, sqrt_wW, sqrt_wH]), sqrt_wH)
-                cross_prod = trace_dot((wX @ H.T), W)
+                cross_prod = trace_dot((wX * H.T), W)
 
             res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
 
