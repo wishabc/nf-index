@@ -104,7 +104,7 @@ def parse_nmf_args(args) -> NMFInputData:
 
 def parse_args_anndata(args):
     print('Reading AnnData')
-    adata = read_zarr_backed(args.from_anndata)[:, :] # to avoid csr dataset
+    adata = read_zarr_backed(args.from_anndata)[:, :100_000] # to avoid csr dataset
     matrix = adata.layers['binary'].T.toarray().astype(dtype)
     if args.samples_mask is None:
         args.samples_mask = mask_from_metadata(adata.obs, args.samples_mask_column)
