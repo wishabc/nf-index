@@ -366,6 +366,8 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
                 cross_prod = trace_dot((wX @ H.T), W)
 
             res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
+            if res < 0:
+                print(res)
         else:
             if W_weights is None:
                 res = squared_norm(X - np.dot(W, H)) / 2.0
