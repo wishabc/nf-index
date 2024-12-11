@@ -145,6 +145,7 @@ def _fit_multiplicative_update(
         X, W, H, beta_loss, square_root=True, wX=wX,
         W_weights=W_weights, H_weights=H_weights
     )
+    print('Error at init', error_at_init)
     previous_error = error_at_init
 
     H_sum, HHt, XHt = None, None, None
@@ -191,7 +192,7 @@ def _fit_multiplicative_update(
 
             # necessary for stability with beta_loss < 1
             if beta_loss <= 1:
-                H[H < np.finfo(np.float64).eps] = 0.0
+                H[H < EPSILON] = 0.0
 
         # test convergence criterion every 10 iterations
         if tol > 0 and n_iter % 10 == 0:
@@ -367,7 +368,7 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
 
             res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
             if res < 0:
-                print(res)
+                print(res, norm_X, norm_WH, cross_prod)
         else:
             if W_weights is None:
                 res = squared_norm(X - np.dot(W, H)) / 2.0

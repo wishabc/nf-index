@@ -154,13 +154,18 @@ def parse_args_matrix(args):
     return parse_optional_args(args, mat, dhs_metadata=dhs_meta, samples_metadata=samples_metadata)
 
 
-def mask_from_metadata(metadata, column_name):
+def mask_from_metadata(metadata: pd.DataFrame, column_name: str):
     if column_name is not None:
         return metadata[column_name].to_numpy().astype(bool)
     return np.ones(metadata.shape[0], dtype=bool)
 
 
-def parse_optional_args(args, matrix: np.ndarray, samples_metadata, dhs_metadata) -> NMFInputData:
+def parse_optional_args(
+        args,
+        matrix: np.ndarray,
+        samples_metadata: pd.DataFrame,
+        dhs_metadata: pd.DataFrame
+    ) -> NMFInputData:
     samples_m = read_mask(args.samples_mask)
     peaks_m = read_mask(args.peaks_mask)
     
