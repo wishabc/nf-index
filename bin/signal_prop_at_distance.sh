@@ -7,15 +7,12 @@ PEAKS_FILE="$3"
 CUTCOUNTS_FILE="$4"
 
 CHROM_SIZES="$5"
-DFOUT="$6"
 
 
 if ! [[ "$DISTANCE" =~ ^[0-9]+$ ]]; then
     echo "Error: Distance must be a non-negative integer."
     exit 1
 fi
-
-echo -e "length\tcutcounts\tdistance\tsample_id" > $DFOUT
 
 zgrep -v '^#' "$PEAKS_FILE" \
     | awk -v OFS="\t" '{print $1, $7, $7 + 1}' \
@@ -28,4 +25,4 @@ zgrep -v '^#' "$PEAKS_FILE" \
         -v sample_id=$SAMPLE_ID \
         -v distance=$DISTANCE \
         '{length_sum += $3 - $2; signal_sum += $4}
-         END {print length_sum, signal_sum, distance, sample_id}' >> $DFOUT
+         END {print length_sum, signal_sum, distance, sample_id}'
