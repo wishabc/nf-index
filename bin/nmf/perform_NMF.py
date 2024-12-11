@@ -10,7 +10,7 @@ import scipy.sparse as sp
 import dataclasses
 
 
-dtype = np.float32
+dtype = np.float64
 
 
 @dataclasses.dataclass
