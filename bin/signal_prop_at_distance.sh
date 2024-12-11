@@ -15,7 +15,7 @@ if ! [[ "$DISTANCE" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-echo -e "length\tsignal\tdistance\tsample_id" > $DFOUT
+echo -e "length\tcutcounts\tdistance\tsample_id" > $DFOUT
 
 zgrep -v '^#' "$PEAKS_FILE" \
     | awk -v OFS="\t" '{print $1, $7, $7 + 1}' \
