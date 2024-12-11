@@ -171,7 +171,7 @@ def _fit_multiplicative_update(
 
         # necessary for stability with beta_loss < 1
         if beta_loss < 1:
-            W[W < np.finfo(np.float64).eps] = 0.0
+            W[W < EPSILON] = 0.0
 
         # update H (only at fit or fit_transform)
         if update_H:
@@ -345,8 +345,8 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
     # The method can be called with scalars
     if not sp.issparse(X):
         X = np.atleast_2d(X)
-    W = np.atleast_2d(W)
-    H = np.atleast_2d(H)
+    W = np.atleast_2d(W).astype(np.float64)
+    H = np.atleast_2d(H).astype(np.float64)
 
     # Frobenius norm
     if beta == 2:
@@ -367,8 +367,7 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
                 cross_prod = trace_dot((wX @ H.T), W)
 
             res = (norm_X + norm_WH - 2.0 * cross_prod) / 2.0
-            if res < 0:
-                print(res, norm_X, norm_WH, cross_prod)
+
         else:
             if W_weights is None:
                 res = squared_norm(X - np.dot(W, H)) / 2.0
@@ -378,6 +377,9 @@ def _beta_divergence(X, W, H, beta, square_root=False, wX=None, W_weights=None, 
                 ) / 2.0
 
         if square_root:
+            if res < 0:
+                print(res, norm_X, norm_WH, cross_prod)
+            res = max(res, 0)
             return np.sqrt(res * 2)
         else:
             return res
