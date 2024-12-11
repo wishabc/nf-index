@@ -5,7 +5,9 @@ process signal_proportion_in_peaks {
 
     input:
         tuple val(ag_id), path(peaks_file), path(cutcounts_file)
-
+    
+    output:
+        tuple val(ag_id), path(name)
 
     script:
     name = "${ag_id}.prop_signal_stats.txt"
@@ -36,6 +38,7 @@ workflow {
             file(row.cutcounts_file),
         ))
         | signal_proportion_in_peaks
+        | map(it -> it[1])
         | collectFile(
             storeDir: params.outdir,
             skip: 1,
