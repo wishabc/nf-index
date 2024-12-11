@@ -22,8 +22,8 @@ zgrep -v '^#' "$PEAKS_FILE" \
     | bedmap --echo --sum - \
         <(zgrep -v '^#' "$CUTCOUNTS_FILE" | awk -v OFS="\t" '{print $1, $2, $3, 0, $4}') \
     | awk -v OFS='\t' \
-        -v total_cutcounts $SUM_CUTCOUNTS \
-        -v sample_id $SAMPLE_ID \
-        -v distance $DISTANCE \
+        -v total_cutcounts=$SUM_CUTCOUNTS \
+        -v sample_id=$SAMPLE_ID \
+        -v distance=$DISTANCE \
         '{length_sum += $3 - $2; signal_sum += $4}
          END {print length_sum, signal_sum, distance, total_cutcounts, sample_id}'
