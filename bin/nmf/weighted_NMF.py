@@ -145,7 +145,7 @@ def _fit_multiplicative_update(
         X, W, H, beta_loss, square_root=True, wX=wX,
         W_weights=W_weights, H_weights=H_weights
     )
-    print('Error at init', error_at_init)
+    print('Error at init', error_at_init, flush=True)
     previous_error = error_at_init
 
     H_sum, HHt, XHt = None, None, None
