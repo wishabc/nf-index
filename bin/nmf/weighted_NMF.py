@@ -208,7 +208,8 @@ def _fit_multiplicative_update(
                 iter_time = time.time()
                 print(
                     "Epoch %02d reached after %.3f seconds, error: %f"
-                    % (n_iter, iter_time - start_time, error)
+                    % (n_iter, iter_time - start_time, error),
+                    flush=True
                 )
 
             if (previous_error - error) / error_at_init < tol:
