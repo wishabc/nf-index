@@ -224,6 +224,8 @@ def main(
     #     fig.savefig(f'{vis_path}/Detailed_barplot.{comp_name}.pdf', transparent=True, bbox_inches='tight')
     #     plt.close(fig)
     samples_projected = W.shape[1] == samples_mask.shape[0]
+    if not samples_projected:
+        metadata = metadata[samples_mask]
     ######### Plot samples #########
     if samples_mask.sum() < samples_mask.shape[0] and samples_projected:
         print('Reference samples set')
