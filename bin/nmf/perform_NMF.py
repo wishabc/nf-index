@@ -105,12 +105,14 @@ def parse_nmf_args(args) -> NMFInputData:
 def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)[:, :]  # to avoid csr dataset
-    # indices = np.arange(adata.shape[1])
-    # np.random.seed(42)
-    # selected_indices = indices[np.random.rand(adata.shape[1]) < 0.1]
-    # selected_indices = np.sort(selected_indices)
-    # adata = adata[:, selected_indices]
+
+    indices = np.arange(adata.shape[1])
+    np.random.seed(42)
+    selected_indices = indices[np.random.rand(adata.shape[1]) < 0.05]
+    selected_indices = np.sort(selected_indices)
+    adata = adata[:, selected_indices]
     matrix = adata.layers['binary'].T.toarray()
+
     if args.samples_mask is None:
         args.samples_mask = mask_from_metadata(adata.obs, args.samples_mask_column)
     
@@ -134,13 +136,18 @@ def parse_args_matrix(args):
     sample_names = np.loadtxt(args.sample_names, dtype=str)
 
     try:
-        dhs_meta = pd.read_table(args.dhs_meta, header=None, usecols=np.arange(4), names=['chr', 'start', 'end', 'dhs_id']).set_index('dhs_id')
+        dhs_meta = pd.read_table(
+            args.dhs_meta,
+            header=None,
+            usecols=np.arange(4),
+            names=['chr', 'start', 'end', 'dhs_id']
+        ).set_index('dhs_id')
         assert dhs_meta.shape[0] == mat.shape[0]
     except AssertionError:
         dhs_meta = pd.read_table(args.dhs_meta)
         assert dhs_meta.shape[0] == mat.shape[0]
 
-    if hasattr(args, 'samples_metadata'):
+    if args.samples_metadata is not None:
         samples_metadata = pd.read_table(args.samples_metadata)
         # Reformat metadata to handle DNase columns
         id_col = 'id' if 'id' in samples_metadata.columns else 'ag_id'
@@ -216,6 +223,8 @@ def read_weights(weights_path, shape, sample_names=None) -> np.ndarray:
             if sample_names is not None:
                 weights_df = weights_df.loc[sample_names]
             weights_vector = weights_df['weight'].to_numpy().astype(dtype=dtype)
+            assert np.all(np.isfinite(weights_vector)), 'Some provided weights are not finite!'
+            assert weights_vector.shape[0] == shape
     else:
         weights_vector = np.ones(shape, dtype=dtype)
     
@@ -262,7 +271,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
         W_weights=W_weights_slice,
         H_weights=H_weights_slice,
     )
-    if samples_m.shape[0] > samples_m.sum():
+    if args.project_masked_samples and samples_m.shape[0] > samples_m.sum():
         print('Projecting samples')
         if args.project_masked_peaks and (non_zero_rows.sum() != mat[:, samples_m].shape[0]):
             H_np = project_peaks(
@@ -310,6 +319,7 @@ def setup_parser():
 
     # Optional arguments for both modes
     parser.add_argument('--project_masked_peaks', action='store_true', help='Project peaks for all masked samples', default=False)
+    parser.add_argument('--project_masked_samples', action='store_true', help='Project peaks for all masked samples', default=False)
     parser.add_argument('--samples_weights', help='Path to samples weights (for weighted NMF)', default=None)
     parser.add_argument('--peaks_weights', help='Path to peaks weights (for weighted NMF)', default=None)
     parser.add_argument('--extra_params', help='Path to json with NMF params (overwrites default settings)', default=None)
