@@ -10,7 +10,7 @@ import scipy.sparse as sp
 import dataclasses
 
 
-dtype = np.float32
+dtype = np.float64
 
 
 @dataclasses.dataclass
@@ -42,7 +42,7 @@ def initialize_model(n_components, extra_params=None, is_weighted=False):
     return WeightedNMF(**params) if is_weighted else NMF(**params)
 
 def data_to_sparse(X: np.ndarray) -> sp.csr_matrix:
-    return sp.coo_matrix(X.T).tocsr()
+    return sp.coo_matrix(X.T).tocsr().astype(dtype)
 
 def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=None):
     assert (W_weights is None) == (H_weights is None), 'Both or neither weights should be provided'
@@ -105,7 +105,7 @@ def parse_nmf_args(args) -> NMFInputData:
 def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)[:, :] # to avoid csr dataset
-    matrix = adata.layers['binary'].T.toarray().astype(dtype)
+    matrix = adata.layers['binary'].T.toarray()
     if args.samples_mask is None:
         args.samples_mask = mask_from_metadata(adata.obs, args.samples_mask_column)
     
@@ -124,7 +124,7 @@ def parse_args_anndata(args):
 
 def parse_args_matrix(args):
     print('Reading matrix')
-    mat = np.load(args.matrix).astype(dtype)
+    mat = np.load(args.matrix)
 
     sample_names = np.loadtxt(args.sample_names, dtype=str)
 
