@@ -106,6 +106,7 @@ def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata) # [:, :]  # to avoid csr dataset
     indices = np.arange(adata.shape[1])
+    np.random.seed(42)
     selected_indices = indices[np.random.rand(adata.shape[1]) < 0.1]
     selected_indices = np.sort(selected_indices)
     adata = adata[:, selected_indices]
