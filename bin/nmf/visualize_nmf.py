@@ -223,9 +223,9 @@ def main(
     #     comp_name = row["name"].replace("/", "_").replace(' ', '_')
     #     fig.savefig(f'{vis_path}/Detailed_barplot.{comp_name}.pdf', transparent=True, bbox_inches='tight')
     #     plt.close(fig)
-
+    samples_projected = W.shape[1] == samples_mask.shape[0]
     ######### Plot samples #########
-    if samples_mask.sum() < samples_mask.shape[0]:
+    if samples_mask.sum() < samples_mask.shape[0] and samples_projected:
         print('Reference samples set')
         ax, _, _ = plot_barplots(W[:, samples_mask], component_data)
         plt.savefig(f'{vis_path}.Barplot_reference_train_samples.pdf', transparent=True, bbox_inches='tight')
@@ -258,7 +258,7 @@ def main(
 
     print('Detailed barplot all samples')
     s_order, fig = barplot_at_scale(relative_W, metadata, colors=component_data['color'])
-    if samples_mask.sum() < samples_mask.shape[0]:
+    if samples_mask.sum() < samples_mask.shape[0] and samples_projected:
         plt.close(fig)
         s_mask = samples_mask[s_order]
         barplot_at_scale(
