@@ -42,7 +42,6 @@ def initialize_model(n_components, extra_params=None, is_weighted=False):
     return WeightedNMF(**params) if is_weighted else NMF(**params)
 
 def data_to_sparse(X: np.ndarray) -> sp.csr_matrix:
-    return X.T.astype(dtype)
     return sp.coo_matrix(X.T).tocsr().astype(dtype)
 
 def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=None):
@@ -107,12 +106,14 @@ def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)[:, :]  # to avoid csr dataset
 
+    ### Debug part start ###
     indices = np.arange(adata.shape[1])
     np.random.seed(42)
     selected_indices = indices[np.random.rand(adata.shape[1]) < 0.05]
     selected_indices = np.sort(selected_indices)
     adata = adata[:, selected_indices]
     matrix = adata.layers['binary'].T.toarray()
+    ### Debug part end ###
 
     if args.samples_mask is None:
         args.samples_mask = mask_from_metadata(adata.obs, args.samples_mask_column)
