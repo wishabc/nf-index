@@ -24,13 +24,13 @@ class NMFInputData:
     dhs_metadata: pd.DataFrame
 
 
-def initialize_model(n_components, extra_params=None, is_weighted=False):
+def initialize_model(n_components, extra_params: dict=None, is_weighted=False):
     params = dict(n_components=n_components,
                     solver='mu', beta_loss='frobenius',
                     random_state=0, init="nndsvda",
                     max_iter=1000, tol=1e-4, alpha_W=0.0, l1_ratio=1.0,
                     verbose=True)
-    if extra_params is not None and extra_params:
+    if extra_params:
         overwritten = {
             key: f'New: {extra_params[key]}. Old: {params[key]}' for key in extra_params
               if key in params and extra_params[key] != params[key]
@@ -48,7 +48,7 @@ def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=Non
     assert (W_weights is None) == (H_weights is None), 'Both or neither weights should be provided'
     X = data_to_sparse(X)
     if W_weights is not None:
-        assert W_weights.ndim == 1 and H_weights.ndim == 1, 'Weights should be 1D arrays'
+        assert W_weights.ndim == 1 and H_weights.ndim == 1, 'Weights are expected to be 1D arrays'
         print(X.shape, W_weights.shape, H_weights.shape)
         W = model.fit_transform(X, W_weights=W_weights[:, None], H_weights=H_weights[None, :])
     else:
@@ -60,11 +60,11 @@ def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=Non
     return W, H, model
 
 
-def project_samples(model, data, H, W_weights=None, H_weights=None):
-    # data: peaks x samples
+def project_samples(model, X, H, W_weights=None, H_weights=None):
+    # X: peaks x samples
     # H: components x peaks
     # NMF: samples x peaks = samples x components * components x peaks
-    X = data_to_sparse(data)
+    X = data_to_sparse(X) # transposes
     params = dict(X=X, H=H, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
@@ -77,10 +77,10 @@ def project_samples(model, data, H, W_weights=None, H_weights=None):
 
 
 def project_peaks(model, X, W, W_weights=None, H_weights=None):
-    # data: peaks x samples
+    # X: peaks x samples
     # W: samples x components
     # NMF: peaks x samples = peaks x components * components x samples
-    X = data_to_sparse(X)
+    X = data_to_sparse(X.T) # transposes
     params = dict(X=X, H=W.T, update_H=False)
     if W_weights is not None:
         assert H_weights is not None
@@ -248,7 +248,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
     print(non_zero_rows.sum())
     peaks_mask = nmf_input_data.peaks_mask & non_zero_rows
 
-    matrix_samples_peaks_slice = mat[peaks_mask, :][:, samples_m]
+    matrix_samples_peaks_slice = samples_masked_matrix[peaks_mask, :]
     print(matrix_samples_peaks_slice.shape)
 
     if W_weights is not None or H_weights is not None:
@@ -257,6 +257,7 @@ def main(nmf_input_data: NMFInputData, **extra_params):
         H_weights_slice = H_weights[peaks_mask]
         is_weighted = True
     else:
+        print('Using sklearn default NMF')
         W_weights_slice = H_weights_slice = None
         is_weighted = False
 
