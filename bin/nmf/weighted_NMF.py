@@ -57,6 +57,8 @@ class WeightedNMF(NMF):
         if W_weights is None and H_weights is None:
             return super()._fit_transform(X, y, W, H, update_H=update_H)
         check_non_negative(X, "NMF (input X)")
+
+        print(f'Weights stats: Median: {np.median(W_weights)}, Sum: {np.sum(W_weights)}, Max: {np.max(W_weights)}')
         
         # check parameters
         self._check_params(X)
