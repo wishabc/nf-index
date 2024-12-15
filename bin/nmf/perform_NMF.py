@@ -188,13 +188,13 @@ def parse_optional_args(
             args.samples_weights,
             matrix.shape[1],
             samples_metadata.index
-        ).astype(matrix.dtype)
+        )#.astype(matrix.dtype)
 
         H_weights_vector = read_weights(
             args.peaks_weights,
             matrix.shape[0],
             dhs_metadata.index
-        ).astype(matrix.dtype)
+        )#.astype(matrix.dtype)
     else:
         W_weights_vector = H_weights_vector = None
   
