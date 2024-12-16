@@ -24,6 +24,7 @@ process fit_nmf {
         --from_anndata ${anndata_path} \
         --samples_mask_column reference_sample \
         --dhs_mask_column autosomal_dhs \
+        --project_masked_samples \
         ${non_required_arg(weights_path, '--samples_weights')} \
         ${non_required_arg(samples_mask, '--samples_mask')} \
         ${non_required_arg(peaks_mask, '--peaks_mask')} \
