@@ -70,7 +70,7 @@ def hierarchical_clust_order(matrix):
     linkage_matrix = sch.linkage(distance_matrix, method='average')
     dendrogram = sch.dendrogram(linkage_matrix, no_plot=True)
     leaves_order = dendrogram['leaves']
-    return leaves_order
+    return np.array(leaves_order)
 
 
 def plot_component(data, labels, color, ax=None, top_count=15):
