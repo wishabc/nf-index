@@ -6,6 +6,8 @@ from tqdm import tqdm
 from order_by_template import get_component_data, define_colors
 from perform_NMF import NMFInputData, parse_nmf_args, setup_parser
 
+import scipy.cluster.hierarchy as sch
+
 
 def barplot_at_scale(matrix, metadata, colors, order=None, agst=None, label_colors=None):
     assert len(metadata) == matrix.shape[1], f'Metadata ({len(metadata)}) should have the same number of samples as the matrix ({matrix.shape[1]})'
@@ -61,6 +63,14 @@ def get_barsortorder(matrix):
         barsortorder.append(desired_order[relevant_cut])
     matrix = matrix.astype(int)
     return np.concatenate(barsortorder)
+
+
+def hierarchical_clust_order(matrix):
+    distance_matrix = sch.distance.pdist((matrix).T, metric='cosine')
+    linkage_matrix = sch.linkage(distance_matrix, method='average')
+    dendrogram = sch.dendrogram(linkage_matrix, no_plot=True)
+    leaves_order = dendrogram['leaves']
+    return leaves_order
 
 
 def plot_component(data, labels, color, ax=None, top_count=15):
@@ -275,6 +285,31 @@ def main(
     plt.savefig(f'{vis_path}.Detailed_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
     plt.close(fig)
 
+    print('Hierarchical barplot all samples')
+    s_order = hierarchical_clust_order(W)
+    _, fig = barplot_at_scale(W, metadata, colors=component_data['color'], order=s_order)
+    if samples_mask.sum() < samples_mask.shape[0] and samples_projected:
+        plt.close(fig)
+        s_mask = samples_mask[s_order]
+        barplot_at_scale(
+            W,
+            metadata,
+            colors=component_data['color'],
+            order=s_order,
+            label_colors=[
+                'r' if s else 'k' for s in s_mask
+            ]
+        )
+    plt.savefig(f'{vis_path}.Hierarchical_barplot_all_samples.pdf', transparent=True, bbox_inches='tight')
+    plt.close(fig)
+
+    print('Hierarchical barplot reference samples')
+    if samples_mask.sum() < samples_mask.shape[0] and samples_projected:
+        s_order = hierarchical_clust_order(W[:, samples_mask])
+        _, fig = barplot_at_scale(W[:, samples_mask], metadata.loc[samples_mask, :], colors=component_data['color'], order=s_order)
+        plt.savefig(f'{vis_path}.Hierarchical_barplot_reference_samples.pdf', transparent=True, bbox_inches='tight')
+        plt.close(fig)
+
     print('Top 20 samples per component')
     annotations = metadata["sample_label"].values
     fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data)
@@ -284,6 +319,15 @@ def main(
     fig, axes = plot_nmf(W, annotations, top_count=20, component_data=component_data, common_scale=True)
     plt.savefig(f'{vis_path}.Top20_all_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
     plt.close(fig)
+
+    if samples_mask.sum() < samples_mask.shape[0] and samples_projected:
+        fig, axes = plot_nmf(W[:, samples_mask], annotations[samples_mask], top_count=20, component_data=component_data)
+        plt.savefig(f'{vis_path}.Top20_reference_samples_barplot.pdf', bbox_inches='tight', transparent=True)
+        plt.close(fig)
+
+        fig, axes = plot_nmf(W[:, samples_mask], annotations[samples_mask], top_count=20, component_data=component_data, common_scale=True)
+        plt.savefig(f'{vis_path}.Top20_reference_samples_barplot.common_scale.pdf', bbox_inches='tight', transparent=True)
+        plt.close(fig)
 
 
     if 'dist_tss' in dhs_meta.columns:
