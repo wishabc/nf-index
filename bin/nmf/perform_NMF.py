@@ -110,7 +110,9 @@ def parse_args_anndata(args):
     indices = np.arange(adata.shape[1])
     np.random.seed(42)
     selected_indices = indices[np.random.rand(adata.shape[1]) < 0.05]
+    print(f'adata shape: {adata.shape[1]}')
     selected_indices = np.sort(selected_indices)
+    np.save('/home/sabramov/tmp/selected_indices.npy', selected_indices)
     adata = adata[:, selected_indices]
     matrix = adata.layers['binary'].T.toarray()
     ### Debug part end ###
@@ -205,7 +207,7 @@ def parse_optional_args(
         samples_weights=W_weights_vector,
         peaks_weights=H_weights_vector,
         dhs_metadata=dhs_metadata,
-        samples_metadata=samples_metadata
+        samples_metadata=samples_metadata,
     )
 
 def read_mask(mask) -> np.ndarray:
