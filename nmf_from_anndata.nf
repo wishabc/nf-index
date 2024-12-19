@@ -37,7 +37,7 @@ process visualize_nmf {
 	tag "${prefix}"
 	conda params.conda
     publishDir "${params.outdir}/nmf/${prefix}"
-    // label "highmem"
+    label "highmem"
     errorStrategy 'ignore'
 
 	input:

@@ -106,16 +106,16 @@ def parse_args_anndata(args):
     print('Reading AnnData')
     adata = read_zarr_backed(args.from_anndata)[:, :]  # to avoid csr dataset
 
-    ### Debug part start ###
-    indices = np.arange(adata.shape[1])
-    np.random.seed(42)
-    selected_indices = indices[np.random.rand(adata.shape[1]) < 0.05]
-    print(f'adata shape: {adata.shape[1]}')
-    selected_indices = np.sort(selected_indices)
-    np.save('/home/sabramov/tmp/selected_indices.npy', selected_indices)
-    adata = adata[:, selected_indices]
-    matrix = adata.layers['binary'].T.toarray()
-    ### Debug part end ###
+    # ### Debug part start ###
+    # indices = np.arange(adata.shape[1])
+    # np.random.seed(42)
+    # selected_indices = indices[np.random.rand(adata.shape[1]) < 0.05]
+    # print(f'adata shape: {adata.shape[1]}')
+    # selected_indices = np.sort(selected_indices)
+    # np.save('/home/sabramov/tmp/selected_indices.npy', selected_indices)
+    # adata = adata[:, selected_indices]
+    # matrix = adata.layers['binary'].T.toarray()
+    # ### Debug part end ###
 
     if args.samples_mask is None:
         args.samples_mask = mask_from_metadata(adata.obs, args.samples_mask_column)
