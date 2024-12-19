@@ -114,8 +114,9 @@ def parse_args_anndata(args):
     # selected_indices = np.sort(selected_indices)
     # np.save('/home/sabramov/tmp/selected_indices.npy', selected_indices)
     # adata = adata[:, selected_indices]
-    # matrix = adata.layers['binary'].T.toarray()
     # ### Debug part end ###
+
+    matrix = adata.layers['binary'].T.toarray()
 
     if args.samples_mask is None:
         args.samples_mask = mask_from_metadata(adata.obs, args.samples_mask_column)
