@@ -6,6 +6,7 @@ def main(metadata, path_to_results):
     unique_prefix = metadata['prefix']
     metadata['W'] = path_to_results + '/' + unique_prefix + '/' + unique_prefix + '.W.npy'
     metadata['H'] = metadata['W'].str.replace('.W.npy', '.H.npy', regex=False)
+    metadata['peaks_mask'] = path_to_results + '/' + unique_prefix + '/' + 'non_zero_peaks_mask.txt'
     return metadata
 
 
