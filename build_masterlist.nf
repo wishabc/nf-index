@@ -3,6 +3,28 @@ nextflow.enable.dsl = 2
 
 include { convert_to_numpy; convert_index_to_anndata } from "./converters"
 
+process filter_segments {
+    conda params.conda
+    scratch true
+
+
+    input:
+        tuple val(ag_id), path(peaks_file), path(peak_stats)
+    
+    output:
+        path name
+    
+    script:
+    name = "${ag_id}.filtered_peaks.bed.gz"
+    """
+    python3 $moduleDir/bin/index_scripts/filter_segments.py ${peak_stats} \
+        | bedops --element-of 1 \
+            <(zcat ${peaks_file} | grep -v '#') \
+            - \
+        | bgzip > ${name}
+    """
+}
+
 process collate_and_chunk {
     conda params.conda
     label "highmem"
@@ -317,3 +339,14 @@ workflow {
         | annotate_masterlist // matrix, samples_order, annotated_index
         | convert_index_to_anndata
 }
+
+workflow filterInvalidSegments {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.peaks_file), file(row.peak_stats)))
+        | filter_segments
+        | buildIndex
+        | annotate_masterlist // matrix, samples_order, annotated_index
+        | convert_index_to_anndata
+}
+
