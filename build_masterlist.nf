@@ -7,6 +7,7 @@ process filter_segments {
     conda params.conda
     scratch true
     tag "${ag_id}"
+    memory 10.GB
 
 
     input:
@@ -20,7 +21,7 @@ process filter_segments {
     """
     python3 $moduleDir/bin/index_scripts/filter_segments.py ${peak_stats} \
         | bedops --element-of 1 \
-            <(zcat ${peaks_file} | grep -v '#') \
+            <(zcat ${peaks_file} | grep -v '#chr') \
             - \
         | bgzip > ${name}
     """
