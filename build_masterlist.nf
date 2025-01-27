@@ -6,6 +6,7 @@ include { convert_to_numpy; convert_index_to_anndata } from "./converters"
 process filter_segments {
     conda params.conda
     scratch true
+    tag "${ag_id}"
 
 
     input:
