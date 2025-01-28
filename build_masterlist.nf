@@ -20,6 +20,7 @@ process filter_segments {
     name = "${ag_id}.filtered_peaks.bed.gz"
     """
     python3 $moduleDir/bin/index_scripts/filter_segments.py ${peak_stats} \
+        | sort-bed - \
         | bedops --element-of 1 \
             <(zcat ${peaks_file} | grep -v '#chr') \
             - \
@@ -33,14 +34,13 @@ process collate_and_chunk {
     scratch true
     
     input:
-        path "peaks/peaks*.starch"
+        path "peaks/*"
     
     output:
         path "chunk*.bed"
 
     script:
     """
-    
     for f in peaks/*; 
         do zcat \$f \
             | cut -f1-7 \
