@@ -8,7 +8,7 @@ process filter_segments {
     scratch true
     tag "${ag_id}"
     memory 10.GB
-
+    publishDir "${params.outdir}/filtered_peak_calls"
 
     input:
         tuple val(ag_id), path(peaks_file), path(peak_stats)
