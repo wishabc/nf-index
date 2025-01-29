@@ -17,7 +17,7 @@ if __name__ == '__main__':
     files = [f"{x}.{args.suffix}.txt" for x in samples_order]
 
     matrix = np.concatenate(
-        [np.load(file, dtype=dtype) for file in files]
+        [np.loadtxt(file, dtype=dtype) for file in files]
     )
 
     np.save(args.outpath, matrix)
