@@ -15,10 +15,9 @@ if __name__ == '__main__':
     samples_order = np.loadtxt(args.samples_order, dtype=str)
 
     files = [f"{x}.{args.suffix}.txt" for x in samples_order]
-
-    matrix = np.concatenate(
-        [np.loadtxt(file, dtype=dtype) for file in files]
-    )
+    files = [np.loadtxt(file, dtype=dtype) for file in files]
+    print('Concatenating vectors')
+    matrix = np.concatenate(files)
 
     np.save(args.outpath, matrix)
 
