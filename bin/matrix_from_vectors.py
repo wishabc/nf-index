@@ -17,7 +17,7 @@ if __name__ == '__main__':
     files = [f"{x}.{args.suffix}.txt" for x in samples_order]
     files = [np.loadtxt(file, dtype=dtype) for file in tqdm(files)]
     print('Concatenating vectors')
-    matrix = np.concatenate(files)
+    matrix = np.stack(files)
 
     np.save(args.outpath, matrix)
 
