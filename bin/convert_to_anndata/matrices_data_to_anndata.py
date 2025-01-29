@@ -9,7 +9,7 @@ def main(adata, meta, matrices):
     meta['index_peaks_file'] = adata.obs['peaks_file']
     adata.obs = meta
     matrices_mapping = {
-        os.path.basename(matrix).replace('.raw.matrix.npy', ''): matrix 
+        os.path.basename(matrix).replace('matrix.', '').replace('.npy', ''): matrix 
         for matrix in matrices
         }
     add_matrices_to_anndata(adata, matrices_mapping)
