@@ -136,22 +136,14 @@ process generate_matrix {
 		tuple val(prefix), path(name)
 
 	script:
-    name = "matrix.${prefix}.mtx.gz"
+    name = "matrix.${prefix}.npy"
+    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
 	"""
-    awk '{print \$0".${prefix}.txt"}' ${samples_order} > file_list.txt
-
-    split -l 400 -d -a 4 \
-        file_list.txt \
-        batch_file_list_
-
-    flist=\$(ls batch_file_list_* | sort -t '_' -k 2 -n)
-    for batch_file in \$flist; do
-        batch_output="batch_\${batch_file##*_}.txt"
-        paste \$(cat "\$batch_file" | xargs) > "\$batch_output"
-    done
-
-    # Combine all batch outputs, sorted numerically, and compress the final result
-    paste \$(ls batch*.txt | sort -t '_' -k 2 -n) | gzip -c > ${name}
+    python3 $moduleDir/bin/matrix_from_vectors.py \
+        ${prefix} \
+        ${samples_order} \
+        ${name} \
+        --dtype ${dtype}
 	"""
 }
 
