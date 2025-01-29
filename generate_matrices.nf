@@ -124,8 +124,7 @@ process count_tags {
 process generate_matrix {
 	publishDir "${params.outdir}/raw_matrices", pattern: "${name}"
 	
-	label "medmem"
-	cpus 2
+	label "highmem"
 	scratch true
     tag "${prefix}"
 
@@ -221,7 +220,6 @@ workflow {
         | extract_meta_from_anndata
         | combine(bams_hotspots)
         | generateMatrices
-        | convert_to_numpy
         | map(it -> it[1])
         | collect(sort: true, flat: true)
 
