@@ -1,6 +1,6 @@
 import numpy as np
 import argparse
-
+from tqdm import tqdm
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -15,7 +15,7 @@ if __name__ == '__main__':
     samples_order = np.loadtxt(args.samples_order, dtype=str)
 
     files = [f"{x}.{args.suffix}.txt" for x in samples_order]
-    files = [np.loadtxt(file, dtype=dtype) for file in files]
+    files = [np.loadtxt(file, dtype=dtype) for file in tqdm(files)]
     print('Concatenating vectors')
     matrix = np.concatenate(files)
 
