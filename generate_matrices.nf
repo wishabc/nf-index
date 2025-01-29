@@ -138,6 +138,7 @@ process generate_matrix {
     name = "matrix.${prefix}.npy"
     dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
 	"""
+    echo 1
     python3 $moduleDir/bin/matrix_from_vectors.py \
         ${prefix} \
         ${samples_order} \
