@@ -15,7 +15,7 @@ def main(adata, meta, matrices):
     add_matrices_to_anndata(adata, matrices_mapping)
 
 
-    adata.var['projected_peaks_binary'] = adata.layers['binary'].sum(axis=0).A1.squeeze()
+    adata.var['projected_peaks_binary'] = adata.layers['binary'].sum(axis=0).squeeze()
     adata.var['final_qc_passing_dhs'] = (adata.var['projected_peaks_binary'] > 0) & adata.var['autosomal_dhs']
     return adata
 

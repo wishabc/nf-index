@@ -9,11 +9,11 @@ from helpers import convert_to_sparse_if_sufficently_sparse, load_from_file
 def main(rows_meta, cols_meta, matrix):
     adata = ad.AnnData(X=matrix, obs=cols_meta[['peaks_file']], var=rows_meta)
 
-    adata.obs['n_peaks'] = adata.X.sum(axis=1).A1.squeeze()
+    adata.obs['n_peaks'] = adata.X.sum(axis=1).squeeze()
     adata.obs['final_qc_passing_sample'] = 1
 
     adata.var['autosomal_dhs'] = adata.var['#chr'].str.contains('chr[1-9]', regex=True)
-    adata.var['n_contributing_samples'] = adata.X.sum(axis=0).A1.squeeze()
+    adata.var['n_contributing_samples'] = adata.X.sum(axis=0).squeeze()
 
     return adata
 
