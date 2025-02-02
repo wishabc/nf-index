@@ -11,20 +11,32 @@ process filter_segments {
     publishDir "${params.outdir}/filtered_peak_calls"
 
     input:
-        tuple val(ag_id), path(peaks_file), path(peak_stats)
+        tuple val(ag_id), path(peaks_file), path(hotspots_file), path(peak_stats)
     
     output:
-        path name
+        tuple val(ag_id), path(name), path(hotspots)
     
     script:
     name = "${ag_id}.filtered_peaks.bed.gz"
+    hotspots = "${ag_id}.filtered_hotspots.bed.gz"
     """
-    python3 $moduleDir/bin/index_scripts/filter_segments.py ${peak_stats} \
-        | sort-bed - \
+    python3 $moduleDir/bin/index_scripts/filter_segments.py \
+        ${peak_stats} \
+        | sort-bed - > filtered_stats.bed
+
+    zcat ${peaks_file} \
+        | grep -v '#chr' \
         | bedops --element-of 1 \
-            <(zcat ${peaks_file} | grep -v '#chr') \
             - \
+            filtered_stats.bed \
         | bgzip > ${name}
+    
+    zcat ${hotspots_file} \
+        | grep -v '#chr' \
+        | bedops --element-of 1 \
+            - \
+            filtered_stats.bed \
+        | bgzip > ${hotspots}
     """
 }
 
@@ -345,10 +357,11 @@ workflow {
 workflow filterInvalidSegments {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.peaks_file), file(row.peak_stats)))
+        | map(row -> tuple(row.ag_id, file(row.peaks_file), file(row.hotspots_file), file(row.peak_stats)))
         | filter_segments
-        | buildIndex
-        | annotate_masterlist // matrix, samples_order, annotated_index
-        | convert_index_to_anndata
+        // | map(it -> it[1])
+        // | buildIndex
+        // | annotate_masterlist // matrix, samples_order, annotated_index
+        // | convert_index_to_anndata
 }
 
