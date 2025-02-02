@@ -359,9 +359,9 @@ workflow filterInvalidSegments {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.peaks_file), file(row.hotspots_file), file(row.peak_stats)))
         | filter_segments
-        // | map(it -> it[1])
-        // | buildIndex
-        // | annotate_masterlist // matrix, samples_order, annotated_index
-        // | convert_index_to_anndata
+        | map(it -> it[1])
+        | buildIndex
+        | annotate_masterlist // matrix, samples_order, annotated_index
+        | convert_index_to_anndata
 }
 
