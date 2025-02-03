@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from helpers import add_matrices_to_anndata
 from genome_tools.data.anndata import read_zarr_backed
+import scipy.sparse as sp
 
 
 def main(adata, meta, matrices):
@@ -14,8 +15,10 @@ def main(adata, meta, matrices):
         }
     add_matrices_to_anndata(adata, matrices_mapping)
 
-
-    adata.var['projected_peaks_binary'] = adata.layers['binary'].sum(axis=0).squeeze()
+    sums = adata.layers['binary'].sum(axis=0)
+    if sp.issparse(adata.layers['binary']):
+        sums = sums.A
+    adata.var['projected_peaks_binary'] = sums.squeeze()
     adata.var['final_qc_passing_dhs'] = (adata.var['projected_peaks_binary'] > 0) & adata.var['autosomal_dhs']
     return adata
 
