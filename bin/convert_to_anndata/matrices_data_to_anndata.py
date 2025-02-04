@@ -8,6 +8,7 @@ import scipy.sparse as sp
 
 def main(adata, meta, matrices):
     meta['index_peaks_file'] = adata.obs['peaks_file']
+    meta['n_peaks'] = adata.obs['n_peaks']
     adata.obs = meta
     matrices_mapping = {
         os.path.basename(matrix).replace('matrix.', '').replace('.npy', ''): matrix 
