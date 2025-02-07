@@ -25,7 +25,7 @@ dhs_meta <- dhs_meta[start_index:(start_index + count - 1), ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
-data <- reticulate::py_eval()(np$load(file_path, mmap_mode = 'r')[start_index - 1: (start_index - 1 + count), ])
+data <- reticulate::py_eval(np$load(file_path, mmap_mode = 'r')[start_index - 1: (start_index - 1 + count), ])
 
 print("Data loaded")
 print(dim(data))
