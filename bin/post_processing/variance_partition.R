@@ -1,7 +1,7 @@
 library(variancePartition)
 library(data.table)
 library(reticulate)
-np <- import("numpy")
+np <- import("numpy", convert=False)
 
 print("Finished imports")
 args = commandArgs(trailingOnly=TRUE)
@@ -25,7 +25,7 @@ dhs_meta <- dhs_meta[start_index:(start_index + count - 1), ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 
-data <- np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count), ]
+data <- py_to_r(np$load(file_path, mmap_mode = 'r')[start_index: (start_index + count), ])
 
 print("Data loaded")
 print(dim(data))
