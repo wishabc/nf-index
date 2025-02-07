@@ -25,7 +25,7 @@ dhs_meta <- dhs_meta[start_index:(start_index + count - 1), ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 print(start_index)
-print(count)
+print(start_index - 1 + count)
 np_array <- np$load(file_path, mmap_mode = 'r')[(start_index - 1):(start_index - 1 + count)]
 print(np_array$shape)
 print("Read as np")
