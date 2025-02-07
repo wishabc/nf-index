@@ -24,7 +24,10 @@ count <- min(count, nrow(dhs_meta) - start_index)
 dhs_meta <- dhs_meta[start_index:(start_index + count - 1), ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
+print(start_index)
+print(count)
 np_array <- np$load(file_path, mmap_mode = 'r')[start_index - 1: (start_index - 1 + count)]
+print(np_array$shape)
 print("Read as np")
 data <- py_to_r(np_array)
 
