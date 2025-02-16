@@ -2,7 +2,6 @@ import anndata as ad
 import sys
 import pandas as pd
 import numpy as np
-import os
 from helpers import convert_to_sparse_if_sufficently_sparse, load_from_file
     
 
