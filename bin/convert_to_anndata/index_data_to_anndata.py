@@ -6,7 +6,7 @@ from helpers import convert_to_sparse_if_sufficently_sparse, load_from_file
     
 
 def main(rows_meta, cols_meta, matrix):
-    adata = ad.AnnData(X=matrix, obs=cols_meta[['peaks_file']], var=rows_meta)
+    adata = ad.AnnData(X=matrix, obs=cols_meta[['peaks_for_index']], var=rows_meta)
 
     adata.obs['n_peaks'] = adata.X.sum(axis=1).A1
     adata.obs['final_qc_passing_sample'] = 1

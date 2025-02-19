@@ -341,7 +341,7 @@ workflow annotateMasterlist {
 workflow {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> file(row.peaks_file))
+        | map(row -> file(row.peaks_for_index))
         | buildIndex
         | annotate_masterlist // matrix, samples_order, annotated_index
         | convert_index_to_anndata
@@ -350,7 +350,7 @@ workflow {
 workflow filterInvalidSegments {
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.peaks_file), file(row.peak_stats)))
+        | map(row -> tuple(row.ag_id, file(row.peaks_for_index), file(row.peak_stats)))
         | filter_segments
         | map(it -> it[1])
         | buildIndex

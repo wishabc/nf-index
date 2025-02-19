@@ -36,7 +36,7 @@ if __name__ == '__main__':
         print("Creating a new anndata object (dropping X and obs)")
         adata_obj = ad.AnnData(X=None, obs=samples_meta, var=adata_obj.var)
     else:
-        samples_meta['index_peaks_file'] = adata_obj.obs['peaks_file']
+        samples_meta['peaks_for_index'] = adata_obj.obs['peaks_for_index']
         samples_meta['n_peaks'] = adata_obj.obs['n_peaks']
         adata_obj.obs = samples_meta
 

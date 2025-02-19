@@ -243,7 +243,7 @@ workflow {
             row.ag_id,
             file(row.cram_file),
             file(row?.cram_index ?: "${row.cram_file}.crai"),
-            file(row.peaks_file),
+            file(row.peaks_for_matrix),
             file(row.normalized_density_bw)
         ))
         | generateMatrices
@@ -256,7 +256,7 @@ workflow filterInvalidSegments {
             row.ag_id,
             file(row.cram_file),
             file(row?.cram_index ?: "${row.cram_file}.crai"),
-            file(row.peaks_file),
+            file(row.peaks_for_matrix),
             file(row.peak_stats),
             file(row.normalized_density_bw)
         ))
