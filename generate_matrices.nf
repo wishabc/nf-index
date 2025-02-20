@@ -224,7 +224,7 @@ workflow generateMatricesFromAnndata {
             index_anndata,
             matrices
         )
-    out:
+    emit:
         add_matrices_to_anndata.out
 }
 
