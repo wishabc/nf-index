@@ -1,7 +1,7 @@
-import dask.array as da
 import scipy.sparse as sp
 import numpy as np
 import argparse
+import pandas as pd
 from genome_tools.data.anndata import read_zarr_backed
 
 
@@ -36,6 +36,7 @@ if __name__ == '__main__':
     args.add_argument('--extra_layers', nargs='+', help='Names of extra layers to extract from anndata', default=[])
     args.add_argument('--extra_layers_suffix', help='Suffix to add to the extra layers names', default='matrix')
     args.add_argument('--dhs_mask_name', help='Name of the var layer containing DHS mask', default=None)
+    args.add_argument('--matrix_samples_file', help='Name of the var layer containing DHS mask', default=None)
     args = args.parse_args()
     anndata = read_zarr_backed(args.anndata)
     if args.dhs_mask_name is not None:
@@ -46,6 +47,9 @@ if __name__ == '__main__':
     
     metadata, index, matrices = main(anndata, args.extra_layers)
     index.to_csv(args.index, sep='\t', index=False, header=False)
+    if args.matrix_samples_file is not None:
+        metadata = pd.read_table(args.matrix_samples_file).set_index('ag_id')
+
     np.savetxt(args.samples_order, metadata.index, fmt='%s')
     metadata.reset_index().to_csv(args.samples_meta, sep='\t')
 

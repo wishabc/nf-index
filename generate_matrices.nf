@@ -26,7 +26,8 @@ process extract_meta_from_anndata {
         ${anndata} \
         ${masterlist} \
         ${samples_order} \
-        samples_meta.txt
+        samples_meta.txt \
+        --matrix_samples_file ${params.samples_file}
 
     awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' ${masterlist} > ${saf_masterlist}
     """
