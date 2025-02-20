@@ -203,16 +203,8 @@ workflow generateDensityMatrix {
         | generate_matrix
 }
 
-workflow generateBinaryMatrix {
-    main:
 
-    out:
-        index_anndata
-        matrices
-
-}
-
-workflow generateMatrices {
+workflow generateMatricesFromAnndata {
     take:
         bams_hotspots
     main:
@@ -246,7 +238,7 @@ workflow {
             file(row.peaks_for_matrix),
             file(row.normalized_density_bw)
         ))
-        | generateMatrices
+        | generateMatricesFromAnndata
 }
 
 workflow filterInvalidSegments {
@@ -266,5 +258,5 @@ workflow filterInvalidSegments {
         | filter_segments
         | join(bams_hotspots) // ag_id, filtered_peaks, cram_file, cram_index, peaks_file, peak_stats, density_bw
         | map(it -> tuple(it[0], it[2], it[3], it[1], it[6])) // ag_id, cram_file, cram_index, peaks_file, density_bw
-        | generateMatrices
+        | generateMatricesFromAnndata
 }
