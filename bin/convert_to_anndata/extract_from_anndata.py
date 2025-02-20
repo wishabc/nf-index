@@ -48,7 +48,16 @@ if __name__ == '__main__':
     metadata, index, matrices = main(anndata, args.extra_layers)
     index.to_csv(args.index, sep='\t', index=False, header=False)
     if args.matrix_samples_file is not None:
-        metadata = pd.read_table(args.matrix_samples_file).set_index('ag_id')
+        matrix_metadata = pd.read_table(args.matrix_samples_file).set_index('ag_id')
+        if matrix_metadata.shape[0] == metadata.shape[0]:
+            print("Matrix samples metadata does not match the number of samples in the anndata object")
+            missing_ids = matrix_metadata.index.difference(metadata.index)
+            if len(missing_ids) > 0:
+                print(f"Missing IDs in matrix samples metadata: {missing_ids}")
+                print("Ignoring anndata samples metadata")
+                metadata = matrix_metadata
+        else:
+            metadata = matrix_metadata
 
     np.savetxt(args.samples_order, metadata.index, fmt='%s')
     metadata.reset_index().to_csv(args.samples_meta, sep='\t')
