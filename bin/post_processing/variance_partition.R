@@ -21,7 +21,7 @@ dhs_meta <- fread(args[5])
 
 count <- min(count, nrow(dhs_meta) - start_index + 1)
 
-dhs_meta <- dhs_meta[start_index:(start_index + count), ]
+dhs_meta <- dhs_meta[start_index:(start_index + count - 1), ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 print(start_index)
