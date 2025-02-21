@@ -19,15 +19,15 @@ count <- as.integer(args[3])
 file_path <- args[4]
 dhs_meta <- fread(args[5])
 
-count <- min(count, nrow(dhs_meta) - start_index)
+count <- min(count, nrow(dhs_meta) - start_index + 1)
 
-dhs_meta <- dhs_meta[start_index:(start_index + count - 1), ]
+dhs_meta <- dhs_meta[start_index:(start_index + count), ]
 row.names(dhs_meta) <- dhs_meta$chunk_id
 
 print(start_index)
 print(start_index - 1 + count)
 np_array <- np$load(file_path, mmap_mode = 'r')[(start_index - 1):(start_index - 1 + count)]
-print(np_array$shape)
+
 print("Read as np")
 data <- py_to_r(np_array)
 
@@ -39,7 +39,6 @@ colnames(data) <- row.names(meta)
 row.names(data) <- row.names(dhs_meta)
 
 formula <- args[6]
-
 
 print("Fitting models")
 
