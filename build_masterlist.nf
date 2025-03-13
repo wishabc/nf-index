@@ -358,3 +358,9 @@ workflow filterInvalidSegments {
         | convert_index_to_anndata
 }
 
+workflow filterHotspots {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.hotspots_file), file(row.peak_stats)))
+        | filter_segments
+}
