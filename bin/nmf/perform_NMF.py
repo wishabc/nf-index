@@ -42,6 +42,8 @@ def initialize_model(n_components, extra_params: dict=None, is_weighted=False):
     return WeightedNMF(**params) if is_weighted else NMF(**params)
 
 def data_to_sparse(X: np.ndarray) -> sp.csr_matrix:
+    if sp.issparse(X):
+        return X.astype(dtype)
     return sp.coo_matrix(X.T).tocsr().astype(dtype)
 
 def run_NMF(model: NMF, X, W_weights: np.ndarray=None, H_weights: np.ndarray=None):
