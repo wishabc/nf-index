@@ -87,8 +87,8 @@ def project_peaks(model, X, W, W_weights=None, H_weights=None):
     if W_weights is not None:
         assert H_weights is not None
         params = {**params,
-            'W_weights': H_weights[None, :],
-            'H_weights': W_weights[:, None]
+            'W_weights': H_weights[:, None],
+            'H_weights': W_weights[None, :]
         }
     projected_peaks, _, _ = model._fit_transform(**params)
     return projected_peaks.T
