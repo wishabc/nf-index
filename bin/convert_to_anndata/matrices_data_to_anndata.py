@@ -28,7 +28,7 @@ if __name__ == '__main__':
     samples_meta[
         samples_meta.select_dtypes(include=['object', 'O', 'category']).columns
     ] = samples_meta.select_dtypes(include=['object', 'O', 'category']).fillna('None')
-    
+
     
     missing_indices = adata_obj.obs.index.difference(samples_meta.index)
     if len(missing_indices) > 0:
@@ -36,7 +36,7 @@ if __name__ == '__main__':
         print("Creating a new anndata object (dropping X and obs)")
         adata_obj = ad.AnnData(X=None, obs=samples_meta, var=adata_obj.var)
     else:
-        adata_obj = adata_obj[samples_meta.index, :]
+        samples_meta = samples_meta.loc[adata_obj.obs_names]
         if 'peaks_for_index' not in samples_meta.columns:
             # Workaround for legacy runs
             adata_obj.obs['peaks_for_index'] = adata_obj.obs['peaks_file']
