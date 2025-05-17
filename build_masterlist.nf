@@ -33,6 +33,36 @@ process filter_segments {
     """
 }
 
+process leave_invalid_segments {
+    conda params.conda
+    scratch true
+    tag "${ag_id}"
+    memory 10.GB
+    publishDir "${params.outdir}/filtered_peak_calls"
+
+    input:
+        tuple val(ag_id), path(peaks_file), path(peak_stats)
+    
+    output:
+        tuple val(ag_id), path(name)
+    
+    script:
+    prefix = file(peaks_file.baseName).baseName // Remove .bed.gz
+    name = "${prefix}.filtered.bed.gz"
+    """
+    python3 $moduleDir/bin/index_scripts/filter_segments.py \
+        ${peak_stats} \
+        | sort-bed - > filtered_stats.bed
+
+    zcat ${peaks_file} \
+        | grep -v '#chr' \
+        | bedops -n 1 \
+            - \
+            filtered_stats.bed \
+        | bgzip > ${name}
+    """
+}
+
 process collate_and_chunk {
     conda params.conda
     label "highmem"
@@ -363,4 +393,12 @@ workflow filterHotspots {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(row.ag_id, file(row.hotspots_file), file(row.peak_stats)))
         | filter_segments
+}
+
+
+workflow defunc {
+    Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(row.ag_id, file(row.peaks_for_index), file(row.peak_stats)))
+        | leave_invalid_segments
 }
