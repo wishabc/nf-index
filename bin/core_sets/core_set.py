@@ -18,7 +18,7 @@ def main(pvals_matrix, binary_matrix, fdr_trheshold=0.001):
 
     combined_pval = acat_equal(pvals_matrix, ones_mask)
     _, fdr, _, _ = multipletests(combined_pval, method='bonferroni')
-    mcv = binary_matrix.sum(axis=0)
+    mcv = binary_matrix.sum(axis=0).A1
     core = (mcv > 0) & (fdr < fdr_trheshold)
     return core
 
@@ -36,6 +36,8 @@ if __name__ == "__main__":
     pvals_matrix = np.power(10, -pvals_matrix.astype('float32'))
 
     binary = anndata[mask, :].layers['binary'].T
+
+    assert pvals_matrix.shape == binary.shape
 
     fdr = float(sys.argv[6])
     core_set_mask = main(pvals_matrix, binary, fdr_trheshold=fdr)
