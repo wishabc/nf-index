@@ -40,7 +40,7 @@ if __name__ == "__main__":
     fdr = float(sys.argv[6])
     core_set_mask = main(pvals_matrix, binary, fdr_trheshold=fdr)
 
-    anndata.var[['#chr', 'start', 'end', 'dhs_id']].reset_index().to_csv(
+    anndata.var.reset_index()[['#chr', 'start', 'end', 'dhs_id']].to_csv(
         sys.argv[7],
         sep='\t',
         index=False,
