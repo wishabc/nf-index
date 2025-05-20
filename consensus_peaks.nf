@@ -1,4 +1,4 @@
-include { generate_matrix; extract_meta_from_anndata } from "./generate_matricess"
+include { generate_matrix; extract_meta_from_anndata } from "./generate_matrices"
 
 
 
