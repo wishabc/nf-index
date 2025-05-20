@@ -59,6 +59,7 @@ process core_set {
     conda params.conda
     label 'medmem'
     publishDir "${params.outdir}/core_sets/${params.grouping_column}"
+    tag "${prefix}"
 
     input:
         tuple val(grouping_key), path(pvals), path(anndata), val(fdr)
