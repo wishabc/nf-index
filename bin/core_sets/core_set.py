@@ -31,9 +31,13 @@ if __name__ == "__main__":
     assert value in samples_meta[grouping_column].unique()
     samples = samples_meta.query(f'{grouping_column} == "{value}"').index
     anndata = read_zarr_backed(sys.argv[4])
+    print('Finished reading anndata')
     mask = anndata.obs_names.isin(samples)
-    pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask]
-    pvals_matrix = np.power(10, -pvals_matrix.astype('float32'))
+
+
+    pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask].astype('float32')
+    pvals_matrix = np.power(10, -pvals_matrix)
+    # Finished reading matrix
 
     binary = anndata[mask, :].layers['binary'].T
 
