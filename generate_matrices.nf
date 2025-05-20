@@ -182,27 +182,27 @@ workflow generateMatrices {
 }
 
 
-workflow generateDensityMatrix {
-    bams_hotspots = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.ag_id,
-            file(row.normalized_density_bw)
-        ))
+// workflow generateDensityMatrix {
+//     bams_hotspots = Channel.fromPath(params.samples_file)
+//         | splitCsv(header:true, sep:'\t')
+//         | map(row -> tuple(
+//             row.ag_id,
+//             file(row.normalized_density_bw)
+//         ))
     
-    samples_order = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/dnase-mouse0529/matrices/full/output/samples_order.txt')
+//     samples_order = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/dnase-mouse0529/matrices/full/output/samples_order.txt')
 
 
 
-    out = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/dnase-mouse0529/matrices/full/output/unfiltered_masterlists/masterlist_DHSs_Altius_all_chunkIDs.bed')
-        | combine(bams_hotspots)
-        | extract_max_density
-        | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
-        | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
-        | groupTuple(by: 0) // suffix, columns
-        | combine(samples_order) // suffix, columns, samples_order
-        | generate_matrix
-}
+//     out = Channel.fromPath('/net/seq/data2/projects/sabramov/SuperIndex/dnase-mouse0529/matrices/full/output/unfiltered_masterlists/masterlist_DHSs_Altius_all_chunkIDs.bed')
+//         | combine(bams_hotspots)
+//         | extract_max_density
+//         | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
+//         | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
+//         | groupTuple(by: 0) // suffix, columns
+//         | combine(samples_order) // suffix, columns, samples_order
+//         | generate_matrix
+// }
 
 
 workflow generateMatricesFromAnndata {
