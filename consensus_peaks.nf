@@ -61,13 +61,14 @@ process core_set {
     publishDir "${params.outdir}/core_sets/${params.grouping_column}"
 
     input:
-        tuple val(grouping_key), path(pvals), path(anndata)
+        tuple val(grouping_key), path(pvals), path(anndata), val(fdr)
     
     output:
-        tuple val(grouping_key), path(name)
+        tuple val(prefix), val(grouping_key), path(name)
     
     script:
-    name = "${grouping_key}.core_set.bonf${params.core_set_fdr}.bed"
+    prefix = "${grouping_key}.bonf${params.core_set_fdr}"
+    name = "${prefix}.bed"
     """
     python3 $moduleDir/bin/core_sets/core_set.py \
         ${params.samples_file} \
@@ -82,7 +83,7 @@ process core_set {
 
 
 workflow generateCoreSets {
-    params.core_set_fdr = 0.001
+    core_set_fdrs = Channel.from(0.1, 0.05, 0.01, 0.001, 0.0001)
     println "Using ${params.grouping_column} as grouping column"
     params.pvals_matrix = "${params.outdir}/raw_matrices/matrix.neglog10_pval.npy"
     data = Channel.fromPath(params.samples_file)
@@ -93,6 +94,7 @@ workflow generateCoreSets {
         )
         | unique()
         | map(it -> tuple(it[0], file(params.pvals_matrix), file(params.index_anndata)))
+        | combine(core_set_fdrs) // grouping_key, pvals, anndata, core_set_fdr
         | core_set
         | collectFile (
             skip: 1,
