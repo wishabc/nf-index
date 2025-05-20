@@ -58,7 +58,7 @@ process core_set {
 
     conda params.conda
     label 'medmem'
-    publishDir "${params.outdir}/core_sets/${params.grouping_column}"
+    publishDir "${params.outdir}/core_sets/${params.grouping_column}.${fdr}"
     tag "${prefix}"
 
     input:
@@ -103,7 +103,7 @@ workflow generateCoreSets {
             storeDir: "${params.outdir}/core_sets/",
         ) { it -> [ 
             "${params.grouping_column}.core_sets_meta.tsv", 
-            "group_key\tfdr\tcore_set_bed\n${it[0]}\t${it[1]}\t${params.outdir}/core_sets/${params.grouping_column}/${it[2].name}\n" 
+            "group_key\tfdr\tcore_set_bed\n${it[0]}\t${it[1]}\t${params.outdir}/core_sets/${params.grouping_column}.${it[1]}/${it[2].name}\n" 
             ] 
         }
 }
