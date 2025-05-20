@@ -71,7 +71,7 @@ process core_set {
     python3 $moduleDir/bin/core_sets/core_set.py \
         ${params.samples_file} \
         ${params.grouping_column} \
-        ${grouping_key} \
+        '${grouping_key}' \
         ${anndata} \
         ${pvals} \
         ${params.core_set_fdr} \
