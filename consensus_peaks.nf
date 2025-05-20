@@ -97,9 +97,9 @@ workflow generateCoreSets {
         | collectFile (
             skip: 1,
             keepHeader: true,
-            storeDir: "${params.outdir}/core_sets/${params.grouping_column}",
+            storeDir: "${params.outdir}/core_sets/",
         ) { it -> [ 
-            "core_sets_meta.tsv", 
+            "${params.grouping_column}.core_sets_meta.tsv", 
             "group_key\tcore_set_bed\n${it[0]}\t${params.outdir}/core_sets/${params.grouping_column}/${it[1].name}\n" 
             ] 
         }
