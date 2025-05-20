@@ -38,6 +38,7 @@ if __name__ == "__main__":
     binary = anndata[mask, :].layers['binary'].T
 
     assert pvals_matrix.shape == binary.shape
+    print(pvals_matrix.shape)
 
     fdr = float(sys.argv[6])
     core_set_mask = main(pvals_matrix, binary, fdr_trheshold=fdr)
