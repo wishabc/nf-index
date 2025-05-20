@@ -57,6 +57,7 @@ workflow extractMaxPvalue {
 process core_set {
 
     conda params.conda
+    label 'high_mem'
     publishDir "${params.outdir}/core_sets/${params.grouping_column}"
 
     input:
