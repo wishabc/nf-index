@@ -27,6 +27,7 @@ if __name__ == "__main__":
     samples_meta = pd.read_table(sys.argv[1]).set_index('ag_id')
     grouping_column = sys.argv[2]
     value = sys.argv[3]
+    samples_meta[grouping_column] = samples_meta[grouping_column].astype(str)
     assert value in samples_meta[grouping_column].unique()
     samples = samples_meta.query(f'{grouping_column} == "{value}"').index
     anndata = read_zarr_backed(sys.argv[4])
