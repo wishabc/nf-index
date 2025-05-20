@@ -67,7 +67,7 @@ process core_set {
         tuple val(prefix), val(grouping_key), path(name)
     
     script:
-    prefix = "${grouping_key}.bonf${params.core_set_fdr}"
+    prefix = "${grouping_key}.bonf${fdr}"
     name = "${prefix}.bed"
     """
     python3 $moduleDir/bin/core_sets/core_set.py \
@@ -76,7 +76,7 @@ process core_set {
         '${grouping_key}' \
         ${anndata} \
         ${pvals} \
-        ${params.core_set_fdr} \
+        ${fdr} \
         ${name}
     """
 }
