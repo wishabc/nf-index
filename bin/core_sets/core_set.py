@@ -21,6 +21,7 @@ def main(pvals_matrix, binary_matrix, fdr_trheshold=0.001):
     mcv = binary_matrix.sum(axis=0).A1
     one_pr = np.ceil(binary_matrix.shape[1] * 0.01)
     core = (mcv > one_pr) & (fdr < fdr_trheshold)
+    print(core.shape, core.sum())
     return core
 
 
