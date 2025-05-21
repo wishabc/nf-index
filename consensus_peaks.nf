@@ -61,6 +61,7 @@ process core_set {
     publishDir "${params.outdir}/core_sets/${params.grouping_column}.${fdr}"
     tag "${prefix}"
 
+
     input:
         tuple val(grouping_key), path(pvals), path(anndata), val(fdr)
     
@@ -105,7 +106,7 @@ workflow generateCoreSets {
             storeDir: "${params.outdir}/core_sets/",
         ) { it -> [ 
             "${params.grouping_column}.core_sets_meta.tsv", 
-            "group_key\tfdr\tcore_set_bed\tcore_set_npy\n${it[0]}\t${it[1]}\t${params.outdir}/core_sets/${params.grouping_column}.${it[1]}/${it[2].name}\t${it[3].name}\n" 
+            "group_key\tfdr\tcore_set_bed\tcore_set_npy\tcore_set_size\n${it[0]}\t${it[1]}\t${params.outdir}/core_sets/${params.grouping_column}.${it[1]}/${it[2].name}\t${it[3].name}\t${it[1].countLines() - 1}\n" 
             ] 
         }
 }
