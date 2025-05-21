@@ -89,7 +89,7 @@ process core_set {
 workflow generateCoreSets {
     core_set_fdrs = Channel.from(0.1, 0.05, 0.01, 0.001, 0.0001)
     println "Using ${params.grouping_column} as grouping column"
-    params.pvals_matrix = "${params.outdir}/raw_matrices/matrix.neglog10_pval.npy"
+    params.pvals_matrix = "${params.outdir}/raw_matrices/matrix.neglog10_pvals.npy"
     data = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
