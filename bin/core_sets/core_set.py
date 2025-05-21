@@ -17,6 +17,7 @@ def main(pvals_matrix, binary_matrix, fdr_trheshold=0.001):
     pvals_matrix[ones_mask] = 0.5 # gets ignored in aggregation
 
     combined_pval = acat_equal(pvals_matrix, ones_mask)
+    combined_pval[np.isnan(combined_pval)] = 1.0
     _, fdr, _, _ = multipletests(combined_pval, method='bonferroni')
     mcv = binary_matrix.sum(axis=1).A1
     one_pr = np.ceil(binary_matrix.shape[1] * 0.01)
