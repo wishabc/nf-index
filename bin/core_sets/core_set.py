@@ -21,10 +21,11 @@ def main(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     combined_pval = acat_equal(pvals_matrix, ones_mask)
     combined_pval[np.isnan(combined_pval)] = 1.0
     fdr = multipletests(combined_pval, method='bonferroni')[1]
-    mcv = binary_matrix.astype(int).sum(axis=1).A1
-    one_pr = np.ceil(binary_matrix.shape[1] * 0.01)
-    print(one_pr, (mcv > one_pr).sum())
     print(fdr.min())
+    mcv = binary_matrix.astype(int).sum(axis=0).A1
+    one_pr = np.ceil(binary_matrix.shape[0] * 0.01)
+    print(one_pr, (mcv > one_pr).sum())
+
     core = (mcv >= one_pr) & (fdr <= fdr_threshold)
     print(core.shape, core.sum())
     return core
