@@ -12,7 +12,7 @@ def acat_equal(p, ones_mask):
     return 0.5 - np.arctan(t) / np.pi
     
 
-def main(pvals_matrix, binary_matrix, fdr_trheshold=0.001):
+def main(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     ones_mask = pvals_matrix == 1.
     pvals_matrix[ones_mask] = 0.5 # gets ignored in aggregation
 
@@ -23,7 +23,7 @@ def main(pvals_matrix, binary_matrix, fdr_trheshold=0.001):
     one_pr = np.ceil(binary_matrix.shape[1] * 0.01)
     print(one_pr, (mcv > one_pr).sum())
     print(fdr.min())
-    core = (mcv > one_pr) & (fdr < fdr_trheshold)
+    core = (mcv > one_pr) & (fdr < fdr_threshold)
     print(core.shape, core.sum())
     return core
 
