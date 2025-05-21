@@ -16,8 +16,7 @@ def acat_equal(p, ones_mask):
 
 def main(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     ones_mask = pvals_matrix == 1.
-    pvals_matrix[ones_mask] = 0.5 # gets ignored in aggregation
-
+    pvals_matrix = np.where(ones_mask, 0.5, pvals_matrix)  # gets ignored in aggregation
     combined_pval = acat_equal(pvals_matrix, ones_mask)
     combined_pval[np.isnan(combined_pval)] = 1.0
     fdr = multipletests(combined_pval, method='bonferroni')[1]
