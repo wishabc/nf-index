@@ -8,7 +8,7 @@ from statsmodels.stats.multitest import multipletests
 def acat_equal(p, ones_mask):
     denom = (~ones_mask).sum(axis=1)
     num = np.sum(np.tan((0.5 - p) * np.pi), axis=1)
-    t = np.where(denom != 0, num / denom, -np.inf)
+    t = num / denom #np.where(denom != 0, num / denom, -np.inf)
     return 0.5 - np.arctan(t) / np.pi
     
 
