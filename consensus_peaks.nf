@@ -65,11 +65,12 @@ process core_set {
         tuple val(grouping_key), path(pvals), path(anndata), val(fdr)
     
     output:
-        tuple val(grouping_key), val(fdr), path(name)
+        tuple val(grouping_key), val(fdr), path(name), path(npy_indicator)
     
     script:
     prefix = "${grouping_key}.bonf${fdr}"
     name = "${prefix}.bed"
+    npy_indicator = "${prefix}.npy"
     """
     python3 $moduleDir/bin/core_sets/core_set.py \
         ${params.samples_file} \
@@ -78,7 +79,8 @@ process core_set {
         ${anndata} \
         ${pvals} \
         ${fdr} \
-        ${name}
+        ${name} \
+        ${npy_indicator}
     """
 }
 
@@ -103,7 +105,7 @@ workflow generateCoreSets {
             storeDir: "${params.outdir}/core_sets/",
         ) { it -> [ 
             "${params.grouping_column}.core_sets_meta.tsv", 
-            "group_key\tfdr\tcore_set_bed\n${it[0]}\t${it[1]}\t${params.outdir}/core_sets/${params.grouping_column}.${it[1]}/${it[2].name}\n" 
+            "group_key\tfdr\tcore_set_bed\tcore_set_npy\n${it[0]}\t${it[1]}\t${params.outdir}/core_sets/${params.grouping_column}.${it[1]}/${it[2].name}\t${it[3].name}\n" 
             ] 
         }
 }
