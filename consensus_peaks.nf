@@ -49,7 +49,7 @@ workflow extractMaxPvalue {
         | extract_pval
         | map(it -> tuple("neglog10_pval", it[1]))
         | combine(index_meta.map(it -> it[1])) // prefix, pvals, samples_order
-        | groupTuple(by: 0) // prefix, pvals, samples_order
+        | groupTuple(by: [0, 2]) // prefix, pvals, samples_order
         | generate_matrix
 }
 
