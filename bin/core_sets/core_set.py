@@ -6,7 +6,7 @@ from statsmodels.stats.multitest import multipletests
 
 
 def acat_equal(p, ones_mask):
-    denom = (~ones_mask).sum(axis=0)
+    denom = (~ones_mask).sum(axis=1)
     num = np.sum(np.tan((0.5 - p) * np.pi), axis=0)
     t = np.where(denom != 0, num / denom, -np.inf)
     return 0.5 - np.arctan(t) / np.pi
@@ -18,7 +18,7 @@ def main(pvals_matrix, binary_matrix, fdr_trheshold=0.001):
 
     combined_pval = acat_equal(pvals_matrix, ones_mask)
     _, fdr, _, _ = multipletests(combined_pval, method='bonferroni')
-    mcv = binary_matrix.sum(axis=0).A1
+    mcv = binary_matrix.sum(axis=1).A1
     one_pr = np.ceil(binary_matrix.shape[1] * 0.01)
     core = (mcv > one_pr) & (fdr < fdr_trheshold)
     print(core.shape, core.sum())
