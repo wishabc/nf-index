@@ -23,7 +23,7 @@ def main(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     one_pr = np.ceil(binary_matrix.shape[1] * 0.01)
     print(one_pr, (mcv > one_pr).sum())
     print(fdr.min())
-    core = (mcv > one_pr) & (fdr < fdr_threshold)
+    core = (mcv >= one_pr) & (fdr <= fdr_threshold)
     print(core.shape, core.sum())
     return core
 
