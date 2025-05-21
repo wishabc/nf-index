@@ -6,9 +6,11 @@ from statsmodels.stats.multitest import multipletests
 
 
 def acat_equal(p, ones_mask):
-    denom = (~ones_mask).sum(axis=1)
-    num = np.sum(np.tan((0.5 - p) * np.pi), axis=1)
-    t = num / denom #np.where(denom != 0, num / denom, -np.inf)
+    # denom = (~ones_mask).sum(axis=1)
+    # num = np.sum(np.tan((0.5 - p) * np.pi), axis=1)
+    # t = np.where(denom != 0, num / denom, -np.inf)
+
+    t = np.sum(np.tan((0.5 - p) * np.pi), axis=0) / (~ones_mask).sum(axis=0)
     return 0.5 - np.arctan(t) / np.pi
     
 
@@ -40,11 +42,11 @@ if __name__ == "__main__":
     mask = anndata.obs_names.isin(samples)
 
 
-    pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask].astype('float32')
+    pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask].astype('float32').T
     pvals_matrix = np.power(10, -pvals_matrix)
     # Finished reading matrix
 
-    binary = anndata[mask, :].layers['binary'].T
+    binary = anndata[mask, :].layers['binary']
 
     assert pvals_matrix.shape == binary.shape
     print(pvals_matrix.shape)
