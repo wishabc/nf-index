@@ -21,7 +21,7 @@ def main(pvals_matrix, binary_matrix, fdr_trheshold=0.001):
     _, fdr, _, _ = multipletests(combined_pval, method='bonferroni')
     mcv = binary_matrix.sum(axis=1).A1
     one_pr = np.ceil(binary_matrix.shape[1] * 0.01)
-    print(one_pr, mcv > one_pr.sum())
+    print(one_pr, (mcv > one_pr).sum())
     core = (mcv > one_pr) & (fdr < fdr_trheshold)
     print(core.shape, core.sum())
     return core
