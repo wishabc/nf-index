@@ -69,7 +69,7 @@ process core_set {
         tuple val(grouping_key), val(fdr), path(name), path(npy_indicator)
     
     script:
-    prefix = "${grouping_key}.bonf${fdr}"
+    prefix = "${grouping_key}.fdr${fdr}"
     name = "${prefix}.bed"
     npy_indicator = "${prefix}.npy"
     """
