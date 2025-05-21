@@ -49,8 +49,8 @@ if __name__ == "__main__":
     assert pvals_matrix.shape == binary.shape
     print(pvals_matrix.shape)
 
-    fdr = float(sys.argv[6])
-    core_set_mask = main(pvals_matrix, binary, fdr_trheshold=fdr)
+    fdr_tr = float(sys.argv[6])
+    core_set_mask = main(pvals_matrix, binary, fdr_threshold=fdr_tr)
 
     anndata.var[core_set_mask].reset_index()[['#chr', 'start', 'end', 'dhs_id']].to_csv(
         sys.argv[7],
