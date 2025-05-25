@@ -44,7 +44,7 @@ if __name__ == "__main__":
     mask = anndata.obs_names.isin(samples)
 
 
-    pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask].astype('float32').T
+    pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask].astype(np.float64).T
     pvals_matrix = np.power(10, -pvals_matrix)
     # Finished reading matrix
 
