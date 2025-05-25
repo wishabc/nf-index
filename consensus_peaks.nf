@@ -66,11 +66,11 @@ process core_set {
         tuple val(grouping_key), path(pvals), path(anndata), val(fdr)
     
     output:
-        tuple val(grouping_key), val(fdr), path(name), path(npy_indicator)
+        tuple val(grouping_key), val(fdr), path("${prefix}.core_set.bed"), path("${prefix}.core_set.npy"), path("${prefix}.saturation_curve.npy"), path("${prefix}.saturation_curve_core.npy"),  path("${prefix}.step_added.npy"), path("${prefix}.mcv_by_step_stats.npy")
     
     script:
     prefix = "${grouping_key}.fdr${fdr}"
-    name = "${prefix}.bed"
+    name = "${prefix}.core_set.bed"
     npy_indicator = "${prefix}.npy"
     """
     python3 $moduleDir/bin/core_sets/core_set.py \
@@ -80,8 +80,7 @@ process core_set {
         ${anndata} \
         ${pvals} \
         ${fdr} \
-        ${name} \
-        ${npy_indicator}
+        ${prefix} \
     """
 }
 
@@ -104,9 +103,11 @@ workflow generateCoreSets {
             skip: 1,
             keepHeader: true,
             storeDir: "${params.outdir}/core_sets/",
-        ) { it -> [ 
+        ) { it -> 
+            def parentDir = "${params.outdir}/core_sets/${params.grouping_column}.${it[1]}"
+            [ 
             "${params.grouping_column}.core_sets_meta.tsv", 
-            "group_key\tfdr\tcore_set_bed\tcore_set_npy\tcore_set_size\n${it[0]}\t${it[1]}\t${params.outdir}/core_sets/${params.grouping_column}.${it[1]}/${it[2].name}\t${params.outdir}/core_sets/${params.grouping_column}.${it[1]}/${it[3].name}\t${it[2].countLines() - 1}\n" 
+            "group_key\tfdr\tcore_set_bed\tcore_set_npy\tcore_set_size\tsatuaration_curve\tsaturation_curve_core\tstep_added\tmcv_by_step_stats\n${it[0]}\t${it[1]}\t${parentDir}/${it[2].name}\t${parentDir}/${it[3].name}\t${it[2].countLines() - 1}\t${parentDir}/${it[4].name}\t${parentDir}/${it[5].name}\t${parentDir}/${it[6].name}\t${parentDir}/${it[7].name}\n" 
             ] 
         }
 }

@@ -4,6 +4,26 @@ import pandas as pd
 from genome_tools.data.anndata import read_zarr_backed
 from statsmodels.stats.multitest import multipletests
 from scipy.stats import cauchy
+from numba import njit, prange
+
+
+def weighted_q(values, weights, q=0.5):
+    """
+    Compute the weighted median of values with corresponding weights.
+    For integer weights this is equivalent to repeating each value weight times
+    and taking the ordinary median.
+    """
+    a = np.asarray(values)
+    w = np.asarray(weights)
+    # sort both arrays by value
+    idx = np.argsort(a)
+    a_sorted, w_sorted = a[idx], w[idx]
+    # cumulative weight and cutoff
+    cumw = np.cumsum(w_sorted)
+    cutoff = w_sorted.sum() * q
+    # first value where cum weight ≥ q total weight
+    return a_sorted[cumw >= cutoff][0]
+
 
 def acat_equal(p, ones_mask):
     # z = norm.isf(p)
@@ -16,7 +36,64 @@ def acat_equal(p, ones_mask):
     return cauchy.cdf(t).astype(p.dtype)
 
 
-def main(pvals_matrix, binary_matrix, fdr_threshold=0.001):
+@njit(parallel=True)
+def saturation_curve_dhs_add_steps(binary_mat, num_shuffles):
+    N, M = binary_mat.shape
+    cum_sum = np.empty((num_shuffles, N), dtype=np.int64)
+    dhs_add_step = -np.ones((num_shuffles, M), dtype=np.int64)  # -1 = never contributed
+
+    for s in prange(num_shuffles):
+        perm = np.arange(N, dtype=np.int64)
+        for j in range(N - 1, 0, -1):
+            k = np.random.randint(0, j + 1)
+            perm[j], perm[k] = perm[k], perm[j]
+
+        current = np.zeros(M, dtype=np.bool_)
+        count = 0
+
+        for step in range(N):
+            row = binary_mat[perm[step]]
+            for j in range(M):
+                if row[j] and not current[j]:
+                    current[j] = True
+                    count += 1
+                    dhs_add_step[s, j] = step
+            cum_sum[s, step] = count
+
+    return cum_sum, dhs_add_step
+
+
+def get_mcv_mask(binary_sparse):
+    return binary_sparse.sum(axis=0).A1
+
+
+def saturation_curve(category_binary, mcv_mask, core_mask, n_shuffles=100):
+    b_mat = np.ascontiguousarray(category_binary[:, mcv_mask])
+    core_b_mat = np.ascontiguousarray(b_mat[:, core_mask])
+    s_curve, step_added = saturation_curve_dhs_add_steps(b_mat, n_shuffles)
+    s_curve_core, _ = saturation_curve_dhs_add_steps(core_b_mat, n_shuffles)
+    return s_curve, s_curve_core, step_added
+
+
+def per_step_stats(category_binary, other_binary, step_added, mcv_mask, core_mask):
+    n_samples = category_binary.shape[1]
+    mcv_by_step_stats = np.zeros((n_samples, 3))  # median, q1, q3
+
+    inv_mcv = get_mcv_mask(other_binary[:, mcv_mask].sum(axis=0).A1)
+
+    for step in np.arange(n_samples):
+        # print(step, step_added[name].shape)
+        weights = (step_added == step).sum(axis=0) * core_mask[mcv_mask]
+        # print('w', weights.shape, inv_mcv.shape)
+        median = weighted_q(inv_mcv, weights)
+        q1 = weighted_q(inv_mcv, weights, 0.25)
+        q3 = weighted_q(inv_mcv, weights, 0.75)
+        mcv_by_step_stats[step, :] = median, q1, q3
+
+    return mcv_by_step_stats
+
+
+def get_core_set(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     ones_mask = pvals_matrix == 1.
     pvals_matrix = np.where(ones_mask, 0.5, pvals_matrix)  # gets ignored in aggregation
     combined_pval = acat_equal(pvals_matrix, ones_mask)
@@ -30,6 +107,22 @@ def main(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     core = (mcv >= one_pr) & (fdr <= fdr_threshold)
     print(core.shape, core.sum())
     return core
+
+def main(pvals_matrix, binary, category_mask, fdr_threshold):
+    category_binary = binary[category_mask, :]
+    inv_binary = binary[~category_mask, :]
+    mcv_mask = get_mcv_mask(category_binary)
+    core_mask = get_core_set(pvals_matrix, category_binary, fdr_threshold=fdr_threshold)
+    s_curve, s_curve_core, step_added = saturation_curve(category_binary, mcv_mask, core_mask)
+    mcv_by_step_stats = per_step_stats(
+        category_binary,
+        inv_binary,
+        step_added,
+        mcv_mask,
+        core_mask
+    )
+
+    return core_mask, s_curve, s_curve_core, step_added, mcv_by_step_stats
 
 
 if __name__ == "__main__":
@@ -48,23 +141,50 @@ if __name__ == "__main__":
     pvals_matrix = np.power(10, -pvals_matrix)
     # Finished reading matrix
 
-    binary = anndata[mask, :].layers['binary']
+    binary = anndata.layers['binary']
 
-    assert pvals_matrix.shape == binary.shape
-    print(pvals_matrix.shape)
+    assert pvals_matrix.shape[1] == binary.shape[1]
+    assert binary.shape[0] == mask.shape[0]
 
     fdr_tr = float(sys.argv[6])
-    core_set_mask = main(pvals_matrix, binary, fdr_threshold=fdr_tr)
+    
+    core_set_mask, s_curve, s_curve_core, step_added, mcv_by_step_stats = main(
+        pvals_matrix,
+        binary,
+        fdr_threshold=fdr_tr
+    )
+
+    prefix = sys.argv[7]
 
     anndata.var[core_set_mask].reset_index()[['#chr', 'start', 'end', 'dhs_id']].to_csv(
-        sys.argv[7],
+        f'{prefix}.core_set.bed',
         sep='\t',
         index=False,
     )
 
     np.save(
-        sys.argv[8],
+        f'{prefix}.core_set.npy',
         core_set_mask
+    )
+
+    np.save(
+        f'{prefix}.saturation_curve.npy',
+        s_curve
+    )
+
+    np.save(
+        f'{prefix}.saturation_curve_core.npy',
+        s_curve_core
+    )
+
+    np.save(
+        f'{prefix}.step_added.npy',
+        step_added
+    )
+
+    np.save(
+        f'{prefix}.mcv_by_step_stats.npy',
+        mcv_by_step_stats
     )
 
 
