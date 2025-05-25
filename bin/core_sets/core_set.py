@@ -151,6 +151,7 @@ if __name__ == "__main__":
     core_set_mask, s_curve, s_curve_core, step_added, mcv_by_step_stats = main(
         pvals_matrix,
         binary,
+        category_mask=mask,
         fdr_threshold=fdr_tr
     )
 
