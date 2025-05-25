@@ -63,7 +63,7 @@ def saturation_curve_dhs_add_steps(binary_mat, num_shuffles):
     return cum_sum, dhs_add_step
 
 
-def get_mcv_mask(binary_sparse):
+def calc_mcv(binary_sparse):
     return binary_sparse.sum(axis=0).A1
 
 
@@ -79,7 +79,7 @@ def per_step_stats(category_binary, other_binary, step_added, mcv_mask, core_mas
     n_samples = category_binary.shape[1]
     mcv_by_step_stats = np.zeros((n_samples, 3))  # median, q1, q3
 
-    inv_mcv = get_mcv_mask(other_binary[:, mcv_mask].sum(axis=0).A1)
+    inv_mcv = calc_mcv(other_binary[:, mcv_mask])
 
     for step in np.arange(n_samples):
         # print(step, step_added[name].shape)
@@ -111,7 +111,7 @@ def get_core_set(pvals_matrix, binary_matrix, fdr_threshold=0.001):
 def main(pvals_matrix, binary, category_mask, fdr_threshold):
     category_binary = binary[category_mask, :]
     inv_binary = binary[~category_mask, :]
-    mcv_mask = get_mcv_mask(category_binary)
+    mcv_mask = calc_mcv(category_binary) > 0
     core_mask = get_core_set(pvals_matrix, category_binary, fdr_threshold=fdr_threshold)
     s_curve, s_curve_core, step_added = saturation_curve(category_binary, mcv_mask, core_mask)
     mcv_by_step_stats = per_step_stats(
