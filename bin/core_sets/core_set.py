@@ -5,7 +5,7 @@ from genome_tools.data.anndata import read_zarr_backed
 from statsmodels.stats.multitest import multipletests
 from scipy.stats import cauchy
 from numba import njit, prange
-
+from tqdm import tqdm
 
 def weighted_q(values, weights, q=0.5):
     """
@@ -81,7 +81,7 @@ def per_step_stats(category_binary, other_binary, step_added, mcv_mask, core_mas
 
     inv_mcv = calc_mcv(other_binary[:, mcv_mask])
 
-    for step in np.arange(n_samples):
+    for step in tqdm(np.arange(n_samples)):
         # print(step, step_added[name].shape)
         weights = (step_added == step).sum(axis=0) * core_mask[mcv_mask]
         # print('w', weights.shape, inv_mcv.shape)
