@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 def read_column(path, dtype):
     if path.endswith('.npy'):
-        return np.load(path).astype(dtype)
+        return np.load(path)
     else:
         return np.loadtxt(path, dtype=dtype)
 

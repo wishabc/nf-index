@@ -38,6 +38,7 @@ process generate_binary_counts {
 
     conda params.conda
     tag "${id}"
+    scratch true
 
     input:
 		tuple path(masterlist), val(id), path(peaks_file)
@@ -47,7 +48,7 @@ process generate_binary_counts {
     
     script:
     suffix = 'binary'
-    name = "${id}.${suffix}.txt"
+    name = "${id}.${suffix}.npy"
     """
     zcat ${peaks_file} \
         | grep -v "^#" \
@@ -55,7 +56,9 @@ process generate_binary_counts {
         --indicator \
         --sweep-all \
         ${masterlist} \
-        - > ${name}
+        - > tmp.txt
+
+    python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype bool
     """
 }
 
@@ -73,7 +76,7 @@ process extract_max_density {
     
     script:
     suffix = "density"
-    name = "${ag_id}.${suffix}.txt"
+    name = "${ag_id}.${suffix}.npy"
     """
     bigWigToBedGraph ${density_bw} tmp.bg 
     cat tmp.bg \
@@ -82,7 +85,9 @@ process extract_max_density {
             --delim "\t" \
             --max ${masterlist} - \
         | sed 's/\\<NAN\\>/0/g' \
-        > ${name}
+        > tmp.txt
+
+    python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype float
     """
 }
 
@@ -99,7 +104,7 @@ process count_tags {
 
 	script:
     suffix = "counts"
-    name = "${id}.${suffix}.txt"
+    name = "${id}.${suffix}.npy"
     ext = bam_file.extension
 	"""
     if [ ${ext} != 'bam' ]; then 
@@ -119,7 +124,9 @@ process count_tags {
 
 	featureCounts -a ${saf} -O -o counts.txt -F SAF \$tag align.bam
 	cat counts.txt \
-        | awk 'NR > 2 {print \$(NF)}' > ${name}
+        | awk 'NR > 2 {print \$(NF)}' > tmp.txt
+        
+    python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype int
 	"""
 }
 
@@ -138,14 +145,11 @@ process generate_matrix {
 
 	script:
     name = "matrix.${prefix}.npy"
-    dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
 	"""
-    echo 1
     python3 $moduleDir/bin/matrix_from_vectors.py \
         ${prefix} \
         ${samples_order} \
-        ${name} \
-        --dtype ${dtype}
+        ${name}
 	"""
 }
 

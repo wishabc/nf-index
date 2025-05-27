@@ -15,14 +15,14 @@ process extract_pval {
         tuple val(id), path(name)
 
     script:
-    name = "${id}.neglog10_pvals.txt"
+    name = "${id}.neglog10_pvals.npy"
     """
     hotspot3-pvals \
         ${pvals_parquet} \
         ${bed_file} \
         ${name} \
         --chrom_sizes ${params.nuclear_chrom_sizes} \
-        --format txt
+        --format npy
     """
 }
 
