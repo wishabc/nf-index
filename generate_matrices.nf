@@ -149,7 +149,8 @@ process generate_matrix {
     python3 $moduleDir/bin/matrix_from_vectors.py \
         ${prefix} \
         ${samples_order} \
-        ${name}
+        ${name} \
+        --input_ext npy
 	"""
 }
 
