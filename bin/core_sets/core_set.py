@@ -78,7 +78,7 @@ def saturation_curve(category_binary, mcv_mask, core_mask, n_shuffles=100):
 
 
 def per_step_stats(category_binary, inv_mcv, step_added, mcv_mask, core_mask):
-    n_samples = category_binary.shape[1]
+    n_samples = category_binary.shape[0]
     mcv_by_step_stats = np.zeros((n_samples, 3))  # median, q1, q3
 
     for step in tqdm(np.arange(n_samples)):
