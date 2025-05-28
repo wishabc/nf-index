@@ -70,8 +70,10 @@ def calc_mcv(binary_sparse):
 def saturation_curve(category_binary, mcv_mask, core_mask, n_shuffles=100):
     b_mat = np.ascontiguousarray(category_binary[:, mcv_mask].todense().A)
     core_b_mat = np.ascontiguousarray(category_binary[:, core_mask].todense().A)
+    print('Saturation curve', b_mat.shape, core_b_mat.shape, n_shuffles)
     s_curve, step_added = saturation_curve_dhs_add_steps(b_mat, n_shuffles)
     s_curve_core, _ = saturation_curve_dhs_add_steps(core_b_mat, n_shuffles)
+    print('Finished saturation curve', b_mat.shape, core_b_mat.shape, n_shuffles)
     return s_curve, s_curve_core, step_added
 
 
@@ -107,6 +109,7 @@ def get_core_set(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     core = (mcv >= one_pr) & (fdr <= fdr_threshold)
     print(core.shape, core.sum())
     return core
+
 
 def main(pvals_matrix, binary, category_mask, fdr_threshold):
     category_binary = binary[category_mask, :]
