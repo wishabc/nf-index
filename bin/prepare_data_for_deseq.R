@@ -113,5 +113,8 @@ if (file.exists(params_file_name)) {
 } else {
   saveRDS(dispersionFunction(dds), file=params_file_name)
 }
+# vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
+# np$save(args[2], np$array(assay(vsd), dtype='float32'))
+
 dds_name <- paste(prefix, ".dds.RDS", sep='')
 saveRDS(dds, dds_name)

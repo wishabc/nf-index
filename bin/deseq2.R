@@ -1,9 +1,12 @@
 #!/usr/bin/env Rscript
 library(readr)
 library(dplyr)
+library(reticulate)
 library(stringr)
 library(data.table)
 library(DESeq2)
+
+np <- import("numpy")
 
 args = commandArgs(trailingOnly=TRUE)
 
