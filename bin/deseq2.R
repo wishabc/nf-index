@@ -70,7 +70,6 @@ if (is.null(norm_factors)) {
   suffix <- ".sf.vst"
   rm(norm_factors)
 }
-rm(counts)
 gc()
 
 if (is.null(params_f)) {
@@ -107,14 +106,38 @@ if (is.null(params_f)) {
   df <- readRDS(params_f)
   dispersionFunction(dds) <- df
 }
+rm(counts)
+gc()
+
 params_file_name <- paste(prefix, suffix, ".params.RDS", sep='')
 if (file.exists(params_file_name)) {
   print(paste('Parameters were not saved. File ', params_file_name, ' exists.', sep=''))
 } else {
   saveRDS(dispersionFunction(dds), file=params_file_name)
 }
+save(dds, file = "dds.RData")
 
-vsd <- varianceStabilizingTransformation(dds, blind = F)
+n_genes <- nrow(dds)
+n_samples <- ncol(dds)
 rm(dds)
 gc()
-np$save(paste(prefix, suffix, ".npy", sep=''), np$array(assay(vsd), dtype='float32'))
+
+
+chunk_size <- 100000
+# Initialize empty matrix for transformed results
+vsd <- matrix(NA_real_, nrow=n_genes, ncol=n_samples)
+
+# Process in row chunks
+for (start in seq(1, n_genes, by=chunk_size)) {
+  end <- min(start + chunk_size - 1, n_genes)
+  cat("Processing genes", start, "to", end, "\n")
+  
+  dds_chunk <- readRDS("dds.rds")[start:end, ]
+  vsd_chunk <- varianceStabilizingTransformation(dds_chunk, blind = FALSE)
+  vsd[start:end, ] <- assay(vsd_chunk)
+  
+  rm(dds_chunk, vsd_chunk)
+  gc()
+}
+#vsd <- varianceStabilizingTransformation(dds, blind = F)
+np$save(paste(prefix, suffix, ".npy", sep=''), np$array(vsd, dtype='float32'))
