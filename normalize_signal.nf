@@ -95,7 +95,7 @@ process prepare_data_for_deseq2 {
         path "${prefix}.params.RDS", emit: model_params
 
 	script:
-	prefix = "deseq_normalized.only_autosomes.filtered.vst"
+	prefix = "deseq_normalized.only_autosomes.filtered.sf.vst"
 	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
 	"""
 	Rscript $moduleDir/bin/prepare_data_for_deseq.R \
@@ -109,8 +109,7 @@ process prepare_data_for_deseq2 {
 
 process deseq2 {
 	conda params.conda
-	publishDir "${params.outdir}/normalization", pattern: "${prefix}*.npy"
-	publishDir "${params.outdir}/params", pattern: "${prefix}*.RDS"
+	publishDir "${params.outdir}/normalization"
 	label "bigmem"
 
 	input:
