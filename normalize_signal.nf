@@ -81,10 +81,9 @@ process normalize_matrix {
 	"""
 }
 
-process deseq2 {
+process prepare_data_for_deseq2 {
 	conda params.conda
-	publishDir "${params.outdir}/normalization", pattern: "${prefix}*.npy"
-	publishDir "${params.outdir}/params", pattern: "${prefix}*.RDS"
+	publishDir "${params.outdir}/params", pattern: "${prefix}.params.RDS"
 	label "bigmem"
 
 	input:
@@ -92,15 +91,39 @@ process deseq2 {
 		path norm_params, stageAs: "params/*"
 
 	output:
-		path "${prefix}*.npy", emit: matrix
-		path "${prefix}*.RDS", emit: model_params
+		tuple val(prefix), path("${prefix}.dds.RDS"), emit: data
+        path "${prefix}.params.RDS", emit: model_params
 
 	script:
-	prefix = "deseq_normalized.only_autosomes.filtered"
+	prefix = "deseq_normalized.only_autosomes.filtered.vst"
+	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
+	"""
+	Rscript $moduleDir/bin/prepare_data_for_deseq.R \
+		${signal_matrix} \
+		${scale_factors} \
+		${samples_order} \
+		${prefix} \
+		${normalization_params}
+	"""
+}
+
+process deseq2 {
+	conda params.conda
+	publishDir "${params.outdir}/normalization", pattern: "${prefix}*.npy"
+	publishDir "${params.outdir}/params", pattern: "${prefix}*.RDS"
+	label "bigmem"
+
+	input:
+		tuple val(prefix), path(dataset)
+
+	output:
+		path "${prefix}.npy"
+
+	script:
 	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
-		${signal_matrix} \
+		${dataset} \
 		${scale_factors} \
 		${samples_order} \
 		${prefix} \
@@ -134,7 +157,8 @@ workflow normalizeMatrix {
             | combine(matrices)
             | map(it -> tuple(it[0], it[2], it[3]))
         
-        normalized_matrix = deseq2(dat, deseq_params).matrix
+        normalized_matrix = prepare_data_for_deseq2(dat, deseq_params).data
+            | deseq2
 
         vp = normalized_matrix
             | combine(matrices)
@@ -142,7 +166,7 @@ workflow normalizeMatrix {
             | variancePartition
 
 		out = normalized_matrix
-            | combine(deseq2.out.model_params)
+            | combine(prepare_data_for_deseq2.out.model_params)
             | combine(normalization.log_diffs)
             | combine(normalization.scale_factors)
             | combine(normalization.model_params)
