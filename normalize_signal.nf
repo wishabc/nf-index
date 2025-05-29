@@ -117,17 +117,14 @@ process deseq2 {
 		tuple val(prefix), path(dataset)
 
 	output:
-		path "${prefix}.npy"
+		path name
 
 	script:
-	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
+    name = "${prefix}.npy"
 	"""
 	Rscript $moduleDir/bin/deseq2.R \
 		${dataset} \
-		${scale_factors} \
-		${samples_order} \
-		${prefix} \
-		${normalization_params}
+		${name} 
 	"""
 }
 

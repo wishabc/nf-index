@@ -24,4 +24,4 @@ for (start in seq(1, n_genes, by=chunk_size)) {
   vsd[start:end, ] <- assay(vsd_chunk)
 }
 #vsd <- varianceStabilizingTransformation(dds, blind = F)
-np$save(paste(prefix, suffix, ".npy", sep=''), np$array(vsd, dtype='float32'))
+np$save(args[2], np$array(vsd, dtype='float32'))
