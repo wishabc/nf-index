@@ -71,7 +71,7 @@ if (is.null(norm_factors)) {
   rm(norm_factors)
 }
 rm(counts)
-gc.collect()
+gc()
 
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
