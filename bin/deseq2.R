@@ -68,7 +68,10 @@ if (is.null(norm_factors)) {
   print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
   suffix <- ".sf.vst"
+  rm(norm_factors)
 }
+rm(counts)
+gc.collect()
 
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
