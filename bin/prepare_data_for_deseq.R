@@ -16,10 +16,10 @@ np <- import("numpy")
 # 4) metadata_file - metadata, one row for each sample. 
 # Should be in the same order as sample_names
 # 5) prefix - prefix of output filenames:
-# if normalization factors are provided - creates files <prefix>.sf.vst.params.RDS and <prefix>.sf.vst.npy
-# else creates files <prefix>.no_sf.vst.params.RDS and <prefix>.no_sf.vst.npy
 # 6) params_file - (optional!) already calculated VST parameters (from previous run
 # of this script). Normalize the data according to the provided model.
+
+# The script creates two files <prefix>.params.RDS and <prefix>.dds.RDS
 
 args = commandArgs(trailingOnly=TRUE)
 
@@ -39,13 +39,7 @@ if (length(args) >= 5) {
 
 print("Reading input matrix")
 counts <- np$load(args[1])
-# Provide NULL or non-existent norm_factors file for conventional VST
-if (is.null(args[2]) | file.exists(args[2])) {
-  print('Reading norm factors')
-  norm_factors <- np$load(args[2])
-} else {
-  norm_factors <- NULL
-}
+
 sample_names <- fread(args[3], sep="\n", header=FALSE)
 
 # Ensure that sample_names is a vector, not a data table
@@ -60,15 +54,21 @@ colData <- data.frame(row.names=sample_names, sample_ids=sample_names)
 
 print('Making DESeq dataset')
 dds <- DESeqDataSetFromMatrix(countData=counts, colData=colData, design=~1)
-if (is.null(norm_factors)) {
-  print("Calculating size factors")
-  dds <- estimateSizeFactors(dds)
-} else {
+rm(counts)
+gc()
+
+# Provide NULL or non-existent norm_factors file for conventional VST
+if (is.null(args[2]) | file.exists(args[2])) {
+  print('Reading norm factors')
+  norm_factors <- np$load(args[2])
   print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
   rm(norm_factors)
+  gc()
+} else {
+  print("Calculating size factors")
+  dds <- estimateSizeFactors(dds)
 }
-gc()
 
 if (is.null(params_f)) {
   print('Calculating and saving VST params')
@@ -104,8 +104,6 @@ if (is.null(params_f)) {
   df <- readRDS(params_f)
   dispersionFunction(dds) <- df
 }
-rm(counts)
-gc()
 
 params_file_name <- paste(prefix, ".params.RDS", sep='')
 if (file.exists(params_file_name)) {

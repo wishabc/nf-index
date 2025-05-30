@@ -84,6 +84,7 @@ process normalize_matrix {
 process prepare_data_for_deseq2 {
 	conda params.conda
 	publishDir "${params.outdir}/params", pattern: "${prefix}.params.RDS"
+    publishDir "${params.outdir}/deseq2", pattern: "${prefix}.dds.RDS"
 	label "bigmem"
 
 	input:
