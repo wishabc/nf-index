@@ -38,14 +38,15 @@ if (length(args) >= 5) {
 }
 
 print("Reading input matrix")
-counts <- np$load(args[1])
+counts <- np$load(args[1], mmap_mode='r')[1:500000, ]
 
 sample_names <- fread(args[3], sep="\n", header=FALSE)
 
 # Ensure that sample_names is a vector, not a data table
 sample_names <- sample_names$V1
 
-counts <- as.data.frame(counts, stringsAsFactors = F)
+counts <- as.matrix(counts)
+storage.mode(counts) <- "integer"
 colnames(counts) <- sample_names
 
 # metadata <- read_delim(args[4], delim='\t', col_names=T)
@@ -60,7 +61,7 @@ gc()
 # Provide NULL or non-existent norm_factors file for conventional VST
 if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
-  norm_factors <- np$load(args[2])
+  norm_factors <- as.matrix(np$load(args[2], mmap_mode='r')[1:500000, ])
   print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
   rm(norm_factors)
