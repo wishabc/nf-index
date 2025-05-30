@@ -39,6 +39,8 @@ if (length(args) >= 5) {
 
 print("Reading counts")
 counts <- np$load(args[1], mmap_mode='r')[0:50000, ]
+
+print('Converting counts to R')
 counts <- py_to_r(counts)
 sample_names <- fread(args[3], sep="\n", header=FALSE)
 
@@ -63,6 +65,7 @@ gc()
 if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
   norm_factors <- np$load(args[2], mmap_mode='r')[0:50000, ]
+  print('Converting norm factors to R')
   norm_factors <- py_to_r(norm_factors)
   norm_factors <- as.matrix(norm_factors)
   print("Applying DESEQ with provided norm_factors")
