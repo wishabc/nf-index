@@ -164,11 +164,9 @@ workflow normalizeMatrix {
 
 		out = normalized_matrix
             | combine(prepare_data_for_deseq2.out.model_params)
-            | combine(normalization.log_diffs)
-            | combine(normalization.scale_factors)
             | combine(normalization.model_params)
             | combine(vp)
-            | map(it -> tuple([it[0], it[2], it[3]], [it[1], it[4], it[5]], it[6], it[7]))
+            | map(it -> tuple([it[0]], [it[1], it[4], it[5]], it[6], it[7]))
 
 	emit:
 		out // deseq2_matrix, log_diffs, scale_factors, deseq2_model_params, lowess_params1, lowess_params2, vp_annotated_masterlist, formula
