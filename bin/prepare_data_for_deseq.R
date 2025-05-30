@@ -6,7 +6,7 @@ library(stringr)
 library(data.table)
 library(DESeq2)
 library(SummarizedExperiment)
-library(DelayedArray)
+library(HDF5Array)
 
 
 np <- import("numpy", convert=FALSE)
@@ -45,6 +45,15 @@ counts <- np$load(args[1], mmap_mode='r')[0:50000,]
 
 print('Converting counts to R')
 counts <- as.matrix(py_to_r(counts))
+
+counts_h5path <- "counts.h5"
+counts_h5 <- writeHDF5Array(
+  counts,    # wrap your in-RAM matrix
+  filepath = counts_h5path,
+  name = "counts",         # dataset name inside the HDF5
+  level = 0               # gzip compression level (0–9)
+)
+
 sample_names <- fread(args[3], sep="\n", header=FALSE)
 
 # Ensure that sample_names is a vector, not a data table
@@ -60,14 +69,14 @@ colData <- data.frame(row.names=sample_names, sample_ids=sample_names)
 print('Making DESeq dataset')
 t1 <- system.time({
   dds <- DESeqDataSet(SummarizedExperiment(
-    assays = list(counts = DelayedArray(counts)),
+    assays = list(counts = counts),
     colData = colData
   ), design = ~1)
 })
 
 t2 <- system.time({
   dds2 <- DESeqDataSet(SummarizedExperiment(
-    assays = list(counts = counts),
+    assays = list(counts = counts_h5),
     colData = colData
   ), design = ~1)
 })
