@@ -38,7 +38,7 @@ if (length(args) >= 5) {
 }
 
 print("Reading counts")
-counts <- np$load(args[1], mmap_mode='r')[0:50000, ]
+counts <- np$load(args[1], mmap_mode='r')
 
 print('Converting counts to R')
 counts <- py_to_r(counts)
@@ -64,7 +64,7 @@ gc()
 # Provide NULL or non-existent norm_factors file for conventional VST
 if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
-  norm_factors <- np$load(args[2], mmap_mode='r')[0:50000, ]
+  norm_factors <- np$load(args[2], mmap_mode='r')
   print('Converting norm factors to R')
   norm_factors <- py_to_r(norm_factors)
   norm_factors <- as.matrix(norm_factors)
