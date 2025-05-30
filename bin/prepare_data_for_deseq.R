@@ -37,7 +37,7 @@ if (length(args) >= 5) {
   params_f <- args[5]
 }
 
-print("Reading counts matrix")
+print("Reading counts")
 counts <- np$load(args[1], mmap_mode='r')[0:500000, ]
 counts <- py_to_r(counts)
 sample_names <- fread(args[3], sep="\n", header=FALSE)
