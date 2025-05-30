@@ -41,10 +41,10 @@ if (length(args) >= 5) {
 }
 
 print("Reading counts")
-counts <- np$load(args[1])
+counts <- np$load(args[1], mmap_mode='r')[0:50000,]
 
 print('Converting counts to R')
-counts <- as.matrix(py_to_r(counts, mmap_mode='r')[0:50000,])
+counts <- as.matrix(py_to_r(counts))
 sample_names <- fread(args[3], sep="\n", header=FALSE)
 
 # Ensure that sample_names is a vector, not a data table
