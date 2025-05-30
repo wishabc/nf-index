@@ -37,7 +37,7 @@ if (length(args) >= 5) {
   params_f <- args[5]
 }
 
-print("Reading input matrix")
+print("Reading counts matrix")
 counts <- np$load(args[1], mmap_mode='r')[1:500000, ]
 
 sample_names <- fread(args[3], sep="\n", header=FALSE)
@@ -45,6 +45,7 @@ sample_names <- fread(args[3], sep="\n", header=FALSE)
 # Ensure that sample_names is a vector, not a data table
 sample_names <- sample_names$V1
 
+print("Converting counts to matrix")
 counts <- as.matrix(counts)
 storage.mode(counts) <- "integer"
 colnames(counts) <- sample_names
