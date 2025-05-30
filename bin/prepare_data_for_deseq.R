@@ -5,6 +5,9 @@ library(reticulate)
 library(stringr)
 library(data.table)
 library(DESeq2)
+library(SummarizedExperiment)
+library(DelayedArray)
+
 
 np <- import("numpy", convert=FALSE)
 
@@ -41,14 +44,12 @@ print("Reading counts")
 counts <- np$load(args[1])
 
 print('Converting counts to R')
-counts <- py_to_r(counts)
+counts <- as.matrix(py_to_r(counts, mmap_mode='r')[0:50000,])
 sample_names <- fread(args[3], sep="\n", header=FALSE)
 
 # Ensure that sample_names is a vector, not a data table
 sample_names <- sample_names$V1
 
-print("Converting counts to matrix")
-counts <- as.matrix(counts)
 storage.mode(counts) <- "integer"
 colnames(counts) <- sample_names
 
@@ -57,17 +58,32 @@ colnames(counts) <- sample_names
 colData <- data.frame(row.names=sample_names, sample_ids=sample_names)
 
 print('Making DESeq dataset')
-dds <- DESeqDataSetFromMatrix(countData=counts, colData=colData, design=~1)
+t1 <- system.time({
+  dds <- DESeqDataSet(SummarizedExperiment(
+    assays = list(counts = DelayedArray(counts)),
+    colData = colData
+  ), design = ~1)
+})
+
+t2 <- system.time({
+  dds2 <- DESeqDataSet(SummarizedExperiment(
+    assays = list(counts = counts),
+    colData = colData
+  ), design = ~1)
+})
+print(t1)
+print(t2)
+#
+# dds <- DESeqDataSet(SummarizedExperiment(assays = list(counts=counts), colData=colData), design=~1)
+# dds <- DESeqDataSetFromMatrix(countData=counts, colData=colData, design=~1)
 rm(counts)
 gc()
 
 # Provide NULL or non-existent norm_factors file for conventional VST
 if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
-  norm_factors <- np$load(args[2])
+  norm_factors <- as.matrix(py_to_r(np$load(args[2], mmap_mode='r')[0:50000,]))
   print('Converting norm factors to R')
-  norm_factors <- py_to_r(norm_factors)
-  norm_factors <- as.matrix(norm_factors)
   print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
   rm(norm_factors)
