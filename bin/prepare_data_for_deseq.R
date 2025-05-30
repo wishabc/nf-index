@@ -6,7 +6,7 @@ library(stringr)
 library(data.table)
 library(DESeq2)
 
-np <- import("numpy")
+np <- import("numpy", convert=FALSE)
 
 # Input parameters:
 # 1) counts matrix 
@@ -38,8 +38,8 @@ if (length(args) >= 5) {
 }
 
 print("Reading counts matrix")
-counts <- np$load(args[1], mmap_mode='r')[1:500000, ]
-
+counts <- np$load(args[1], mmap_mode='r')[0:500000, ]
+counts <- py_to_r(counts)
 sample_names <- fread(args[3], sep="\n", header=FALSE)
 
 # Ensure that sample_names is a vector, not a data table
@@ -62,7 +62,9 @@ gc()
 # Provide NULL or non-existent norm_factors file for conventional VST
 if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
-  norm_factors <- as.matrix(np$load(args[2], mmap_mode='r')[1:500000, ])
+  norm_factors <- np$load(args[2], mmap_mode='r')[0:500000, ]
+  norm_factors <- py_to_r(norm_factors)
+  norm_factors <- as.matrix(norm_factors)
   print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
   rm(norm_factors)
