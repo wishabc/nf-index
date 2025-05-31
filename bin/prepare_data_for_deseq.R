@@ -122,4 +122,8 @@ if (file.exists(params_file_name)) {
 # np$save(args[2], np$array(assay(vsd), dtype='float32'))
 
 dds_name <- paste(prefix, ".dds.RDS", sep='')
-saveRDS(dds, dds_name)
+timing <- system.time({
+  saveRDS(dds, dds_name, compress = FALSE)
+})
+
+print(timing)
