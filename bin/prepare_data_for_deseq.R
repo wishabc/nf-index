@@ -40,7 +40,7 @@ if (length(args) >= 5) {
 }
 
 print("Reading counts")
-counts <- np$load(args[1], mmap_mode='r')[0:50000,]
+counts <- np$load(args[1])
 
 print('Converting counts to R')
 counts <- as.matrix(py_to_r(counts))
@@ -66,7 +66,7 @@ gc()
 # Provide NULL or non-existent norm_factors file for conventional VST
 if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
-  norm_factors <- as.matrix(py_to_r(np$load(args[2], mmap_mode='r')[0:50000,]))
+  norm_factors <- as.matrix(py_to_r(np$load(args[2])))
   print('Converting norm factors to R')
   print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
