@@ -68,7 +68,6 @@ if (is.null(args[2]) | file.exists(args[2])) {
   print('Reading norm factors')
   norm_factors <- as.matrix(py_to_r(np$load(args[2])))
   print('Converting norm factors to R')
-  print("Applying DESEQ with provided norm_factors")
   normalizationFactors(dds) <- norm_factors
   rm(norm_factors)
   gc()
