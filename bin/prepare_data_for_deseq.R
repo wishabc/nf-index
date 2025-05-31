@@ -6,7 +6,6 @@ library(stringr)
 library(data.table)
 library(DESeq2)
 library(SummarizedExperiment)
-library(HDF5Array)
 
 
 np <- import("numpy", convert=FALSE)
