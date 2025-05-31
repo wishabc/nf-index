@@ -77,7 +77,7 @@ process add_normalized_matrices_to_anndata {
 
     input:
         val anndata
-        tuple path(matrices), path(normalization_params), path(masterlist_vp), val(formula)
+        tuple path(normalized_matrix), path(normalization_params), path(masterlist_vp), val(formula)
     
     output:
         path(name, type: 'dir')
@@ -91,7 +91,7 @@ process add_normalized_matrices_to_anndata {
         ${masterlist_vp} \
         '${formula}' \
         autosomal_dhs \
-        ${matrices} \
+        ${normalized_matrix} \
         ${normalization_params}
     """
 }

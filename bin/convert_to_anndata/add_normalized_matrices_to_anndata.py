@@ -43,8 +43,8 @@ if __name__ == '__main__':
     annotated_masterlist.rename(columns={x: f'{x}_variance_partition' for x in annotated_masterlist.columns}, inplace=True)
     formula = sys.argv[4]
     mask_name = sys.argv[5]
-    matrices = sys.argv[6:9]
-    params = sys.argv[9:]
+    matrices = sys.argv[6:7]
+    params = sys.argv[7:]
 
     adata = main(adata, matrices, params, formula, annotated_masterlist, mask_name=mask_name)
     adata.write_zarr(sys.argv[2])
