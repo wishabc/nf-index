@@ -60,7 +60,7 @@ process normalize_matrix {
     pref = 'normalized.only_autosomes.filtered'
     save_dir = 'normalization'
 	prefix = "${save_dir}/${pref}"
-	n = norm_params[0].name != "params/empty.params" ? file(norm_params[0]).baseName : ""
+	n = norm_params[0].name != "empty.params" ? file(norm_params[0]).baseName : ""
 	normalization_params = n ? "--model_params params/${n}" : ""
 	"""
     export OPENBLAS_NUM_THREADS=1
@@ -97,7 +97,7 @@ process prepare_data_for_deseq2 {
 
 	script:
 	prefix = "deseq_normalized.only_autosomes.filtered.sf.vst"
-	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
+	normalization_params = norm_params.name != "empty.params" ? norm_params : ""
 	"""
 	Rscript $moduleDir/bin/prepare_data_for_deseq.R \
 		${signal_matrix} \
