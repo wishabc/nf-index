@@ -41,7 +41,7 @@ process extract_from_anndata {
 
 process normalize_matrix {
 	conda params.conda
-	label "bigmem"
+	label "medmem"
 	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
     publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params*"
     publishDir "${params.outdir}/qc", pattern: "${prefix}*.pdf"
@@ -60,10 +60,10 @@ process normalize_matrix {
     pref = 'normalized.only_autosomes.filtered'
     save_dir = 'normalization'
 	prefix = "${save_dir}/${pref}"
-	n = norm_params[0].name != "params/empty.params" ? file(norm_params[0]).baseName : ""
+	n = norm_params[0].name != "empty.params" ? file(norm_params[0]).baseName : ""
 	normalization_params = n ? "--model_params params/${n}" : ""
 	"""
-    echo ${norm_params[0].name}
+    echo ${norm_params.name}
     export OPENBLAS_NUM_THREADS=1
     export OMP_NUM_THREADS=1
 
