@@ -60,10 +60,10 @@ process normalize_matrix {
     pref = 'normalized.only_autosomes.filtered'
     save_dir = 'normalization'
 	prefix = "${save_dir}/${pref}"
-    println(norm_params[0].name)
 	n = norm_params[0].name != "params/empty.params" ? file(norm_params[0]).baseName : ""
 	normalization_params = n ? "--model_params params/${n}" : ""
 	"""
+    echo ${norm_params[0].name}
     export OPENBLAS_NUM_THREADS=1
     export OMP_NUM_THREADS=1
 
