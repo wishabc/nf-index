@@ -41,7 +41,7 @@ process extract_from_anndata {
 
 process normalize_matrix {
 	conda params.conda
-	label "medmem"
+	label "bigmem"
 	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
     publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params*"
     publishDir "${params.outdir}/qc", pattern: "${prefix}*.pdf"
