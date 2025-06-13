@@ -97,9 +97,8 @@ process prepare_data_for_deseq2 {
 
 	script:
 	prefix = "deseq_normalized.only_autosomes.filtered.sf.vst"
-	normalization_params = norm_params.name != "empty.params" ? norm_params : ""
+	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
 	"""
-    echo 1
 	Rscript $moduleDir/bin/prepare_data_for_deseq.R \
 		${signal_matrix} \
 		${scale_factors} \
