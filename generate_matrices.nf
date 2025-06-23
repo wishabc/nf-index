@@ -1,37 +1,11 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
-include { add_matrices_to_anndata; convert_to_numpy } from "./converters"
+include { add_matrices_to_anndata; convert_to_numpy; extract_meta_from_anndata } from "./converters"
 include { filter_segments } from "./build_masterlist"
 
 params.conda = "$moduleDir/environment.yml"
 
-
-process extract_meta_from_anndata {
-    conda params.conda
-    label "medmem"
-
-    input:
-        val anndata
-
-    output:
-        tuple path(masterlist), path(samples_order), path(saf_masterlist)
-
-    script:
-    masterlist = "masterlist.no_header.bed"
-    samples_order = "samples_order.txt"
-    saf_masterlist = "masterlist.no_header.saf"
-    """
-    python3 $moduleDir/bin/convert_to_anndata/extract_from_anndata.py \
-        ${anndata} \
-        ${masterlist} \
-        ${samples_order} \
-        samples_meta.txt \
-        --matrix_samples_file ${params.samples_file}
-
-    awk -v OFS='\t' '{print \$4,\$1,\$2,\$3,"."}' ${masterlist} > ${saf_masterlist}
-    """
-}
 
 
 process generate_binary_counts {

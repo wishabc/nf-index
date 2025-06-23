@@ -1,5 +1,5 @@
-include { generate_matrix; extract_meta_from_anndata } from "./generate_matrices"
-
+include { generate_matrix } from "./generate_matrices"
+include { extract_meta_from_anndata } from "./converters"
 
 
 process extract_pval {
