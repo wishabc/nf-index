@@ -135,8 +135,15 @@ if __name__ == "__main__":
     samples = samples_meta.query(f'{grouping_column} == "{value}"').index
     anndata = read_zarr_backed(sys.argv[4])
     print('Finished reading anndata')
+    if np.any(~samples_meta.index.isin(anndata.obs_names)):
+        raise ValueError(
+            f'Some samples from samples_meta {sys.argv[1]} are not present in the anndata object {sys.argv[4]}.'
+        )
+    if len(anndata) != len(samples_meta):
+        anndata_mask = anndata.obs_names.isin(samples_meta.index)
+        anndata = anndata[anndata_mask, :].copy()
+    
     mask = anndata.obs_names.isin(samples)
-
 
     pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask].astype(np.float64).T
     pvals_matrix = np.power(10, -pvals_matrix)
