@@ -107,7 +107,7 @@ workflow generateCoreSets {
             def parentDir = "${params.outdir}/core_sets/${params.grouping_column}.${it[1]}"
             [ 
             "${params.grouping_column}.core_sets_meta.tsv", 
-            "group_key\tfdr\tcore_set_bed\tcore_set_npy\tcore_set_size\tsatuaration_curve\tsaturation_curve_core\tstep_added\tmcv_by_step_stats\n${it[0]}\t${it[1]}\t${parentDir}/${it[2].name}\t${parentDir}/${it[3].name}\t${it[2].countLines() - 1}\t${parentDir}/${it[4].name}\t${parentDir}/${it[5].name}\t${parentDir}/${it[6].name}\t${parentDir}/${it[7].name}\n" 
+            "group_key\tfdr\tcore_set_bed\tcore_set_npy\tcore_set_size\tsaturation_curve\tsaturation_curve_core\tstep_added\tmcv_by_step_stats\n${it[0]}\t${it[1]}\t${parentDir}/${it[2].name}\t${parentDir}/${it[3].name}\t${it[2].countLines() - 1}\t${parentDir}/${it[4].name}\t${parentDir}/${it[5].name}\t${parentDir}/${it[6].name}\t${parentDir}/${it[7].name}\n" 
             ] 
         }
 }
