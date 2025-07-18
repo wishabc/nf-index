@@ -1,11 +1,13 @@
-import sys
+import argparse
 import numpy as np
 import pandas as pd
 from genome_tools.data.anndata import read_zarr_backed
 from statsmodels.stats.multitest import multipletests
-from scipy.stats import cauchy
+
+from scipy.stats import cauchy, combine_pvalues, norm
 from numba import njit, prange
 from tqdm import tqdm
+
 
 def weighted_q(values, weights, q=0.5):
     """
@@ -24,14 +26,21 @@ def weighted_q(values, weights, q=0.5):
     # first value where cum weight ≥ q total weight
     return a_sorted[cumw >= cutoff][0]
 
+def stouffer_equal_weights(p, ones_mask, denom):
+    """
+    Equal-weight Stouffer’s method on p-value matrix `p`, masked by `ones_mask`.
+    Returns combined p-values per column.
+    """
+    z = norm.isf(p)
+    z = np.where(ones_mask, 0.0, z)
 
-def acat_equal(p, ones_mask):
-    # z = norm.isf(p)
-    # z_sum = np.sum(z, axis=0)
-    # z_comb = z_sum / np.sqrt(z.shape[0])
-    # return norm.sf(z_comb)
-    denom = (~ones_mask).sum(axis=0)
+    z_comb = np.sum(z, axis=0) / np.sqrt(denom)
+    return norm.sf(z_comb).astype(p.dtype)
+
+
+def acat_equal_weights(p, ones_mask, denom):
     q = cauchy.ppf(p)
+    q = np.where(ones_mask, 0.0, q)
     t = np.sum(q, axis=0) / denom
     return cauchy.cdf(t).astype(p.dtype)
 
@@ -93,11 +102,21 @@ def per_step_stats(category_binary, inv_mcv, step_added, mcv_mask, core_mask):
     return mcv_by_step_stats
 
 
-def get_core_set(pvals_matrix, binary_matrix, fdr_threshold=0.001):
+def combine_pvals(pvals_matrix, combine_pval_method):
     ones_mask = pvals_matrix == 1.
     pvals_matrix = np.where(ones_mask, 0.5, pvals_matrix)  # gets ignored in aggregation
-    combined_pval = acat_equal(pvals_matrix, ones_mask)
+    denom = (~ones_mask).sum(axis=0)
+    if combine_pval_method == 'cauchy':
+        combined_pval = acat_equal_weights(pvals_matrix, ones_mask, denom)
+    elif combine_pval_method == 'stouffer':
+         combined_pval = stouffer_equal_weights(pvals_matrix, ones_mask, denom)
+    else:
+        raise ValueError(f'Unknown method for p-value combination: {combine_pval_method}')
     combined_pval[np.isnan(combined_pval)] = 1.0
+    return combined_pval
+
+def get_core_set(pvals_matrix, binary_matrix, combine_pval_method, fdr_threshold=0.001):
+    combined_pval = combine_pvals(pvals_matrix, combine_pval_method=combine_pval_method)
     fdr = multipletests(combined_pval, method='bonferroni')[1]
     print(fdr.min())
     mcv = binary_matrix.astype(int).sum(axis=0).A1
@@ -109,11 +128,11 @@ def get_core_set(pvals_matrix, binary_matrix, fdr_threshold=0.001):
     return core
 
 
-def main(pvals_matrix, binary, category_mask, fdr_threshold):
+def main(pvals_matrix, binary, category_mask, fdr_threshold, combine_pval_method='cauchy'):
     category_binary = binary[category_mask, :]
     mcv_mask = calc_mcv(category_binary) > 0
     inv_mcv = calc_mcv(binary[~category_mask, :][:, mcv_mask])
-    core_mask = get_core_set(pvals_matrix, category_binary, fdr_threshold=fdr_threshold)
+    core_mask = get_core_set(pvals_matrix, category_binary, fdr_threshold=fdr_threshold, combine_pval_method=combine_pval_method)
     s_curve, s_curve_core, step_added = saturation_curve(category_binary, mcv_mask, core_mask)
     mcv_by_step_stats = per_step_stats(
         category_binary,
@@ -126,75 +145,89 @@ def main(pvals_matrix, binary, category_mask, fdr_threshold):
     return core_mask, s_curve, s_curve_core, step_added, mcv_by_step_stats
 
 
-if __name__ == "__main__":
-    samples_meta = pd.read_table(sys.argv[1]).set_index('ag_id')
-    grouping_column = sys.argv[2]
-    value = sys.argv[3]
+def parse_args():
+    parser = argparse.ArgumentParser(description="Compute core sets from p-values and binary matrix along with saturation curves.")
+    parser.add_argument("output_prefix", type=str, help="Prefix for all output files.")
+    parser.add_argument("samples_meta", type=str, help="Path to samples metadata TSV file (must contain 'ag_id' column).")
+    parser.add_argument("grouping_column", type=str, help="Column in samples_meta to use for grouping.")
+    parser.add_argument("value", type=str, help="Value in grouping_column to select samples.")
+    parser.add_argument("anndata_path", type=str, help="Path to Zarr-backed AnnData object.")
+    parser.add_argument("pvals_npy", type=str, help="Path to npy file with -log10 p-values matrix.")
+    parser.add_argument("fdr_threshold", type=float, help="FDR threshold for core set selection.")
+    parser.add_argument("--method", type=str, choices=("cauchy", "stouffer"), help="Method for p-value combination.")
+
+    return parser.parse_args()
+
+
+def load_and_validate_inputs(samples_meta_path, grouping_column, value, anndata_path, pvals_path):
+    # Load metadata
+    samples_meta = pd.read_table(samples_meta_path).set_index("ag_id")
     samples_meta[grouping_column] = samples_meta[grouping_column].astype(str)
-    assert value in samples_meta[grouping_column].unique()
+
+    if value not in samples_meta[grouping_column].unique():
+        raise ValueError(f"Value '{value}' not found in column '{grouping_column}'.")
+
     samples = samples_meta.query(f'{grouping_column} == "{value}"').index
-    anndata = read_zarr_backed(sys.argv[4])
-    print('Finished reading anndata')
+
+    # Load AnnData
+    anndata = read_zarr_backed(anndata_path)
+    print("Finished reading anndata.")
+
+    # Consistency checks
     if np.any(~samples_meta.index.isin(anndata.obs_names)):
         raise ValueError(
-            f'Some samples from samples_meta {sys.argv[1]} are not present in the anndata object {sys.argv[4]}.'
+            f"Some samples from {samples_meta_path} are not present in {anndata_path}."
         )
+
     if len(anndata) != len(samples_meta):
-        anndata_mask = anndata.obs_names.isin(samples_meta.index)
-        anndata = anndata[anndata_mask, :].copy()
-    
+        anndata = anndata[anndata.obs_names.isin(samples_meta.index), :].copy()
+
     mask = anndata.obs_names.isin(samples)
 
-    pvals_matrix = np.load(sys.argv[5], mmap_mode='r')[:, mask].astype(np.float64).T
-    pvals_matrix = np.power(10, -pvals_matrix)
-    # Finished reading matrix
+    # Load and convert p-values
+    pvals_matrix = np.load(pvals_path, mmap_mode='r')[:, mask].astype(np.float64).T
+    pvals_matrix = np.power(10, -pvals_matrix)  # Convert -log10(p) to p
 
-    binary = anndata.layers['binary']
+    # Binary layer
+    binary = anndata.layers["binary"]
 
-    assert pvals_matrix.shape[1] == binary.shape[1]
-    assert binary.shape[0] == mask.shape[0]
+    # Final shape checks
+    if pvals_matrix.shape[1] != binary.shape[1]:
+        raise ValueError("pvals_matrix and binary matrix have mismatched feature dimensions.")
+    if binary.shape[0] != mask.shape[0]:
+        raise ValueError("binary matrix and sample mask have mismatched row dimensions.")
 
-    fdr_tr = float(sys.argv[6])
-    
+    return anndata, pvals_matrix, mask
+
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    anndata, pvals_matrix, mask = load_and_validate_inputs(
+        args.samples_meta,
+        args.grouping_column,
+        args.value,
+        args.anndata_path,
+        args.pvals_npy
+    )
+    binary = anndata.layers["binary"]
+
     core_set_mask, s_curve, s_curve_core, step_added, mcv_by_step_stats = main(
         pvals_matrix,
         binary,
         category_mask=mask,
-        fdr_threshold=fdr_tr
+        fdr_threshold=args.fdr_threshold,
+        combine_pval_method=args.method
     )
 
-    prefix = sys.argv[7]
+    # Output files
+    prefix = args.output_prefix
 
     anndata.var[core_set_mask].reset_index()[['#chr', 'start', 'end', 'dhs_id']].to_csv(
-        f'{prefix}.core_set.bed',
-        sep='\t',
-        index=False,
+        f"{prefix}.core_set.bed", sep='\t', index=False
     )
-
-    np.save(
-        f'{prefix}.core_set.npy',
-        core_set_mask
-    )
-
-    np.save(
-        f'{prefix}.saturation_curve.npy',
-        s_curve
-    )
-
-    np.save(
-        f'{prefix}.saturation_curve_core.npy',
-        s_curve_core
-    )
-
-    np.save(
-        f'{prefix}.step_added.npy',
-        step_added
-    )
-
-    np.save(
-        f'{prefix}.mcv_by_step_stats.npy',
-        mcv_by_step_stats
-    )
-
-
-    
+    np.save(f"{prefix}.core_set.npy", core_set_mask)
+    np.save(f"{prefix}.saturation_curve.npy", s_curve)
+    np.save(f"{prefix}.saturation_curve_core.npy", s_curve_core)
+    np.save(f"{prefix}.step_added.npy", step_added)
+    np.save(f"{prefix}.mcv_by_step_stats.npy", mcv_by_step_stats)

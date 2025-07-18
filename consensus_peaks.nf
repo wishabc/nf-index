@@ -74,13 +74,14 @@ process core_set {
     npy_indicator = "${prefix}.npy"
     """
     python3 $moduleDir/bin/core_sets/core_set.py \
+        ${prefix} \
         ${params.samples_file} \
         ${params.grouping_column} \
         '${grouping_key}' \
         ${anndata} \
         ${pvals} \
         ${fdr} \
-        ${prefix} \
+        --method stouffer
     """
 }
 
