@@ -229,5 +229,6 @@ workflow extractDensity {
             file(row.normalized_density_bw)
         ))
         | combine(reference_bed)
+        | map(it -> tuple(it[2], it[0], it[1]))
         | extract_max_density
 }
