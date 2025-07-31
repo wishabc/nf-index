@@ -239,7 +239,6 @@ process extract_bg_params {
     tag "${ag_id}"
     scratch true
     publishDir "${params.outdir}/bg_params"
-    label "medmem"
 
     input:
         tuple path(masterlist), val(ag_id), path(bg_params_tabix), path(tabix_index)
