@@ -253,7 +253,7 @@ process extract_bg_params {
     { zcat ${bg_params_tabix} | head -1 || true; } > header.txt
     zcat ${bg_params_tabix} \
         | grep -v "^#" \
-        | grep "segment" \
+        | { grep "segment" || true; } \
         | bedtools intersect \
             -wb \
             -a <(cut -f1-3 ${masterlist}) \

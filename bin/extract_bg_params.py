@@ -1,6 +1,6 @@
 """
-       | python3 $moduleDir/bin/extract_bg_params.py \
-            --header header.txt \
+       | python3 $moduleDir/bin/extract_bg_params.py 
+            --header header.txt 
             --output ${name}
 """
 
@@ -16,8 +16,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+if __name__ == "__main__":
     args = parse_args()
+
     header = np.loadtxt(args.header, dtype=str)
     data = pd.read_table(args.input, header=None, names=['#chr1', 'start1', 'end1', *header])
     np.save(args.output, data[['r', 'p']].values.astype(np.float32))
