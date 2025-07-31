@@ -20,7 +20,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    header = np.loadtxt(args.header, dtype=str, delimiter='\t')
+    header = pd.read_table(args.header).columns
     print(header)
     names = ['#chr1', 'start1', 'end1', *header]
     print(names)
