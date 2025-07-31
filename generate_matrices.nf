@@ -235,7 +235,7 @@ workflow extractDensity {
 }
 
 process extract_bg_params {
-    conda params.conda
+    conda "/home/sabramov/miniconda3/envs/jupyterlab"
     tag "${ag_id}"
     scratch true
     publishDir "${params.outdir}/bg_params"

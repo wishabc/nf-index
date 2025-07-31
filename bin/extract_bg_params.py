@@ -19,5 +19,5 @@ def parse_args():
 def main():
     args = parse_args()
     header = np.loadtxt(args.header, dtype=str)
-    data = pd.read_table(args.input, header=None, names=['#chr', 'start', 'end', *header])
+    data = pd.read_table(args.input, header=None, names=['#chr1', 'start1', 'end1', *header])
     np.save(args.output, data[['r', 'p']].values.astype(np.float32))
