@@ -22,4 +22,4 @@ if __name__ == "__main__":
 
     header = np.loadtxt(args.header, dtype=str)
     data = pd.read_table(sys.stdin, header=None, names=['#chr1', 'start1', 'end1', *header])
-    np.save(args.output, data[['r', 'p']].values.astype(np.float32))
+    np.save(args.output, data[['bg_r', 'bg_p']].values.astype(np.float32))
