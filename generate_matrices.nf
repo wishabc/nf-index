@@ -237,7 +237,7 @@ workflow extractDensity {
 process extract_bg_params {
     conda "/home/sabramov/miniconda3/envs/jupyterlab"
     tag "${ag_id}"
-    scratch true
+
     publishDir "${params.outdir}/bg_params"
 
     input:
@@ -258,8 +258,8 @@ process extract_bg_params {
             -wb \
             -a ${masterlist} \
             -b stdin \
-            -sorted \
-        | python3 $moduleDir/bin/extract_bg_params.py \
+            -sorted > tmp.bed
+    cat tmp.bed | python3 $moduleDir/bin/extract_bg_params.py \
             --header header.txt \
             --output ${name}
     """
