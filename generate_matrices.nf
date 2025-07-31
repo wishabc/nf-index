@@ -258,7 +258,6 @@ process extract_bg_params {
             -wb \
             -a ${masterlist} \
             -b stdin \
-            -sorted \
         | python3 $moduleDir/bin/extract_bg_params.py \
             --header header.txt \
             --output ${name}
