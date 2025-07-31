@@ -1,0 +1,23 @@
+"""
+       | python3 $moduleDir/bin/extract_bg_params.py \
+            --header header.txt \
+            --output ${name}
+"""
+
+import argparse
+import numpy as np
+import pandas as pd
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Extract background parameters")
+    parser.add_argument("--header", required=True, help="Path to the header file")
+    parser.add_argument("--output", required=True, help="Path to the output file")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    header = np.loadtxt(args.header, dtype=str)
+    data = pd.read_table(args.input, header=None, names=['#chr', 'start', 'end', *header])
+    np.save(args.output, data[['r', 'p']].values.astype(np.float32))

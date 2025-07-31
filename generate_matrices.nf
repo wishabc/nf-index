@@ -233,3 +233,48 @@ workflow extractDensity {
         | map(it -> tuple(it[2], it[0], it[1]))
         | extract_max_density
 }
+
+process extract_bg_params {
+    conda params.conda
+    tag "${ag_id}"
+    scratch true
+    publishDir "${params.outdir}/bg_params"
+
+    input:
+        tuple path(masterlist), val(ag_id), path(bg_params_tabix), path(tabix_index)
+    
+    output:
+        tuple val(suffix), path(name)
+    
+    script:
+    suffix = "bg_params"
+    name = "${ag_id}.${suffix}.npy"
+    """
+    zcat ${bg_params_tabix} | head -1 > header.txt
+    zcat ${bg_params_tabix} \
+        | grep -v "^#" \
+        | grep "segment" \
+        | bedtools intersect \
+            -wb \
+            -a ${masterlist} \
+            -b stdin \
+        | python3 $moduleDir/bin/extract_bg_params.py \
+            --header header.txt \
+            --output ${name}
+    """
+}
+
+workflow extractBGParams {
+    println "Extracting bg params at ${params.reference_bed}"
+    reference_bed = Channel.fromPath(params.reference_bed)
+    samples_meta = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id,
+            file(row.peak_stats),
+            file("${row.peak_stats}.tbi")
+        ))
+        | combine(reference_bed)
+        | map(it -> tuple(it[2], it[0], it[1]))
+        | extract_bg_params
+}
