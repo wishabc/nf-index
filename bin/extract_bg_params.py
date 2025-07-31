@@ -21,5 +21,9 @@ if __name__ == "__main__":
     args = parse_args()
 
     header = np.loadtxt(args.header, dtype=str)
-    data = pd.read_table(sys.stdin, header=None, names=['#chr1', 'start1', 'end1', *header])
+    print(header)
+    names = ['#chr1', 'start1', 'end1', *header]
+    print(names)
+    data = pd.read_table(sys.stdin, header=None, names=names)
+    print(data.head())
     np.save(args.output, data[['bg_r', 'bg_p']].values.astype(np.float32))
