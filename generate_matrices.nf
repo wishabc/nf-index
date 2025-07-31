@@ -250,8 +250,9 @@ process extract_bg_params {
     suffix = "bg_params"
     name = "${ag_id}.${suffix}.npy"
     """
-    zcat ${bg_params_tabix} | head -1 || true > header.txt
+    { zcat ${bg_params_tabix} | head -1 || true; } > header.txt
     zcat ${bg_params_tabix} \
+        | cut -f1-3
         | grep -v "^#" \
         | grep "segment" \
         | bedtools intersect \
@@ -259,7 +260,10 @@ process extract_bg_params {
             -a ${masterlist} \
             -b stdin \
             -sorted > tmp.bed
-    cat tmp.bed | python3 $moduleDir/bin/extract_bg_params.py \
+
+
+    cat tmp.bed \
+        | python3 $moduleDir/bin/extract_bg_params.py \
             --header header.txt \
             --output ${name}
     """
