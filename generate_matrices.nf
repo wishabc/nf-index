@@ -251,7 +251,7 @@ process extract_bg_params {
     suffix = "bg_params"
     name = "${ag_id}.${suffix}.npy"
     """
-    zcat ${bg_params_tabix} | head -1 > header.txt
+    zcat ${bg_params_tabix} | head -1 || true > header.txt
     zcat ${bg_params_tabix} \
         | grep -v "^#" \
         | grep "segment" \
