@@ -275,6 +275,6 @@ workflow extractBGParams {
             file("${row.peak_stats}.tbi")
         ))
         | combine(reference_bed)
-        | map(it -> tuple(it[2], it[0], it[1]))
+        | map(it -> tuple(it[3], it[0], it[1], it[2]))
         | extract_bg_params
 }
