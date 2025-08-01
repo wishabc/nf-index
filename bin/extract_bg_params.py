@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     header = pd.read_table(args.header).columns
     print(header)
-    names = ['#chr1', 'start1', 'end1', *header]
+    names = ['#chr1', 'start1', 'end1', 'n_overlap', *header]
     print(names)
     data = pd.read_table(sys.stdin, header=None, names=names)
     print(data.head())
