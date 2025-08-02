@@ -255,8 +255,7 @@ process extract_bg_params {
         | grep -v "^#" \
         | { grep "segment" || true; } \
         | bedtools intersect \
-            -wb \
-            -C \
+            -loj
             -a <(cut -f1-3 ${masterlist}) \
             -b stdin \
             -sorted > tmp.bed
