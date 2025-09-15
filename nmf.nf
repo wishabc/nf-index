@@ -17,7 +17,7 @@ process fit_nmf {
 
 	script:
 	"""
-    python3 $moduleDir/bin/nmf/perform_NMF.py \
+    python3 $moduleDir/bin/nmf/run_NMF.py \
         ${n_components} \
         ${prefix} \
         --matrix ${matrix_path} \
@@ -26,7 +26,6 @@ process fit_nmf {
         ${non_required_arg(samples_weights, '--samples_weights')} \
         ${non_required_arg(samples_mask, '--samples_mask')} \
         ${non_required_arg(peaks_mask, '--peaks_mask')} \
-        ${non_required_arg(peaks_weights, '--peaks_weights')} \
         ${non_required_arg(extra_params, '--extra_params')}
 	"""
 }
