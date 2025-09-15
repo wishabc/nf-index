@@ -78,7 +78,7 @@ workflow {
             file(params.norm_matrix),
             file(params.masterlist),
             file(params.samples_meta),
-            file(params.formula)
+            params.formula
         )
     ) | variancePartition
 }
