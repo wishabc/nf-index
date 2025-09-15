@@ -72,10 +72,13 @@ workflow variancePartition {
 }
 
 
-// workflow {
-//     params.h5file = "${params.outdir}/matrices.h5"
-//     variancePartition(
-//         Channel.fromPath(params.masterlist),
-//         Channel.fromPath(params.h5file)
-//     )
-// }
+workflow {
+    input_data = Channel.of(
+        tuple(
+            file(params.norm_matrix),
+            file(params.masterlist),
+            file(params.samples_meta),
+            file(params.formula)
+        )
+    ) | variancePartition
+}
