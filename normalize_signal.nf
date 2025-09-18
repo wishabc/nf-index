@@ -252,6 +252,7 @@ workflow diffDeseq {
     params.total_chunks = 500
     Channel.of(1..params.total_chunks)
         | differential_deseq
+        | flatten()
         | map(it -> tuple(it.simpleName, it))
         | take(2)
         | collectFile(
