@@ -55,24 +55,22 @@ export_deseq_data <- function(dds, prefix) {
     pvalue   = res_lrt$pvalue,
     padj     = res_lrt$padj
   )
-  write.table(lrt_tbl, paste0(prefix, "_LRT.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+  write.table(lrt_tbl, paste0(prefix, "LRT.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
 
   if (!("mu" %in% assayNames(dds))) stop("Assay 'mu' missing. Run nbinomWaldTest() or nbinomLRT() first.")
     
 
   ## 1) per-sample long data (box/strip + fitted means)
   print('Plot data')
-  nc   <- counts(dds, normalized = TRUE)
+  nc   <- (counts(dds, normalized = FALSE) + 1) / normalizationFactors(dds)
   mu   <- assay(dds, "mu")
-  q <- mu / normalizationFactors(dds)
+  q <- (mu + 1) / normalizationFactors(dds)
   gids <- rownames(dds); sids <- colnames(dds)
   df_plot <- data.frame(
     gene                 = rep(gids, times = length(sids)),
     sample               = rep(sids, each  = length(gids)),
-    normalized_count     = as.numeric(nc),
-    log10_norm_count_p1  = log10(as.numeric(nc) + 1),
-    mu_hat               = as.numeric(q),
-    log10_mu_hat_p1      = log10(as.numeric(q) + 1)
+    log10_norm_count_p1  = log10(as.numeric(nc)),
+    log10_q_hat_p1      = log10(as.numeric(q))
   )
   md <- as.data.frame(colData(dds))
   keep_cols <- intersect(c("species","extended_annotation"), colnames(md))
