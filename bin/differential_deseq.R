@@ -179,8 +179,13 @@ get_chunk <- function(dds, total_chunks, i) {
 
 args = commandArgs(trailingOnly=TRUE)
 
-dds_chunk <- get_chunk(readRDS(args[2]), total_chunks = 100, i = as.integer(args[3]))
+print('Loading dds')
+dds_chunk <- readRDS(args[2])
+print('Slicing chunk')
+dds_chunk <- get_chunk(dds_chunk, total_chunks = as.integer(args[3]), i = as.integer(args[4]))
+print('Estimating point dispersions')
 dds_chunk <- estimateDispersionsGeneEst(dds_chunk)
+print('Estimating dispersions MAP')
 dds_chunk <- estimateDispersionsMAP(dds_chunk)
-
-export_deseq_data(res_cat$dds_sub, prefix = args[1])
+print('Exporting DESeq data')
+export_deseq_data(dds_chunk, prefix = args[1])

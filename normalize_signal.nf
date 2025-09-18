@@ -232,14 +232,15 @@ process differential_deseq {
         val chunk
 
     output:
-        path "${prefix}*"
+        path "${suffix}*"
 
     script:
-    prefix = "deseq_res.${chunk}"
+    suffix = "deseq_res.${chunk}"
     """
     Rscript $moduleDir/bin/differential_deseq.R \
-        ${prefix} \
+        ${suffix} \
         ${params.dds} \
+        ${params.total_chunks} \
         ${chunk}
     """
 }
@@ -247,7 +248,8 @@ process differential_deseq {
 
 workflow diffDeseq {
     params.dds = "/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/w_babachi_new.v23/index/filled_1pr/output/normalization/lowess/ready_for_deseq.reciprocal.mouse+human.normalized.only_autosomes.filtered.no_q.dds.RDS"
-    Channel.of(1..100)
+    params.total_chunks = 500
+    Channel.of(1..params.total_chunks)
         | differential_deseq
         | map(it -> tuple(it.simmpleName, it))
         | collectFile(
