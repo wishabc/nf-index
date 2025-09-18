@@ -251,7 +251,7 @@ workflow diffDeseq {
     params.total_chunks = 500
     Channel.of(1..params.total_chunks)
         | differential_deseq
-        | map(it -> tuple(it.simmpleName, it))
+        | map(it -> tuple(it.simpleName, it))
         | collectFile(
             storeDir: "${params.outdir}",
             skip: 1,
