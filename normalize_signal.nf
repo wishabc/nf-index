@@ -259,6 +259,6 @@ workflow diffDeseq {
             skip: 1,
             keepHeader: true
         ) {
-            it -> [ "${it[0]}.tsv", it[1].text ]
+            it -> [ "${it[0]}.tsv", it[1] ]
         }
 }
