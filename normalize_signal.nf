@@ -225,6 +225,7 @@ workflow {
 
 process differential_deseq {
 
+    memory { 30.GB * task.attempt * task.attempt }
     conda "/home/sabramov/miniconda3/envs/r-jupyter/"
     label "medmem"
 
@@ -232,7 +233,7 @@ process differential_deseq {
         val chunk
 
     output:
-        path "${suffix}*"
+        path "*${suffix}.tsv"
 
     script:
     suffix = "deseq_res.${chunk}"
