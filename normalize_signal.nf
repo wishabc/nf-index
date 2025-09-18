@@ -225,22 +225,22 @@ workflow {
 
 process differential_deseq {
 
-    conda params.conda
+    conda "/home/sabramov/miniconda3/envs/r-jupyter/"
     label "medmem"
 
     input:
         val chunk
 
     output:
-        path name
+        path "${prefix}*"
 
     script:
-    name = "deseq_res.${chunk}.tsv"
+    prefix = "deseq_res.${chunk}"
     """
     Rscript $moduleDir/bin/differential_deseq.R \
+        ${prefix} \
         ${params.dds} \
         ${chunk}
-        ${name}
     """
 }
 
@@ -248,5 +248,13 @@ process differential_deseq {
 workflow diffDeseq {
     params.dds = "/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/w_babachi_new.v23/index/filled_1pr/output/normalization/lowess/ready_for_deseq.reciprocal.mouse+human.normalized.only_autosomes.filtered.no_q.dds.RDS"
     Channel.of(1..100)
-        | differential_deseq()
+        | differential_deseq
+        | map(it -> tuple(it.simmpleName, it))
+        | collectFile(
+            storeDir: "${params.outdir}",
+            skip: 1,
+            keepHeader: true
+        ) {
+            it -> [ "${it[0]}.tsv", it[1].text ]
+        }
 }
