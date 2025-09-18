@@ -55,7 +55,7 @@ export_deseq_data <- function(dds, prefix) {
     pvalue   = res_lrt$pvalue,
     padj     = res_lrt$padj
   )
-  write.table(lrt_tbl, paste0(prefix, "LRT.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+  write.table(lrt_tbl, paste0("LRT.", prefix, ".tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
 
   if (!("mu" %in% assayNames(dds))) stop("Assay 'mu' missing. Run nbinomWaldTest() or nbinomLRT() first.")
     
