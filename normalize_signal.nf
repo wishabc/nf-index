@@ -221,3 +221,32 @@ workflow {
 
     add_normalized_matrices_to_anndata(anndata, out)
 }
+
+
+process differential_deseq {
+
+    conda params.conda
+    label "medmem"
+
+    input:
+        val chunk
+
+    output:
+        path name
+
+    script:
+    name = "deseq_res.${chunk}.tsv"
+    """
+    Rscript $moduleDir/bin/differential_deseq.R \
+        ${params.dds} \
+        ${chunk}
+        ${name}
+    """
+}
+
+
+workflow diffDeseq {
+    params.dds = "/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/w_babachi_new.v23/index/filled_1pr/output/normalization/lowess/ready_for_deseq.reciprocal.mouse+human.normalized.only_autosomes.filtered.no_q.dds.RDS"
+    Channel.of(1..100)
+        | differential_deseq()
+}
