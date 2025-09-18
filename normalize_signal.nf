@@ -253,13 +253,11 @@ workflow diffDeseq {
     Channel.of(1..params.total_chunks)
         | differential_deseq
         | flatten()
-        | map(it -> tuple(it.simpleName, it))
-        | take(2)
         | collectFile(
             storeDir: "${params.outdir}",
             skip: 1,
             keepHeader: true
         ) {
-            it -> [ "${it[0]}.tsv", it[1] ]
+            it -> [ "${it.simpleName}.tsv", it ]
         }
 }
