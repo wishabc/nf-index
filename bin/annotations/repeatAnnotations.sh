@@ -2,44 +2,8 @@
 
 #Path to relevant Masterlist Files
 masterlist=$1
-encode3=$2
-gwas_catalog=$3
-repeats=$4
-outfile=$5
-#Bedops command to print whether or not the masterlist file overlaps an encode3 DHS and by how much
-bedmap --echo --echo-map --bp-ovr 1 --indicator --bases-uniq-f ${masterlist} ${encode3} \
-| awk -F'|' '{print $(NF-1)"\t"$NF}'> is_encode3.txt
-
-
-#Double check number of rows are the same
-#Can do later
-
-echo "Finished encode3 annotation"
-
-####################
-#Parse gwas_catalog#
-####################
-#Got rid of some weird chr5 X 12, chr1 x 3 in the first column
-cut -f7,12,13,21,28,31 ${gwas_catalog} \
-    | awk -F'\t' '{print "chr"$2"\t"$3"\t"$3+1"\t"$4"\t"$5"\t"$6"\t"$1}' \
-    | awk -F' ' '{if($2 != "x") print}' \
-    | awk '$1 ~ /^chr([1-9]|1[0-9]|2[0-2]|X|Y)$/' \
-    | sort-bed - \
-> catalog_parsed.tsv
-
-################################
-#Map Masterlist to gwas_catalog#
-################################
-
-bedmap --count ${masterlist} catalog_parsed.tsv > gwas_catalog_count.txt
-bedmap --echo --echo-map ${masterlist} catalog_parsed.tsv > gwas_catalog_mapped.bed
-
-
-#Double check number of rows are the same
-#Can do later
-#Also maybe have a mapped file to show the overlapping trait(s)
-
-echo "Finished gwas_catalog annotations"
+repeats=$2
+outfile=$3
 
 #############################
 #Parse and Map Repeat Masker#
@@ -109,8 +73,8 @@ bedmap --echo-map --fraction-both 1 tmp.masterlist.bed3 dhs_annotated_all-repeat
 | awk -F'\t' '{if($1 == "") print """\t""""\t"""; else print}' \
 > repeats.txt
 
-echo -e "is_encode3\tencode3_ovr-fraction\tnum_gwasCatalog_variants\trepeat_class\trepeat_family\trepeat_name" > ${outfile}
-paste is_encode3.txt gwas_catalog_count.txt repeats.txt >> ${outfile}
+echo -e "repeat_class\trepeat_family\trepeat_name" > ${outfile}
+paste repeats.txt >> ${outfile}
 
 echo "Finished Repeat Annotations"
 

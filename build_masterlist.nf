@@ -280,6 +280,11 @@ process annotate_masterlist {
     script:
     name = "masterlist_DHSs_all_chunks.Altius.annotated.bed"
     """
+    bash $moduleDir/bin/annotations/repeatAnnotations.sh \
+        ${masterlist} \
+        ${params.repeats} \
+        repeat_annotations.txt
+
     bash $moduleDir/bin/annotations/gencodeAnnotations.sh \
 	    ${params.species} \
         ${masterlist} \
@@ -296,8 +301,9 @@ process annotate_masterlist {
     echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end" \
         | cat - ${masterlist} \
         | paste - \
+            gc_content.txt \
             gencode_annotations.txt \
-            gc_content.txt > ${name}
+            repeat_annotations.txt > ${name}
     """
 }
 
