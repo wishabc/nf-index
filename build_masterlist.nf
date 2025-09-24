@@ -345,7 +345,7 @@ workflow buildIndex {
 
 
 workflow {
-    print "Peaks files are used from  - params.samples_file = ${params.samples_file}"
+    print "Using peak files from  - params.samples_file = ${params.samples_file}. Column for peak files: ${params.index_peaks_column}"
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row[params.index_peaks_column]))
