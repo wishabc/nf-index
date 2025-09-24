@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     peaks_column = sys.argv[5]
     samples_meta = pd.read_table(sys.argv[4]).set_index('ag_id').loc[
-        samples_order, [[peaks_column]]
+        samples_order, [peaks_column]
     ]
     adata_obj = main(annotated_masterlist, samples_meta, matrix)
     adata_obj.write_zarr(sys.argv[6])
