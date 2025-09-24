@@ -13,6 +13,6 @@ faidx -i nucleotide -b ${masterlist} ${genome_fasta} \
             print $1, $2-1, $3, cg, cg/total; }' \
     | bedmap \
         --delim "\t" --echo \
-        --bases-uniq - ${mappable_file} \
+        --bases-uniq - <(zcat ${mappable_file} | grep -v '#chr') \
     | cut -f4- \
     >> ${outfile}

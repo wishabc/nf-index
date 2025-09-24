@@ -9,7 +9,6 @@ def main(rows_meta, cols_meta, matrix):
     adata = ad.AnnData(X=matrix, obs=cols_meta, var=rows_meta)
 
     adata.obs['n_peaks'] = adata.X.sum(axis=1).A1
-    adata.obs['final_qc_passing_sample'] = 1
 
     adata.var['autosomal_dhs'] = adata.var['#chr'].str.contains('chr[1-9]', regex=True)
     adata.var['n_contributing_samples'] = adata.X.sum(axis=0).A1

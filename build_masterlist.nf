@@ -295,7 +295,7 @@ process annotate_masterlist {
     bash $moduleDir/bin/annotations/gcContentAnnotations.sh \
         ${masterlist} \
         ${params.genome_fasta} \
-        ${params.mappable_file} \
+        ${params.mappable_not_blacklist_file} \
         gc_content.txt
 
     echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end" \
