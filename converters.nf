@@ -41,6 +41,7 @@ process convert_index_to_anndata {
         ${samples_order} \
         ${binary_matrix} \
         ${params.samples_file} \
+        '${params.index_peaks_column}' \
         ${name}
     """
 }

@@ -280,19 +280,6 @@ process annotate_masterlist {
     script:
     name = "masterlist_DHSs_all_chunks.Altius.annotated.bed"
     """
-    #python3 $moduleDir/bin/annotations/spot1Annotations.py \
-    #    ${binary_matrix} \
-    #    ${samples_order} \
-    #    ${params.samples_file} \
-    #   spot1_metrics.txt
- 
-    bash $moduleDir/bin/annotations/simpleAnnotations.sh \
-        ${masterlist} \
-        ${params.encode3} \
-        ${params.gwas_catalog} \
-	    ${params.repeats} \
-        simple_annotations.txt
-    
     bash $moduleDir/bin/annotations/gencodeAnnotations.sh \
 	    ${params.species} \
         ${masterlist} \
@@ -306,11 +293,9 @@ process annotate_masterlist {
         ${params.mappable_file} \
         gc_content.txt
 
-    # spot1_metrics.txt
     echo -e "#chr\tstart\tend\tdhs_id\ttotal_signal\tnum_samples\tnum_peaks\tdhs_width\tdhs_summit\tcore_start\tcore_end" \
         | cat - ${masterlist} \
         | paste - \
-            simple_annotations.txt \
             gencode_annotations.txt \
             gc_content.txt > ${name}
     """
@@ -358,47 +343,50 @@ workflow buildIndex {
         out
 }
 
-workflow annotateMasterlist {
-    Channel.of(
-        tuple(
-            file("${params.index_dir}/raw/binary.index.raw.matrix.npy"),
-            file("${params.index_dir}/samples_order.txt"),
-            file("${params.index_dir}/unfiltered_masterlist/masterlist_DHSs_Altius_all_chunkIDs.bed")
-        )
-    ) | annotate_masterlist
-}
 
 workflow {
+    print "Peaks files are used from  - params.samples_file = ${params.samples_file}"
     Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
-        | map(row -> file(row.peaks_for_index))
+        | map(row -> file(row[params.index_peaks_column]))
         | buildIndex
         | annotate_masterlist // matrix, samples_order, annotated_index
         | convert_index_to_anndata
 }
 
-workflow filterInvalidSegments {
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.peaks_for_index), file(row.peak_stats)))
-        | filter_segments
-        | map(it -> it[1])
-        | buildIndex
-        | annotate_masterlist // matrix, samples_order, annotated_index
-        | convert_index_to_anndata
-}
 
-workflow filterHotspots {
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.hotspots_file), file(row.peak_stats)))
-        | filter_segments
-}
+// DEFUNC
+// workflow annotateMasterlist {
+//     Channel.of(
+//         tuple(
+//             file("${params.index_dir}/raw/binary.index.raw.matrix.npy"),
+//             file("${params.index_dir}/samples_order.txt"),
+//             file("${params.index_dir}/unfiltered_masterlist/masterlist_DHSs_Altius_all_chunkIDs.bed")
+//         )
+//     ) | annotate_masterlist
+// }
+// workflow filterInvalidSegments {
+//     Channel.fromPath(params.samples_file)
+//         | splitCsv(header:true, sep:'\t')
+//         | map(row -> tuple(row.ag_id, file(row.peaks_for_index), file(row.peak_stats)))
+//         | filter_segments
+//         | map(it -> it[1])
+//         | buildIndex
+//         | annotate_masterlist // matrix, samples_order, annotated_index
+//         | convert_index_to_anndata
+// }
+
+// workflow filterHotspots {
+//     Channel.fromPath(params.samples_file)
+//         | splitCsv(header:true, sep:'\t')
+//         | map(row -> tuple(row.ag_id, file(row.hotspots_file), file(row.peak_stats)))
+//         | filter_segments
+// }
 
 
-workflow defunc {
-    Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(row.ag_id, file(row.peaks_for_index), file(row.peak_stats)))
-        | leave_invalid_segments
-}
+// workflow defunc {
+//     Channel.fromPath(params.samples_file)
+//         | splitCsv(header:true, sep:'\t')
+//         | map(row -> tuple(row.ag_id, file(row.peaks_for_index), file(row.peak_stats)))
+//         | leave_invalid_segments
+// }
