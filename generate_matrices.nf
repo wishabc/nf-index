@@ -148,7 +148,7 @@ process extract_bg_mean {
         | grep segment \
         | bedtools intersect \
             -loj \
-            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$5, \$5 + 1 }' ${masterlist}) \
+            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$5, \$5 + 1 }' ${masterlist} | sort-bed -) \
             -b stdin \
             -sorted >> tmp.bed
 
