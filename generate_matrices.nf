@@ -7,8 +7,8 @@ include { filter_segments } from "./build_masterlist"
 params.conda = "$moduleDir/environment.yml"
 
 
+// Processes below create a np array of shape n_dhs x 1
 process generate_binary_counts {
-
     conda params.conda
     tag "${id}"
     scratch true
@@ -104,6 +104,64 @@ process count_tags {
 	"""
 }
 
+process extract_max_pval {
+    tag "${ag_id}"
+    conda "/home/sabramov/miniconda3/envs/hotspot3"
+    label 'high_mem'
+
+    input:
+        tuple path(masterlist), val(ag_id), path(pvals_parquet)
+
+    output:
+        tuple val(suffix), path(name)
+
+    script:
+    suffix = 'neglog10_pvals'
+    name = "${ag_id}.${suffix}.npy"
+    """
+    hotspot3-pvals \
+        ${pvals_parquet} \
+        ${masterlist} \
+        ${name} \
+        --chrom_sizes ${params.nuclear_chrom_sizes} \
+        --format npy
+    """
+}
+
+// returns a np array of shape n_dhs x 2
+process extract_bg_params {
+    conda params.conda
+    tag "${ag_id}"
+
+    input:
+        tuple path(masterlist), val(ag_id), path(bg_params_tabix), path(tabix_index)
+    
+    output:
+        tuple val(suffix_r), path(name_r), emit: bg_r
+        tuple val(suffix_p), path(name_p), emit: bg_p
+    
+    script:
+    suffix_r = "bg_params.r"
+    suffix_p = "bg_params.p"
+    name_r = "${ag_id}.${suffix_r}.npy"
+    name_p = "${ag_id}.${suffix_p}.npy"
+    """
+    echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
+
+    zcat ${bg_params_tabix} \
+        | grep -v "^#" \
+        | { grep "segment" || true; } \
+        | bedtools intersect \
+            -loj \
+            -a <(cut -f1-3 ${masterlist}) \
+            -b stdin \
+            -sorted >> tmp.bed
+
+    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${name_r} ${name_p}
+    """
+}
+
+// merge a np array of shape n_dhs x 2
 process generate_matrix {
 	publishDir "${params.outdir}/raw_matrices", pattern: "${name}"
 	
@@ -129,43 +187,15 @@ process generate_matrix {
 }
 
 
-process extract_bg_params {
-    conda params.conda
-    tag "${ag_id}"
-
-    publishDir "${params.outdir}/bg_params"
-
-    input:
-        tuple path(masterlist), val(ag_id), path(bg_params_tabix), path(tabix_index)
-    
-    output:
-        tuple val(suffix), path(name)
-    
-    script:
-    suffix = "bg_params"
-    name = "${ag_id}.${suffix}.npy"
-    """
-    echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
-
-    zcat ${bg_params_tabix} \
-        | grep -v "^#" \
-        | { grep "segment" || true; } \
-        | bedtools intersect \
-            -loj \
-            -a <(cut -f1-3 ${masterlist}) \
-            -b stdin \
-            -sorted >> tmp.bed
-
-    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${name}
-    """
-}
-
-
 workflow generateMatrices {
     take:
-        data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density, fit_stats
+        data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density, fit_stats, hotspot3_pvals
 
     main:
+        binary_cols = data
+            | map(it -> tuple(it[0], it[3], it[6]))
+            | generate_binary_counts
+
         density_cols = data // masterlist, samples_order, saf_masterlist 
             | map(it -> tuple(it[0], it[3], it[7]))
             | extract_max_density
@@ -177,17 +207,21 @@ workflow generateMatrices {
         bg_params_cols = data
             | map(it -> tuple(it[0], it[3], it[8]))
             | extract_bg_params
+        
+        max_pvals = data
+            | map(it -> tuple(it[0], it[3], it[9]))
+            | extract_max_pval
 
         samples_order = data
             | map(it -> it[1])
             | first()
 
-        out = data
-            | map(it -> tuple(it[0], it[3], it[6]))
-            | generate_binary_counts
+        out = binary_cols
             | mix(count_cols)
             | mix(density_cols) // suffix, column
-            | mix(bg_params_cols)
+            | mix(bg_params_cols.bg_p)
+            | mix(bg_params_cols.bg_r)
+            | mix(max_pvals)
             | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
             | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
             | groupTuple(by: 0) // suffix, columns
