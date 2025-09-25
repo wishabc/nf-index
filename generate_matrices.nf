@@ -134,7 +134,7 @@ process extract_bg_params {
     tag "${ag_id}"
 
     input:
-        tuple path(masterlist), val(ag_id), path(bg_params_tabix), path(tabix_index)
+        tuple path(masterlist), val(ag_id), path(bg_params_tabix)
     
     output:
         tuple val(suffix_r), path(name_r), emit: bg_r
