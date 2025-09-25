@@ -40,7 +40,6 @@ process extract_max_density {
     conda params.conda
     tag "${ag_id}"
     scratch true
-    publishDir "${params.outdir}/density"
 
     input:
         tuple path(masterlist), val(ag_id), path(density_bw)
