@@ -199,6 +199,32 @@ workflow {
 }
 
 
+process tmp {
+
+    input:
+        tuple val(ag_id), val(cram)
+    
+    output:
+        tuple val(ag_id), path(cram2)
+    
+    script:
+    cram2 = file(cram)
+    """
+    echo1
+    """
+
+
+}
+workflow debug {
+    bams_hotspots = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.ag_id,
+            row.cram_file,
+        ))
+        | tmp
+}
+
 
 ////////////////////// /////////////
 workflow extractDensity {
