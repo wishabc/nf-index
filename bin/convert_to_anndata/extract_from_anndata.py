@@ -8,7 +8,7 @@ from genome_tools.data.anndata import read_zarr_backed
 
 def main(anndata_obj, extra_keys):
     metadata = anndata_obj.obs
-    masterlist = anndata_obj.var.reset_index()[['#chr', 'start', 'end', 'dhs_id', 'summit']]
+    masterlist = anndata_obj.var.reset_index()[['#chr', 'start', 'end', 'dhs_id', 'dhs_summit']]
     
     matrices = {key: anndata_obj.layers[key] for key in extra_keys}
     return metadata, masterlist, matrices
