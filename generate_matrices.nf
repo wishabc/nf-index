@@ -149,10 +149,10 @@ process extract_bg_params {
 
     zcat ${bg_params_tabix} \
         | grep -v "^#" \
-        | { grep "segment" || true; } \
+        | grep segment \
         | bedtools intersect \
             -loj \
-            -a <(cut -f1-3 ${masterlist}) \
+            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$8, \$8 + 1 }' ${masterlist}) \
             -b stdin \
             -sorted >> tmp.bed
 
