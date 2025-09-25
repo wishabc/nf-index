@@ -204,13 +204,10 @@ process tmp {
     input:
         tuple val(ag_id), val(cram)
     
-    output:
-        tuple val(ag_id), path(cram2)
     
     script:
-    cram2 = file(cram)
     """
-    echo1
+    [ -e "${cram}" ]
     """
 
 
