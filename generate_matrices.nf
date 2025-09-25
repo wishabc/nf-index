@@ -200,6 +200,7 @@ workflow {
 
 
 process tmp {
+    tag "${ag_id}"
 
     input:
         tuple val(ag_id), val(cram)
