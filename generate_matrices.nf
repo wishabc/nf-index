@@ -107,7 +107,6 @@ process count_tags {
 process extract_max_pval {
     tag "${ag_id}"
     conda "/home/sabramov/miniconda3/envs/hotspot3"
-    label 'high_mem'
 
     input:
         tuple path(masterlist), val(ag_id), path(pvals_parquet)
@@ -166,6 +165,7 @@ process generate_matrix {
 	publishDir "${params.outdir}/raw_matrices", pattern: "${name}"
 	
 	label "highmem"
+    conda "${params.conda}"
 	scratch true
     tag "${prefix}"
 

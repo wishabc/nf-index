@@ -35,6 +35,7 @@ dependencies:
   - bioconductor-variancepartition
   - bioconductor-rhdf5
   - tqdm
+  - bedtools
   - pip
   - pip:
     - git+https://github.com/wishabc/nmf-tools.git
