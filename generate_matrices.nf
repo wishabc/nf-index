@@ -199,37 +199,6 @@ workflow {
 }
 
 
-process tmp {
-    tag "${ag_id}"
-
-    input:
-        tuple val(ag_id), val(cram)
-    
-    
-    script:
-    """
-    [ -e "${cram}" ]
-    """
-
-
-}
-workflow debug {
-    bams_hotspots = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.ag_id,
-            tuple(
-                row.cram_file,
-                row.cram_index,
-                row[params.matrix_peaks_column],
-                row.normalized_density_bw
-            )
-        ))
-        | transpose()
-        | tmp
-}
-
-
 ////////////////////// /////////////
 workflow extractDensity {
     println "Extracting normalized density at ${params.reference_bed}"

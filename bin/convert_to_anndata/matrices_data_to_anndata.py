@@ -8,17 +8,17 @@ import anndata as ad
 
 
 def main(adata, matrices):
+    matrices_types = ['counts', 'binary', 'density']
     matrices_mapping = {
-        os.path.basename(matrix).replace('matrix.', '').replace('.npy', ''): matrix 
-        for matrix in matrices
+        x: f'matrix.{x}.npy' for x in matrices_types
     }
+    for matrix in matrices:
+        if matrix not in matrices_mapping.values():
+            raise ValueError(f"Matrix {matrix} not recognized. Expected one of {list(matrices_mapping.values())}")
+
     add_matrices_to_anndata(adata, matrices_mapping)
 
-    sums = adata.layers['binary'].sum(axis=0)
-    if sp.issparse(adata.layers['binary']):
-        sums = sums.A
-    adata.var['n_peaks'] = sums.squeeze()
-    adata.var['final_qc_passing_dhs'] = (adata.var['projected_peaks_binary'] > 0) & adata.var['autosomal_dhs']
+    adata.obs['n_peaks'] = adata.layers['binary'].sum(axis=1).A1
     return adata
 
 
@@ -36,9 +36,14 @@ if __name__ == '__main__':
         print("Creating a new anndata object (dropping X and obs)")
         adata_obj = ad.AnnData(X=None, obs=samples_meta, var=adata_obj.var)
     else:
-        adata_obj.obs = samples_meta.loc[adata_obj.obs_names].join(
-            adata_obj.obs
-        )
+        samples_meta = samples_meta.loc[adata_obj.obs.index, :]
+        overlap = samples_meta.columns.intersection(adata_obj.obs.columns)
+
+        if len(overlap) > 0:
+            for col in overlap:
+                assert samples_meta[col].equals(adata_obj.obs[col]), f"Column '{col}' differs between samples_meta and adata.obs"
+
+        adata_obj.obs = samples_meta.drop(columns=overlap).join(adata_obj.obs)
 
 
     matrices = sys.argv[4:]
