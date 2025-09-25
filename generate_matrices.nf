@@ -128,7 +128,7 @@ process extract_max_pval {
 }
 
 // returns a np array of shape n_dhs x 2
-process extract_bg_params {
+process extract_bg_means {
     conda params.conda
     tag "${ag_id}"
 
@@ -136,14 +136,11 @@ process extract_bg_params {
         tuple path(masterlist), val(ag_id), path(bg_params_tabix)
     
     output:
-        tuple val(suffix_r), path(name_r), emit: bg_r
-        tuple val(suffix_p), path(name_p), emit: bg_p
+        tuple val(suffix), path(name)
     
     script:
-    suffix_r = "bg_params.r"
-    suffix_p = "bg_params.p"
-    name_r = "${ag_id}.${suffix_r}.npy"
-    name_p = "${ag_id}.${suffix_p}.npy"
+    suffix = "mean_bg_agg_cutcounts"
+    name = "${ag_id}.${suffix}.npy"
     """
     echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
 
@@ -152,11 +149,11 @@ process extract_bg_params {
         | grep segment \
         | bedtools intersect \
             -loj \
-            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$8, \$8 + 1 }' ${masterlist}) \
+            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$5, \$5 + 1 }' ${masterlist}) \
             -b stdin \
             -sorted >> tmp.bed
 
-    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${name_r} ${name_p}
+    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${name}
     """
 }
 
@@ -219,8 +216,7 @@ workflow generateMatrices {
         out = binary_cols
             | mix(count_cols)
             | mix(density_cols) // suffix, column
-            | mix(bg_params_cols.bg_p)
-            | mix(bg_params_cols.bg_r)
+            | mix(bg_params_cols)
             | mix(max_pvals)
             | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
             | map(it -> tuple(groupKey(it[0], it[2]), it[1]))

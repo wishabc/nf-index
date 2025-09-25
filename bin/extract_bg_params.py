@@ -6,13 +6,12 @@ import pandas as pd
 def parse_args():
     parser = argparse.ArgumentParser(description="Extract background parameters")
     parser.add_argument("bg_params_file", help="Path to the background params file overlapped with a bed file")
-    parser.add_argument("bg_params_r", help="Path to the r parameters output file")
-    parser.add_argument("bg_params_p", help="Path to the p parameters output file")
+    parser.add_argument("mean_background", help="Path to the r parameters output file")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
     data = pd.read_table(args.bg_params_file, na_values=".")
-    np.save(args.bg_params_r, data['bg_r'].values.astype(np.float32))
-    np.save(args.bg_params_p, data['bg_p'].values.astype(np.float32))
+    data['mean_bg'] = data['bg_r'] * data['bg_p'] / (1 - data['bg_p'])
+    np.save(args.mean_background, data['mean_bg'].values.astype(np.float32))
