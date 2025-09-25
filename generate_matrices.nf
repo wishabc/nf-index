@@ -8,7 +8,7 @@ params.conda = "$moduleDir/environment.yml"
 
 
 // Processes below create a np array of shape n_dhs x 1
-process generate_binary_counts {
+process project_peak_calls {
     conda params.conda
     tag "${id}"
     scratch true
@@ -128,7 +128,7 @@ process extract_max_pval {
 }
 
 // returns a np array of shape n_dhs x 2
-process extract_bg_means {
+process extract_bg_mean {
     conda params.conda
     tag "${ag_id}"
 
@@ -191,7 +191,7 @@ workflow generateMatrices {
     main:
         binary_cols = data
             | map(it -> tuple(it[0], it[3], it[6]))
-            | generate_binary_counts
+            | project_peak_calls
 
         density_cols = data // masterlist, samples_order, saf_masterlist 
             | map(it -> tuple(it[0], it[3], it[7]))
@@ -203,7 +203,7 @@ workflow generateMatrices {
 
         bg_params_cols = data
             | map(it -> tuple(it[0], it[3], it[8]))
-            | extract_bg_params
+            | extract_bg_mean
         
         max_pvals = data
             | map(it -> tuple(it[0], it[3], it[9]))
