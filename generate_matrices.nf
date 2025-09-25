@@ -189,7 +189,7 @@ process generate_matrix {
 
 workflow generateMatrices {
     take:
-        data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density, fit_stats, hotspot3_pvals
+        data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density, fit_stats, hotspot3_pvals_parquet
 
     main:
         binary_cols = data
@@ -265,7 +265,8 @@ workflow {
             file(row?.cram_index ?: "${row.cram_file}.crai"),
             file(row[params.matrix_peaks_column]),
             file(row.normalized_density_bw),
-            file(row.hotspot3_fit_stats_file)
+            file(row.hotspot3_fit_stats_file),
+            file(row.hotspot3_pvals_parquet)
         ))
         | generateMatricesFromAnndata
 }
