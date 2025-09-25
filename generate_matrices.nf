@@ -218,8 +218,14 @@ workflow debug {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.ag_id,
-            row.cram_file,
+            tuple(
+                row.cram_file,
+                row.cram_index,
+                row[params.matrix_peaks_column],
+                row.normalized_density_bw
+            )
         ))
+        | transpose()
         | tmp
 }
 
