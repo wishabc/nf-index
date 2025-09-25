@@ -17,7 +17,7 @@ def main(adata, matrices):
     sums = adata.layers['binary'].sum(axis=0)
     if sp.issparse(adata.layers['binary']):
         sums = sums.A
-    adata.var['projected_peaks_binary'] = sums.squeeze()
+    adata.var['n_peaks'] = sums.squeeze()
     adata.var['final_qc_passing_dhs'] = (adata.var['projected_peaks_binary'] > 0) & adata.var['autosomal_dhs']
     return adata
 
@@ -36,13 +36,10 @@ if __name__ == '__main__':
         print("Creating a new anndata object (dropping X and obs)")
         adata_obj = ad.AnnData(X=None, obs=samples_meta, var=adata_obj.var)
     else:
-        samples_meta = samples_meta.loc[adata_obj.obs_names]
-        if 'peaks_for_index' not in samples_meta.columns:
-            # Workaround for legacy runs
-            adata_obj.obs['peaks_for_index'] = adata_obj.obs['peaks_file']
-        samples_meta['peaks_for_index'] = adata_obj.obs['peaks_for_index']
-        samples_meta['n_peaks'] = adata_obj.obs['n_peaks']
-        adata_obj.obs = samples_meta
+        adata_obj.obs = samples_meta.loc[adata_obj.obs_names].join(
+            adata_obj.obs
+        )
+
 
     matrices = sys.argv[4:]
 
