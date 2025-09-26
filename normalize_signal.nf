@@ -9,7 +9,7 @@ params.conda = "$moduleDir/environment.yml"
 
 process extract_from_anndata {
     conda params.conda
-    label "bigmem"
+    label "highmem"
 
     input:
         val anndata
