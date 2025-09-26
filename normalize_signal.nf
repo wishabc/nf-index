@@ -15,7 +15,7 @@ process extract_from_anndata {
         val anndata
     
     output:
-        tuple val(prefix), path("binary.matrix.npy"), path("counts.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
+        tuple val(prefix), path("binary.matrix.npz"), path("counts.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
 
     script:
     prefix = params.dhs_mask_name
@@ -104,7 +104,9 @@ process deseq2_vst {
 	conda params.conda
 	publishDir "${params.outdir}/normalization", pattern: "${prefix}.vst.npy"
     publishDir "${params.outdir}/params/normalization", pattern: "${prefix}.dispersion_function.RDS"
-	label "bigmem"
+    publishDir "${params.outdir}/qc", pattern: "${prefix}.dispersions_plot.pdf"
+	
+    label "bigmem"
 
 	input:
 		tuple val(prefix), path(dataset), val(vst_design_formula)
@@ -113,6 +115,7 @@ process deseq2_vst {
 	output:
 		tuple val(prefix), path("${prefix}.vst.npy"), emit: vst
         tuple val(prefix), path("${prefix}.dispersion_function.RDS"), emit: dispersion_function
+        tuple val(prefix), path("${prefix}.dispersions_plot.pdf"), emit: dispersions_plot
 
 	script:
     p = vst_params.name != "params/empty.params" ? vst_params : ""

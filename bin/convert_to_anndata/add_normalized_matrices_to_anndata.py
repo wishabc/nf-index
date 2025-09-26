@@ -21,7 +21,7 @@ def expand_vp_results(variance_partition_results: pd.DataFrame, index, mask):
     return expanded_variance_partition_results
 
 
-def parse_normalization_params(params, adata):
+def add_normalization_params(adata, params):
     for param in params:
         if param.endswith('RDS'):
             with open(param, 'rb') as f:
@@ -56,19 +56,7 @@ def main(
         ): matrix for matrix in matrices
     }
     add_matrices_to_anndata(adata, matrices_mapping, mask)
-    for param in params:
-        if param.endswith('RDS'):
-            with open(param, 'rb') as f:
-                adata.uns['deseq_params'] = base64.b64encode(f.read()).decode('utf-8')
-        elif param.endswith('json'):
-            with open(param) as f:
-                adata.uns['lowess_params'] = json.load(f)
-        elif param.endswith('npz'):
-            loaded_params = np.load(param)
-            for key in loaded_params:
-                adata.uns[f'norm_params_{key}'] = loaded_params[key]
-        else:
-            raise ValueError(f'Unknown parameter file type: {param}')
+    add_normalization_params(adata, params)
 
     adata.uns['variance_partition_formula'] = variance_partition_formula
     adata.uns['deseq_design_formula'] = deseq_design_formula

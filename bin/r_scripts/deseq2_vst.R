@@ -27,20 +27,21 @@ design(dds) <- formula
 if (is.null(params_f)) {
     print('Calculating and saving VST params')
     nsub <- 1000
+    min_baseMean <- 2
     fitType <- "parametric"
     object <- dds
 
     # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
     # dispersionFunction is not getting saved otherwise
     baseMean <- MatrixGenerics::rowMeans(counts(object, normalized=TRUE))
-    if (sum(baseMean > 5) < nsub) {
+    if (sum(baseMean > min_baseMean) < nsub) {
         stop("less than 1000 rows with mean normalized count > 5, 
         it is recommended to use varianceStabilizingTransformation directly")
     }
 
     # subset to a specified number of genes with mean normalized count > 5
-    object.sub <- object[baseMean > 5,]
-    baseMean <- baseMean[baseMean > 5]
+    object.sub <- object[baseMean > min_baseMean,]
+    baseMean <- baseMean[baseMean > min_baseMean]
     o <- order(baseMean)
     idx <- o[round(seq(from=1, to=length(o), length=nsub))]
     object.sub <- object.sub[idx,]
@@ -48,6 +49,13 @@ if (is.null(params_f)) {
     # estimate dispersion trend
     object.sub <- estimateDispersionsGeneEst(object.sub, quiet=TRUE)
     object.sub <- estimateDispersionsFit(object.sub, fitType=fitType, quiet=TRUE)
+
+    object.sub <- estimateDispersionsMAP(object.sub)
+
+    dispersion_plot_name <- paste(prefix, ".dispersions_plot.pdf", sep='')
+    pdf(dispersion_plot_name, width = 3, height = 3, units = "in", res = 300)
+    plotDispEsts(object.sub, ylim = c(1e-4, 10), xlim = c(2, 2000))
+    dev.off()
 
     # assign to the full object
     dispersionFunction(object) <- dispersionFunction(object.sub)
