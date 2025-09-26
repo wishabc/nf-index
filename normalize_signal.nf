@@ -209,6 +209,7 @@ workflow existingModel {
     } else {
         print "Using existing model from ${params.template_anndata}"
     }
+    print "Using ${params.normalization_layer} of ${params.matrices_anndata} for normalization"
 
     existing_params = Channel.of(params.template_anndata)
         | extract_normalization_params_from_template
@@ -225,10 +226,11 @@ workflow existingModel {
 
 // De-novo normalization
 workflow {
+    print "Using ${params.normalization_layer} of ${params.matrices_anndata} for normalization"
     anndata = Channel.of(params.matrices_anndata)
-    matrices = extract_from_anndata(anndata)
+    normalization_input_data = extract_from_anndata(anndata)
 
-    out = normalizeMatrix(matrices, Channel.empty())
+    out = normalizeMatrix(normalization_input_data, Channel.empty())
 
     add_normalized_matrices_to_anndata(anndata, out)
 }
