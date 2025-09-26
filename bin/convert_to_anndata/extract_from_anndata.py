@@ -72,4 +72,10 @@ if __name__ == '__main__':
     metadata.reset_index().to_csv(args.samples_meta, sep='\t')
 
     for name, matrix in matrices.items():
-        np.save(f"{name}.{args.extra_layers_suffix}.npy", convert_matrix_to_dense(matrix.T))
+        if sp.issparse(matrix):
+            sp.save_npz(f"{name}.{args.extra_layers_suffix}.npz", matrix.T)
+        elif isinstance(matrix, da.Array):
+            np.save(f"{name}.{args.extra_layers_suffix}.npy", matrix.T.compute())
+        else:
+            np.save(f"{name}.{args.extra_layers_suffix}.npy", matrix.T)
+        
