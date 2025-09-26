@@ -77,38 +77,32 @@ if (is.null(args[2]) | file.exists(args[2])) {
 }
 
 if (is.null(params_f)) {
-  print('Calculating and saving VST params')
-  # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
-  # dispersionFunction is not getting saved otherwise
-  baseMean <- rowMeans(counts(dds, normalized=TRUE))
-  if (sum(baseMean > 5) < 1000) {
-    stop("less than 'nsub' rows with mean normalized count > 5, 
-  it is recommended to use varianceStabilizingTransformation directly")
-  }
+    print('Calculating and saving VST params')
+    # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
+    # dispersionFunction is not getting saved otherwise
+    baseMean <- MatrixGenerics::rowMeans(counts(object, normalized=TRUE))
+    if (sum(baseMean > 5) < 1000) {
+        stop("less than 1000 rows with mean normalized count > 5, 
+        it is recommended to use varianceStabilizingTransformation directly")
+    }
 
-  # subset to a specified number of genes with mean normalized count > 5
-  dds.sub <- dds[baseMean > 5,]
-  baseMean <- baseMean[baseMean > 5]
-  o <- order(baseMean)
-  ## Changed compared to https://github.com/mikelove/DESeq2/blob/master/R/vst.R ##
-  ## Use evenly spaced values of baseMean to estimate the dispersion trend instead of ranks
-  baseMean_sorted <- baseMean[o] 
-  points <- seq(from = baseMean_sorted[1], to = baseMean_sorted[length(baseMean_sorted)], length.out = 1000)
-  idx_sorted <- findInterval(points, baseMean_sorted)
+    # subset to a specified number of genes with mean normalized count > 5
+    object.sub <- object[baseMean > 5,]
+    baseMean <- baseMean[baseMean > 5]
+    o <- order(baseMean)
+    idx <- o[round(seq(from=1, to=length(o), length=nsub))]
+    object.sub <- object.sub[idx,]
 
-  idx_original <- o[idx_sorted]
-  dds.sub <- dds.sub[idx_original,]
-  ###
-  # estimate dispersion trend
-  dds.sub <- estimateDispersionsGeneEst(dds.sub, quiet=TRUE)
-  dds.sub <- estimateDispersionsFit(dds.sub, fitType="parametric", quiet=TRUE)
+    # estimate dispersion trend
+    object.sub <- estimateDispersionsGeneEst(object.sub, quiet=TRUE)
+    object.sub <- estimateDispersionsFit(object.sub, fitType=fitType, quiet=TRUE)
 
-  # assign to the full object
-  dispersionFunction(dds) <- dispersionFunction(dds.sub)
+    # assign to the full object
+    dispersionFunction(object) <- dispersionFunction(object.sub)
 } else {
-  print('Use existing VST params')
-  df <- readRDS(params_f)
-  dispersionFunction(dds) <- df
+    print('Use existing VST params')
+    df <- readRDS(params_f)
+    dispersionFunction(dds) <- df
 }
 
 params_file_name <- paste(prefix, ".params.RDS", sep='')

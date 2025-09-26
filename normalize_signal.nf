@@ -70,8 +70,7 @@ process normalize_matrix {
         ${save_dir} \
         --prefix ${pref} \
 		--jobs ${task.cpus} \
-        --normalization_type quantile_lowess \
-		${non_required_arg(params.sample_weights, '--weights')} \
+        --normalization_type lowess \
 		${normalization_params}
 
     qc-normalization ${save_dir} \
@@ -108,7 +107,7 @@ process prepare_data_for_deseq2 {
 	"""
 }
 
-process deseq2 {
+process deseq2_vst {
 	conda params.conda
 	publishDir "${params.outdir}/normalization"
 	label "bigmem"
@@ -122,7 +121,7 @@ process deseq2 {
 	script:
     name = "${prefix}.npy"
 	"""
-	Rscript $moduleDir/bin/deseq2.R \
+	Rscript $moduleDir/bin/deseq2_vst.R \
 		${dataset} \
 		${name} 
 	"""
@@ -155,7 +154,7 @@ workflow normalizeMatrix {
             | map(it -> tuple(it[0], it[2], it[3]))
         
         normalized_matrix = prepare_data_for_deseq2(dat, deseq_params).data
-            | deseq2
+            | deseq2_vst
 
         vp = normalized_matrix
             | combine(matrices)
