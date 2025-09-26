@@ -15,12 +15,8 @@ def main(anndata_obj, extra_keys):
         if key in anndata_obj.layers:
             matrices[key] = anndata_obj.layers[key]
         elif key == "bg_corrected_agg_cutcounts":
-            nuclear_reads = da.from_array(
-                anndata_obj.obs['nuclear_reads'].values[:, None],
-                chunks=(anndata_obj.layers['density'].chunks[0], 1)
-            )
-            val = nuclear_reads * anndata_obj.layers['density'] / 1e6 - anndata_obj.layers['mean_bg_agg_cutcounts']
-            matrices[key] = da.clip(val, 0, None)
+            val = anndata_obj.obs['nuclear_reads'].values[:, None] * anndata_obj.layers['density'].compute() / 1e6 - anndata_obj.layers['mean_bg_agg_cutcounts'].compute()
+            matrices[key] = np.clip(val, 0, None)
         else:
             raise ValueError(f"Layer '{key}' not found in the AnnData object.")
 
