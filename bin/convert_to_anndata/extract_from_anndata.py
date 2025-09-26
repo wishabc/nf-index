@@ -20,8 +20,6 @@ def main(anndata_obj, extra_keys):
         else:
             raise ValueError(f"Layer '{key}' not found in the AnnData object.")
 
-
-    matrices = {key: anndata_obj.layers[key] for key in extra_keys}
     return metadata, masterlist, matrices
 
 
