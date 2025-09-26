@@ -10,7 +10,60 @@ np <- import("numpy")
 
 args = commandArgs(trailingOnly=TRUE)
 
-dds <- readRDS(args[1])
+
+prefix <- args[1]
+dds <- readRDS(args[2])
+formula <- args[3]
+
+params_f <- NULL
+
+if (length(args) >= 4) {
+  print("Taking existing params")
+  params_f <- args[4]
+}
+
+design(dds) <- formula
+
+if (is.null(params_f)) {
+    print('Calculating and saving VST params')
+    nsub <- 1000
+    fitType <- "parametric"
+    object <- dds
+
+    # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
+    # dispersionFunction is not getting saved otherwise
+    baseMean <- MatrixGenerics::rowMeans(counts(object, normalized=TRUE))
+    if (sum(baseMean > 5) < nsub) {
+        stop("less than 1000 rows with mean normalized count > 5, 
+        it is recommended to use varianceStabilizingTransformation directly")
+    }
+
+    # subset to a specified number of genes with mean normalized count > 5
+    object.sub <- object[baseMean > 5,]
+    baseMean <- baseMean[baseMean > 5]
+    o <- order(baseMean)
+    idx <- o[round(seq(from=1, to=length(o), length=nsub))]
+    object.sub <- object.sub[idx,]
+
+    # estimate dispersion trend
+    object.sub <- estimateDispersionsGeneEst(object.sub, quiet=TRUE)
+    object.sub <- estimateDispersionsFit(object.sub, fitType=fitType, quiet=TRUE)
+
+    # assign to the full object
+    dispersionFunction(object) <- dispersionFunction(object.sub)
+} else {
+    print('Use existing VST params')
+    df <- readRDS(params_f)
+    dispersionFunction(dds) <- df
+}
+
+params_file_name <- paste(prefix, ".dispersion_function.RDS", sep='')
+if (file.exists(params_file_name)) {
+  print(paste('Parameters were not saved. File ', params_file_name, ' exists.', sep=''))
+} else {
+  saveRDS(dispersionFunction(dds), file=params_file_name)
+}
 
 vsd <- varianceStabilizingTransformation(dds, blind = F)
-np$save(args[2], np$array(vsd, dtype='float32'))
+vsd_name <- paste(prefix, ".vst.npy", sep='')
+np$save(vsd_name, np$array(vsd, dtype='float32'))

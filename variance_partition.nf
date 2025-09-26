@@ -9,13 +9,13 @@ process variance_partition {
     conda params.conda
 
     input:
-        tuple val(start_index), path(norm_matrix), path(masterlist), path(samples_meta), val(formula)
+        tuple val(start_index), val(prefix), path(norm_matrix), path(masterlist), path(samples_meta), val(variance_partition_formula)
     
     output:
-        path name
+        tuple val(prefix), path(name)
     
     script:
-    name = "${start_index}.variance_partition.tsv"
+    name = "${prefix}.${start_index}.variance_partition.tsv"
     """
     Rscript $moduleDir/bin/post_processing/variance_partition.R \
         ${samples_meta} \
@@ -23,7 +23,7 @@ process variance_partition {
         ${params.chunk_size} \
         ${norm_matrix} \
         ${masterlist} \
-        '${formula}' \
+        '${variance_partition_formula}' \
         ${name} 
     """
 }
@@ -41,7 +41,7 @@ process sort_bed {
         path name
     
     script:
-    name = "masterlist.vp_annotated.sorted.bed"
+    name = "${unsorted_bed.simpleName}.vp_annotated.sorted.bed"
     """
     head -1 ${unsorted_bed} > ${name}
     tail -n+2 ${unsorted_bed} | sort-bed - >> ${name}
@@ -51,22 +51,23 @@ process sort_bed {
 
 workflow variancePartition {
     take:
-        data // normalized_matrix, masterlist, samples_file, formula
+        data // prefix, normalized_matrix, masterlist, samples_file, variance_partition_formula
     main:
         out = data
-            | flatMap(it -> (1..it[1].countLines()))
+            | flatMap(it -> (1..it[2].countLines()))
             | collate(params.chunk_size, remainder=true)
-            | map(it -> it[0])
-            | combine(data) // chunk_start, normalized_matrix, masterlist, samples_order, samples_file, formula
-            | variance_partition
+            | map(it -> it[1])
+            | combine(data) // chunk_start, prefix, normalized_matrix, masterlist, samples_order, samples_file, variance_partition_formula
+            | variance_partition // prefix, vp_annotated_chunk
             | collectFile(
-                name: "masterlist.vp_annotated.bed",
                 keepHeader: true,
                 sort: true,
                 skip: 1
-            )
+            ) { [
+                "${it[0]}.masterlist.vp_annotated.bed", // name
+                it[1] // content
+            ] }
             | sort_bed
-            | combine(data.map(it -> it[3]))
     emit:
         out  
 }
@@ -78,7 +79,7 @@ workflow {
             file(params.norm_matrix),
             file(params.masterlist),
             file(params.samples_meta),
-            params.formula
+            params.variance_partition_formula
         )
     ) | variancePartition
 }

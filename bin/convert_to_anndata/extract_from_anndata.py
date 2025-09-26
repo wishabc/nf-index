@@ -28,6 +28,14 @@ def convert_matrix_to_dense(matrix):
         raise TypeError("Unsupported matrix type. Must be a Dask array, NumPy array, or Scipy sparse matrix.")
 
 
+def get_mask_from_column_name(adata, mask_name):
+    if mask_name != "":
+        mask = adata.var[mask_name]
+    else:
+        mask = np.ones(adata.var.shape[0], dtype=bool)
+    return mask
+
+
 if __name__ == '__main__':
     args = argparse.ArgumentParser('Extract data from anndata object containing DHS information')
     args.add_argument('anndata', help='Path to anndata zarr object')
@@ -36,14 +44,12 @@ if __name__ == '__main__':
     args.add_argument('samples_meta', help='Path where to save samples metadata')
     args.add_argument('--extra_layers', nargs='+', help='Names of extra layers to extract from anndata', default=[])
     args.add_argument('--extra_layers_suffix', help='Suffix to add to the extra layers names', default='matrix')
-    args.add_argument('--dhs_mask_name', help='Name of the var layer containing DHS mask', default=None)
+    args.add_argument('--dhs_mask_name', help='Name of the var layer containing DHS mask', default="")
     args.add_argument('--matrix_samples_file', help='Name of the var layer containing DHS mask', default=None)
     args = args.parse_args()
     anndata = read_zarr_backed(args.anndata)
-    if args.dhs_mask_name is not None:
-        mask = anndata.var[args.dhs_mask_name]
-    else:
-        mask = np.ones(anndata.var.shape[0], dtype=bool)
+    mask = get_mask_from_column_name(anndata, args.dhs_mask_name)
+
     anndata = anndata[:, mask]
     
     metadata, index, matrices = main(anndata, args.extra_layers)

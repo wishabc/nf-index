@@ -78,7 +78,7 @@ process add_normalized_matrices_to_anndata {
 
     input:
         val anndata
-        tuple path(normalized_matrix), path(normalization_params), path(masterlist_vp), val(formula)
+        tuple path(matrices), path(normalization_params), path(masterlist_vp), val(vst_design_formula), val(variance_partition_formula)
     
     output:
         path(name, type: 'dir')
@@ -90,9 +90,9 @@ process add_normalized_matrices_to_anndata {
         ${anndata} \
         ${name} \
         ${masterlist_vp} \
-        '${formula}' \
-        autosomal_dhs \
-        ${normalized_matrix} \
+        '${variance_partition_formula}' \
+        ${params.dhs_mask_name} \
+        ${matrices} \
         ${normalization_params}
     """
 }

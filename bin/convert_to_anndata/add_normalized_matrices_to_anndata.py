@@ -6,8 +6,48 @@ from helpers import add_matrices_to_anndata
 from genome_tools.data.anndata import read_zarr_backed
 import json
 import base64
+import argparse
 
-def main(adata, matrices, params, formula, annotated_masterlist, mask_name='autosomes_mask'):
+from extract_from_anndata import get_mask_from_column_name
+
+
+def expand_vp_results(variance_partition_results: pd.DataFrame, index, mask):
+    expanded_variance_partition_results = pd.DataFrame(
+        data=np.nan,
+        index=index,
+        columns=variance_partition_results.columns
+    )
+    expanded_variance_partition_results.loc[mask, :] = variance_partition_results.values
+    return expanded_variance_partition_results
+
+
+def parse_normalization_params(params, adata):
+    for param in params:
+        if param.endswith('RDS'):
+            with open(param, 'rb') as f:
+                adata.uns['deseq_params'] = base64.b64encode(
+                    f.read()
+                ).decode('utf-8')
+        elif param.endswith('json'):
+            with open(param) as f:
+                adata.uns['lowess_params'] = json.load(f)
+        elif param.endswith('npz'):
+            loaded_params = np.load(param)
+            for key in loaded_params:
+                adata.uns[f'norm_params_{key}'] = loaded_params[key]
+        else:
+            raise ValueError(f'Unknown parameter file type: {param}')
+
+
+def main(
+        adata,
+        matrices,
+        params,
+        deseq_design_formula,
+        variance_partition_formula,
+        variance_partition_results,
+        mask
+    ):
     matrices_mapping = {
         os.path.basename(matrix).replace(
             'normalized.only_autosomes.filtered.', ''
@@ -15,7 +55,7 @@ def main(adata, matrices, params, formula, annotated_masterlist, mask_name='auto
             '.npy', ''
         ): matrix for matrix in matrices
     }
-    add_matrices_to_anndata(adata, matrices_mapping, mask_name)
+    add_matrices_to_anndata(adata, matrices_mapping, mask)
     for param in params:
         if param.endswith('RDS'):
             with open(param, 'rb') as f:
@@ -29,22 +69,59 @@ def main(adata, matrices, params, formula, annotated_masterlist, mask_name='auto
                 adata.uns[f'norm_params_{key}'] = loaded_params[key]
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
-    adata.uns['vp_formula'] = formula
-    adata.var = adata.var.join(annotated_masterlist, how='left')
+
+    adata.uns['variance_partition_formula'] = variance_partition_formula
+    adata.uns['deseq_design_formula'] = deseq_design_formula
+    
+    adata.varm['variance_partition'] = expand_vp_results(
+        variance_partition_results,
+        adata.var.index,
+        mask
+    ).values
     return adata
 
 
 if __name__ == '__main__':
-    adata = read_zarr_backed(sys.argv[1])
-    annotated_masterlist = pd.read_table(sys.argv[3]).set_index('V4')
-    annotated_masterlist = annotated_masterlist[
-        [x for x in annotated_masterlist.columns if not x.startswith('V')]
-    ]
-    annotated_masterlist.rename(columns={x: f'{x}_variance_partition' for x in annotated_masterlist.columns}, inplace=True)
-    formula = sys.argv[4]
-    mask_name = sys.argv[5]
-    matrices = sys.argv[6:7]
-    params = sys.argv[7:]
+    parser = argparse.ArgumentParser(
+        description="Merge results of normalization into existing AnnData object."
+    )
+    parser.add_argument("input", help="Input Zarr file")
+    parser.add_argument("output", help="Output Zarr file")
+    parser.add_argument("variance_partition_result", help="Variance partition annotated masterlist bed")
+    parser.add_argument("variance_partition_formula", help="Formula used for variance partition")
+    parser.add_argument("deseq_design_formula", help="Formula used for variance partition")
+    parser.add_argument("--dhs_mask_name", help="DHS mask column name")
+    parser.add_argument(
+        "--matrices",
+        nargs="+",
+        required=True,
+        help="Matrices to add to the AnnData object"
+    )
+    parser.add_argument(
+        "--params",
+        nargs="+",
+        default=[],
+        help="Normalization parameters to reproduce normalization (RDS, json, npz files)"
+    )
+    args = parser.parse_args()
 
-    adata = main(adata, matrices, params, formula, annotated_masterlist, mask_name=mask_name)
-    adata.write_zarr(sys.argv[2])
+    adata = read_zarr_backed(args.input)
+
+    variance_partition_results = pd.read_table(args.variance_partition_result)
+    variance_partition_results = variance_partition_results[
+        [x for x in variance_partition_results.columns if not x.startswith('V')]
+    ]
+
+    mask = get_mask_from_column_name(adata, args.dhs_mask_name)
+    args.matrices = sys.argv[6:7]
+
+    adata = main(
+        adata,
+        args.matrices,
+        args.params,
+        args.deseq_design_formula,
+        args.variance_partition_formula,
+        variance_partition_results,
+        mask=mask
+    )
+    adata.write_zarr(args.output)

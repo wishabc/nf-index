@@ -5,12 +5,6 @@ include { variancePartition } from "./variance_partition"
 include { add_normalized_matrices_to_anndata } from "./converters"
 
 params.conda = "$moduleDir/environment.yml"
-params.sample_weights = ""
-
-
-def non_required_arg(value, key) {
-    return value ? "${key} ${value}": ""
-}
 
 
 process extract_from_anndata {
@@ -21,9 +15,10 @@ process extract_from_anndata {
         val anndata
     
     output:
-        tuple path("binary.matrix.npy"), path("counts.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
+        tuple val(prefix), path("binary.matrix.npy"), path("counts.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
 
     script:
+    prefix = params.dhs_mask_name
     samples_order = "samples_order.txt"
     masterlist = "masterlist.no_header.bed"
     samples_meta = "samples_meta.txt"
@@ -34,7 +29,7 @@ process extract_from_anndata {
         ${samples_order} \
         ${samples_meta} \
         --extra_layers binary counts \
-        --dhs_mask_name autosomal_dhs
+        --dhs_mask_name ${params.dhs_mask_name}
     """
 }
 
@@ -42,24 +37,23 @@ process extract_from_anndata {
 process normalize_matrix {
 	conda params.conda
 	label "bigmem"
-	publishDir "${params.outdir}", pattern: "${prefix}*.npy"
-    publishDir "${params.outdir}/params", pattern: "${prefix}.lowess_params*"
-    publishDir "${params.outdir}/qc", pattern: "${prefix}*.pdf"
+	publishDir "${params.outdir}", pattern: "${prefix_dir}*.npy"
+    publishDir "${params.outdir}/params", pattern: "${prefix_dir}.lowess_params*"
+    publishDir "${params.outdir}/qc", pattern: "${prefix_dir}*.pdf"
 
 	input:
-        tuple path(peaks_matrix), path(signal_matrix)
+        tuple val(prefix), path(peaks_matrix), path(signal_matrix)
 		path norm_params, stageAs: "params/*"
 
 	output:
-		path "${prefix}.scale_factors.mean_normalized.npy", emit: scale_factors
-        path "${prefix}.log_differences.npy", emit: log_diffs
-		tuple path("${prefix}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
-        path "${prefix}.*.pdf", emit: normalization_qc
+		tuple val(prefix), path("${prefix_dir}.scale_factors.mean_normalized.npy"), emit: scale_factors
+        tuple val(prefix), path("${prefix_dir}.log_differences.npy"), emit: log_diffs
+		tuple val(prefix), path("${prefix_dir}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
+        tuple val(prefix), path("${prefix_dir}.*.pdf"), emit: normalization_qc
 		
 	script:
-    pref = 'normalized.only_autosomes.filtered'
     save_dir = 'normalization'
-	prefix = "${save_dir}/${pref}"
+	prefix_dir = "${save_dir}/${prefix}"
 	n = norm_params.name != "params/empty.params" ? file(norm_params[0]).baseName : ""
 	normalization_params = n ? "--model_params params/${n}" : ""
 	"""
@@ -68,107 +62,121 @@ process normalize_matrix {
 
 	normalize-matrix ${signal_matrix} \
         ${save_dir} \
-        --prefix ${pref} \
+        --prefix ${prefix} \
 		--jobs ${task.cpus} \
         --normalization_type lowess \
 		${normalization_params}
 
     qc-normalization ${save_dir} \
-        --prefix ${pref} \
+        --prefix ${prefix} \
         --n_samples 10 \
         --peak_matrix ${peaks_matrix}
 	"""
 }
 
-process prepare_data_for_deseq2 {
+
+process prepare_deseq_dataset {
 	conda params.conda
-	publishDir "${params.outdir}/params", pattern: "${prefix}.params.RDS"
-    publishDir "${params.outdir}/deseq2", pattern: "${prefix}.dds.RDS"
+    publishDir "${params.outdir}/deseq2"
+    
 	label "bigmem"
 
 	input:
-		tuple path(scale_factors), path(signal_matrix), path(samples_order)
-		path norm_params, stageAs: "params/*"
+		tuple val(prefix), path(scale_factors), path(signal_matrix), path(samples_order), path(metadata)
 
 	output:
-		tuple val(prefix), path("${prefix}.dds.RDS"), emit: data
-        path "${prefix}.params.RDS", emit: model_params
+		tuple val(prefix), path(name)
 
 	script:
-	prefix = "deseq_normalized.only_autosomes.filtered.sf.vst"
-	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
+    name = "${prefix}.deseq_dataset.RDS"
 	"""
-	Rscript $moduleDir/bin/r_scripts/prepare_data_for_deseq.R \
+	Rscript $moduleDir/bin/r_scripts/prepare_deseq_dataset.R \
+    	${samples_order} \
+        ${metadata} \
 		${signal_matrix} \
-		${scale_factors} \
-		${samples_order} \
-		${prefix} \
-		${normalization_params}
+        ${name} \
+		${scale_factors}
 	"""
 }
 
+
 process deseq2_vst {
 	conda params.conda
-	publishDir "${params.outdir}/normalization"
+	publishDir "${params.outdir}/normalization", pattern: "${prefix}.vst.npy"
+    publishDir "${params.outdir}/params/normalization", pattern: "${prefix}.dispersion_function.RDS"
 	label "bigmem"
 
 	input:
-		tuple val(prefix), path(dataset)
+		tuple val(prefix), path(dataset), val(vst_design_formula)
+        path vst_params, stageAs: "params/*"
 
 	output:
-		path name
+		tuple val(prefix), path("${prefix}.vst.npy"), emit: vst
+        tuple val(prefix), path("${prefix}.dispersion_function.RDS"), emit: dispersion_function
 
 	script:
-    name = "${prefix}.npy"
+    p = vst_params.name != "params/empty.params" ? vst_params : ""
 	"""
 	Rscript $moduleDir/bin/r_scripts/deseq2_vst.R \
+        ${prefix} \
 		${dataset} \
-		${name} 
+        '${vst_design_formula}' \
+        ${p}
 	"""
 }
 
 
 workflow normalizeMatrix {
 	take:
-		matrices  // binary_matrix, count_matrix, samples_order, masterlist, samples_file
+		matrices  // prefix, binary_matrix, count_matrix, samples_order, masterlist, samples_file
 		normalization_params
 
 	main:
-
 		lowess_params = normalization_params
-			| filter { it.name =~ /lowess_params/ }
+			| filter { it.name =~ /lowess_params/ } // TODO modify regex to use prefix
 			| ifEmpty(file("empty.params"))
 			| collect(sort: true)
         
-        deseq_params = normalization_params
-			| filter { it.name =~ /params\.RDS/ }
+        vst_params = normalization_params
+			| filter { it.name =~ /dispersion_function\.RDS/ } // TODO modify regex to use prefix
 			| ifEmpty(file("empty.params"))
 
-		normalization = normalize_matrix(
-            matrices.map(it -> tuple(it[0], it[1])),
+		normalization_data = normalize_matrix(
+            matrices.map(it -> tuple(it[0], it[1], it[2])),
             lowess_params
         )
 
-        dat = normalization.scale_factors
-            | combine(matrices)
-            | map(it -> tuple(it[0], it[2], it[3]))
+        deseq_data = normalization_data.scale_factors // prefix, scale factors
+            | join(matrices) // prefix, scale factors, binary_matrix, count_matrix, samples_order, masterlist, samples_file
+            | map(it -> tuple(it[0], it[1], it[3], it[4], it[5])) // prefix, scale factors, count_matrix, samples_order, samples_file
+            | prepare_data_for_deseq2 // prefix, dataset
+            | combine(Channel.of(params.vst_design_formula)) // prefix, dataset, formula
+
+        vst_data = deseq2_vst(deseq_data, vst_params) // prefix, vst_matrix
         
-        normalized_matrix = prepare_data_for_deseq2(dat, deseq_params).data
-            | deseq2_vst
 
-        vp = normalized_matrix
-            | combine(matrices)
-            | map(it -> tuple(it[0], it[4], it[5], params.formula))
-            | variancePartition
+        variance_partition_data = vst_data.vst
+            | combine(matrices) // prefix, vst_matrix, binary_matrix, count_matrix, samples_order, masterlist, samples_file
+            | map(it -> tuple(it[0], it[5], it[6], params.variance_partition_formula))
+            | variancePartition // prefix, vp_annotated_masterlist
 
-		out = normalized_matrix
-            | combine(prepare_data_for_deseq2.out.model_params)
-            | combine(normalization.model_params)
-            | combine(vp)
-            | map(it -> tuple([it[0]], [it[1], it[2], it[3]], it[4], it[5]))
+		out = normalization_data.scale_factors // prefix, scale factors
+            | join(vst_data.vst)
+            | join(normalization_data.model_params)
+            | join(vst_data.dispersion_function)
+            | join(variance_partition_data) // prefix, scale_factors, vst_matrix, model_params, dispersion_function, vp_annotated_masterlist
+            | map(
+                it -> tuple(
+                    [it[1], it[2]], // [vst_matrix, scale_factors]
+                    [it[2], it[3], it[4]], // [model_params]
+                    it[5], // vp_annotated_masterlist
+                    params.vst_design_formula,
+                    params.variance_partition_formula
+                )
+            )
 
 	emit:
-		out // deseq2_matrix, [model_params], vp_annotated_masterlist, formula
+		out // [vst_matrix, scale_factors], [model_params], vp_annotated_masterlist, formula
 }
 
 process extract_normalization_params_from_template {
@@ -211,6 +219,7 @@ workflow existingModel {
     add_normalized_matrices_to_anndata(anndata, out)
 }
 
+
 // De-novo normalization
 workflow {
     anndata = Channel.of(params.matrices_anndata)
@@ -220,6 +229,7 @@ workflow {
 
     add_normalized_matrices_to_anndata(anndata, out)
 }
+
 
 
 process differential_deseq {
