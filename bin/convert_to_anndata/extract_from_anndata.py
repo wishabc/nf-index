@@ -70,7 +70,7 @@ if __name__ == '__main__':
             metadata = matrix_metadata
 
     np.savetxt(args.samples_order, metadata.index, fmt='%s')
-    metadata.reset_index().to_csv(args.samples_meta, sep='\t')
+    metadata.reset_index().to_csv(args.samples_meta, sep='\t', index=False)
 
     for name, matrix in matrices.items():
         if sp.issparse(matrix):
