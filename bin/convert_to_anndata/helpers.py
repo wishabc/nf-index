@@ -40,6 +40,14 @@ def convert_to_sparse_if_sufficently_sparse(matrix, threshold=0.7):
         return matrix
 
 
+def get_mask_from_column_name(adata, mask_name):
+    if mask_name != "":
+        mask = adata.var[mask_name]
+    else:
+        mask = np.ones(adata.var.shape[0], dtype=bool)
+    return mask
+
+
 def load_from_file(filepath):
     """
     Load data from a .npz or .npy file, inferring if the .npz contains a sparse matrix.

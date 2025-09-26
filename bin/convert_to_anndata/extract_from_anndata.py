@@ -4,12 +4,23 @@ import argparse
 import pandas as pd
 import dask.array as da
 from genome_tools.data.anndata import read_zarr_backed
-
+from helpers import get_mask_from_column_name
 
 def main(anndata_obj, extra_keys):
     metadata = anndata_obj.obs
     masterlist = anndata_obj.var.reset_index()[['#chr', 'start', 'end', 'dhs_id', 'dhs_summit']]
     
+    matrices = {}
+    for key in extra_keys:
+        if key in anndata_obj.layers:
+            matrices[key] = anndata_obj.layers[key]
+        elif key == "bg_corrected_agg_cutcounts":
+            val = anndata_obj.obs['nuclear_reads'].values[:, None] * anndata_obj.layers['density'] / 1e6 - anndata_obj.layers['mean_bg_agg_cutcounts']
+            matrices[key] = da.clip(val, a_min=0, a_max=None)
+        else:
+            raise ValueError(f"Layer '{key}' not found in the AnnData object.")
+
+
     matrices = {key: anndata_obj.layers[key] for key in extra_keys}
     return metadata, masterlist, matrices
 
@@ -26,14 +37,6 @@ def convert_matrix_to_dense(matrix):
         return matrix
     else:
         raise TypeError("Unsupported matrix type. Must be a Dask array, NumPy array, or Scipy sparse matrix.")
-
-
-def get_mask_from_column_name(adata, mask_name):
-    if mask_name != "":
-        mask = adata.var[mask_name]
-    else:
-        mask = np.ones(adata.var.shape[0], dtype=bool)
-    return mask
 
 
 if __name__ == '__main__':

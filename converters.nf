@@ -92,6 +92,7 @@ process add_normalized_matrices_to_anndata {
         ${masterlist_vp} \
         '${vst_design_formula}' \
         '${variance_partition_formula}' \
+        --normalization_layer ${params.normalization_layer} \
         --dhs_mask_name ${params.dhs_mask_name} \
         --matrices ${matrices} \
         --params ${normalization_params}

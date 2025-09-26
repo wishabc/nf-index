@@ -8,7 +8,7 @@ import json
 import base64
 import argparse
 
-from extract_from_anndata import get_mask_from_column_name
+from helpers import get_mask_from_column_name
 
 
 def expand_vp_results(variance_partition_results: pd.DataFrame, index, mask):
@@ -43,8 +43,6 @@ def main(
         adata,
         matrices,
         params,
-        deseq_design_formula,
-        variance_partition_formula,
         variance_partition_results,
         mask
     ):
@@ -56,9 +54,6 @@ def main(
 
     add_matrices_to_anndata(adata, matrices_mapping, mask)
     add_normalization_params(adata, params)
-
-    adata.uns['variance_partition_formula'] = variance_partition_formula
-    adata.uns['deseq_design_formula'] = deseq_design_formula
     
     adata.varm['variance_partition'] = expand_vp_results(
         variance_partition_results,
@@ -77,6 +72,7 @@ if __name__ == '__main__':
     parser.add_argument("variance_partition_result", help="Variance partition annotated masterlist bed")
     parser.add_argument("variance_partition_formula", help="Formula used for variance partition")
     parser.add_argument("deseq_design_formula", help="Formula used for variance partition")
+    parser.add_argument("--normalization_layer", help="Name of the layer used for normalization", default="counts")
     parser.add_argument("--dhs_mask_name", help="DHS mask column name")
     parser.add_argument(
         "--matrices",
@@ -106,9 +102,11 @@ if __name__ == '__main__':
         adata,
         args.matrices,
         args.params,
-        args.deseq_design_formula,
-        args.variance_partition_formula,
         variance_partition_results,
         mask=mask
     )
+    adata.uns['normalization_layer'] = args.normalization_layer
+    adata.uns['variance_partition_formula'] = args.variance_partition_formula
+    adata.uns['deseq_design_formula'] = args.deseq_design_formula
+
     adata.write_zarr(args.output)

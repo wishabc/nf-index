@@ -15,7 +15,7 @@ process extract_from_anndata {
         val anndata
     
     output:
-        tuple val(prefix), path("binary.matrix.npz"), path("counts.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
+        tuple val(prefix), path("binary.matrix.npz"), path("${params.normalization_layer}.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
 
     script:
     prefix = params.dhs_mask_name
@@ -28,7 +28,7 @@ process extract_from_anndata {
         ${masterlist} \
         ${samples_order} \
         ${samples_meta} \
-        --extra_layers binary counts \
+        --extra_layers binary ${params.normalization_layer} \
         --dhs_mask_name ${params.dhs_mask_name}
     """
 }
@@ -48,7 +48,7 @@ process normalize_matrix {
 	output:
 		tuple val(prefix), path("${prefix_dir}.scale_factors.mean_normalized.npy"), emit: scale_factors
         tuple val(prefix), path("${prefix_dir}.log_differences.npy"), emit: log_diffs
-		tuple val(prefix), path("${prefix_dir}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: lowess_normalization_params
+		tuple val(prefix), path("${prefix_dir}.lowess_params.npz"), path("${prefix_dir}.lowess_params.json"), emit: lowess_normalization_params
         tuple val(prefix), path("${prefix_dir}.*.pdf"), emit: normalization_qc
 		
 	script:
@@ -232,6 +232,11 @@ workflow {
 
     add_normalized_matrices_to_anndata(anndata, out)
 }
+
+
+
+
+
 
 
 
