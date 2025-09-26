@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 import numpy as np
 import os
-from helpers import add_matrices_to_anndata
+from helpers import add_matrices_to_anndata, get_matrices_mapping_by_types
 from genome_tools.data.anndata import read_zarr_backed
 import json
 import base64
@@ -23,18 +23,18 @@ def expand_vp_results(variance_partition_results: pd.DataFrame, index, mask):
 
 def add_normalization_params(adata, params):
     for param in params:
-        if param.endswith('RDS'):
+        if param.endswith('.params.RDS'):
             with open(param, 'rb') as f:
-                adata.uns['deseq_params'] = base64.b64encode(
+                adata.uns['vst_dispersion_function_rds.b64_encoded'] = base64.b64encode(
                     f.read()
                 ).decode('utf-8')
         elif param.endswith('json'):
             with open(param) as f:
-                adata.uns['lowess_params'] = json.load(f)
+                adata.uns['lowess_normalization_params'] = json.load(f)
         elif param.endswith('npz'):
             loaded_params = np.load(param)
             for key in loaded_params:
-                adata.uns[f'norm_params_{key}'] = loaded_params[key]
+                adata.uns[f'lowess_normalization_params.{key}'] = loaded_params[key]
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
 
@@ -48,13 +48,12 @@ def main(
         variance_partition_results,
         mask
     ):
-    matrices_mapping = {
-        os.path.basename(matrix).replace(
-            'normalized.only_autosomes.filtered.', ''
-        ).replace(
-            '.npy', ''
-        ): matrix for matrix in matrices
-    }
+    matrices_types = [
+        'scale_factors.mean_normalized',
+        'vst'
+    ]
+    matrices_mapping = get_matrices_mapping_by_types(matrices, matrices_types)
+
     add_matrices_to_anndata(adata, matrices_mapping, mask)
     add_normalization_params(adata, params)
 

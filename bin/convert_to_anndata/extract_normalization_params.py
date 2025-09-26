@@ -19,13 +19,13 @@ class NpEncoder(json.JSONEncoder):
     
 
 def main(anndata_obj):
-    deseq_params = base64.b64decode(anndata_obj.uns['deseq_params'])
+    deseq_params = base64.b64decode(anndata_obj.uns['vst_dispersion_function_rds.b64_encoded'])
     
-    norm_json = anndata_obj.uns['lowess_params']
+    norm_json = anndata_obj.uns['lowess_normalization_params']
     norm_arrays = {}
     for key in anndata_obj.uns.keys():
-        if key.startswith('norm_params_'):
-            real_key = key.replace('norm_params_', '')
+        if key.startswith('lowess_normalization_params.'):
+            real_key = key.replace('lowess_normalization_params.', '')
             norm_arrays[real_key] = anndata_obj.uns[key]
 
     return deseq_params, norm_arrays, norm_json

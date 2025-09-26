@@ -62,9 +62,19 @@ def load_from_file(filepath):
             return dict(np.load(filepath))
     else:
         raise ValueError("Unsupported file format. Expected formats are .npy or .npz ")
-    
 
-def add_matrices_to_anndata(adata, matrices_mapping, mask_name=None):
+
+def get_matrices_mapping_by_types(matrices, matrices_types):
+    matrices_mapping = {
+        x: f'matrix.{x}.npy' for x in matrices_types
+    }
+    for matrix in matrices:
+        if matrix not in matrices_mapping.values():
+            raise ValueError(f"Matrix {matrix} not recognized. Expected one of {list(matrices_mapping.values())}")
+    return matrices_mapping
+
+
+def add_matrices_to_anndata(adata, matrices_mapping: dict, mask=None):
     for matrix_name, matrix in matrices_mapping.items():
         matrix = np.load(matrix).T
         if matrix.dtype == np.float64:
@@ -72,8 +82,7 @@ def add_matrices_to_anndata(adata, matrices_mapping, mask_name=None):
 
         if matrix.shape[0] != adata.shape[0]:
             raise ValueError(f"Matrix {matrix_name} has {matrix.shape[0]} samples, but the number of samples in anndata is {adata.shape[0]}")
-        if matrix.shape[1] != adata.shape[1] and mask_name is not None:
-            mask = adata.var[mask_name]
+        if mask is not None:
             assert mask.sum() == matrix.shape[1]
             data = np.empty(adata.shape, dtype=np.float32)
             data[:] = np.nan

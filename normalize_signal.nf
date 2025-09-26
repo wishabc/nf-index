@@ -48,7 +48,7 @@ process normalize_matrix {
 	output:
 		tuple val(prefix), path("${prefix_dir}.scale_factors.mean_normalized.npy"), emit: scale_factors
         tuple val(prefix), path("${prefix_dir}.log_differences.npy"), emit: log_diffs
-		tuple val(prefix), path("${prefix_dir}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: model_params
+		tuple val(prefix), path("${prefix_dir}.lowess_params.npz"), path("${prefix}.lowess_params.json"), emit: lowess_normalization_params
         tuple val(prefix), path("${prefix_dir}.*.pdf"), emit: normalization_qc
 		
 	script:
@@ -165,7 +165,7 @@ workflow normalizeMatrix {
 
 		out = normalization_data.scale_factors // prefix, scale factors
             | join(vst_data.vst)
-            | join(normalization_data.model_params)
+            | join(normalization_data.lowess_normalization_params)
             | join(vst_data.dispersion_function)
             | join(variance_partition_data) // prefix, scale_factors, vst_matrix, model_params, dispersion_function, vp_annotated_masterlist
             | map(

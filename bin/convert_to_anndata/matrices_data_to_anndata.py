@@ -1,9 +1,7 @@
 import sys
 import pandas as pd
-import os
-from helpers import add_matrices_to_anndata
+from helpers import add_matrices_to_anndata, get_matrices_mapping_by_types
 from genome_tools.data.anndata import read_zarr_backed
-import scipy.sparse as sp
 import anndata as ad
 
 
@@ -12,12 +10,7 @@ def main(adata, matrices):
         'counts', 'binary', 'density',
         'mean_bg_agg_cutcounts', 'neglog10_pvals'
     ]
-    matrices_mapping = {
-        x: f'matrix.{x}.npy' for x in matrices_types
-    }
-    for matrix in matrices:
-        if matrix not in matrices_mapping.values():
-            raise ValueError(f"Matrix {matrix} not recognized. Expected one of {list(matrices_mapping.values())}")
+    matrices_mapping = get_matrices_mapping_by_types(matrices, matrices_types)
 
     add_matrices_to_anndata(adata, matrices_mapping)
 
