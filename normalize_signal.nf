@@ -149,7 +149,7 @@ workflow normalizeMatrix {
         deseq_data = normalization_data.scale_factors // prefix, scale factors
             | join(matrices) // prefix, scale factors, binary_matrix, count_matrix, samples_order, masterlist, samples_file
             | map(it -> tuple(it[0], it[1], it[3], it[4], it[5])) // prefix, scale factors, count_matrix, samples_order, samples_file
-            | prepare_data_for_deseq2 // prefix, dataset
+            | prepare_deseq_dataset // prefix, dataset
             | combine(Channel.of(params.vst_design_formula)) // prefix, dataset, formula
 
         vst_data = deseq2_vst(deseq_data, vst_params) // prefix, vst_matrix
