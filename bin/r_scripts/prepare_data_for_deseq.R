@@ -78,10 +78,12 @@ if (is.null(args[2]) | file.exists(args[2])) {
 
 if (is.null(params_f)) {
     print('Calculating and saving VST params')
+    nsub <- 1000
+    fitType <- "parametric"
     # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
     # dispersionFunction is not getting saved otherwise
     baseMean <- MatrixGenerics::rowMeans(counts(object, normalized=TRUE))
-    if (sum(baseMean > 5) < 1000) {
+    if (sum(baseMean > 5) < nsub) {
         stop("less than 1000 rows with mean normalized count > 5, 
         it is recommended to use varianceStabilizingTransformation directly")
     }

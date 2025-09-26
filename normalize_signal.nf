@@ -98,7 +98,7 @@ process prepare_data_for_deseq2 {
 	prefix = "deseq_normalized.only_autosomes.filtered.sf.vst"
 	normalization_params = norm_params.name != "params/empty.params" ? norm_params : ""
 	"""
-	Rscript $moduleDir/bin/prepare_data_for_deseq.R \
+	Rscript $moduleDir/bin/r_scripts/prepare_data_for_deseq.R \
 		${signal_matrix} \
 		${scale_factors} \
 		${samples_order} \
@@ -121,7 +121,7 @@ process deseq2_vst {
 	script:
     name = "${prefix}.npy"
 	"""
-	Rscript $moduleDir/bin/deseq2_vst.R \
+	Rscript $moduleDir/bin/r_scripts/deseq2_vst.R \
 		${dataset} \
 		${name} 
 	"""

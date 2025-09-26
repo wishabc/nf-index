@@ -10,7 +10,7 @@ import anndata as ad
 def main(adata, matrices):
     matrices_types = [
         'counts', 'binary', 'density',
-        'mean_bg_agg_cutcounts.', 'neglog10_pvals'
+        'mean_bg_agg_cutcounts', 'neglog10_pvals'
     ]
     matrices_mapping = {
         x: f'matrix.{x}.npy' for x in matrices_types
