@@ -15,6 +15,7 @@ prefix <- args[1]
 dds <- readRDS(args[2])
 formula <- args[3]
 
+colData(dds) <- droplevels(colData(dds))
 design(dds) <- as.formula(formula)
 
 
