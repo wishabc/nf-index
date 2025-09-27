@@ -54,7 +54,7 @@ if (length(args) >= 4) {
     object.sub <- estimateDispersionsMAP(object.sub)
 
     dispersion_plot_name <- paste(prefix, ".dispersions_plot.pdf", sep='')
-    pdf(dispersion_plot_name, width = 3, height = 3, units = "in", res = 300)
+    pdf(dispersion_plot_name, width = 3, height = 3)
     plotDispEsts(object.sub, ylim = c(1e-4, 10), xlim = c(2, 2000))
     dev.off()
 
