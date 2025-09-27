@@ -61,14 +61,9 @@ rm(counts)
 gc()
 
 # Provide NULL or non-existent norm_factors file for conventional VST
-norm_factors_path <- NULL 
 if (length(args) >= 6) {
-  print("Taking pre-computed params")
+  print("Taking pre-computed norm factors")
   norm_factors_path <- args[6]
-}
-
-
-if (is.null(norm_factors_path)) {
   print('Reading norm factors')
   norm_factors <- as.matrix(py_to_r(np$load(norm_factors_path)))
   print('Converting norm factors to R')
@@ -79,6 +74,7 @@ if (is.null(norm_factors_path)) {
   print("Calculating size factors")
   dds <- estimateSizeFactors(dds)
 }
+
 
 dds_name <- args[5]
 timing <- system.time({
