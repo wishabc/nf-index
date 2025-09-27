@@ -33,7 +33,7 @@ if (length(args) >= 4) {
 
     # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
     # dispersionFunction is not getting saved otherwise
-    baseMean <- MatrixGenerics::rowMeans(counts(object, normalized=TRUE))
+    baseMean <- rowMeans(counts(object, normalized=TRUE))
     if (sum(baseMean > min_baseMean) < nsub) {
         stop("less than 1000 rows with mean normalized count > 5, 
         it is recommended to use varianceStabilizingTransformation directly")
