@@ -34,7 +34,7 @@ sample_names <- fread(args[1], sep="\n", header=FALSE)$V1
 
 sample_meta <- data.frame(fread(args[2], stringsAsFactors = TRUE))
 rownames(sample_meta) <- sample_meta$ag_id
-sample_meta <- sample_meta[sample_names$V1, ]
+sample_meta <- sample_meta[sample_names, ]
 
 
 print("Reading counts")
