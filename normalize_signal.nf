@@ -82,7 +82,7 @@ process prepare_deseq_dataset {
 	label "bigmem"
 
 	input:
-		tuple val(prefix), path(scale_factors), path(signal_matrix), path(samples_order), path(metadata)
+		tuple val(prefix), path(scale_factors), path(signal_matrix), path(samples_order), path(metadata), path(masterlist)
 
 	output:
 		tuple val(prefix), path(name)
@@ -94,6 +94,7 @@ process prepare_deseq_dataset {
     	${samples_order} \
         ${metadata} \
 		${signal_matrix} \
+        ${masterlist} \
         ${name} \
 		${scale_factors}
 	"""

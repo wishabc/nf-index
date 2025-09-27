@@ -33,7 +33,7 @@ if (length(args) < 4) {
 sample_names <- fread(args[1], sep="\n", header=FALSE)$V1
 
 sample_meta <- data.frame(fread(args[2], stringsAsFactors = TRUE))
-rownames(sample_meta) <- sample_meta$ag_id
+row.names(sample_meta) <- sample_meta$ag_id
 sample_meta <- sample_meta[sample_names, ]
 
 
@@ -44,6 +44,12 @@ counts <- as.matrix(py_to_r(counts))
 storage.mode(counts) <- "integer"
 colnames(counts) <- sample_names
 
+masterlist <- fread(args[4], sep="\n", header=FALSE)$V4
+row.names(counts) <- masterlist
+
+print(colnames(counts))
+print(rownames(sample_meta))
+stopifnot(identical(colnames(counts), rownames(sample_meta)))
 
 print('Making DESeq dataset')
 dds <- DESeqDataSet(
@@ -56,9 +62,9 @@ gc()
 
 # Provide NULL or non-existent norm_factors file for conventional VST
 norm_factors_path <- NULL 
-if (length(args) >= 5) {
+if (length(args) >= 6) {
   print("Taking pre-computed params")
-  norm_factors_path <- args[5]
+  norm_factors_path <- args[6]
 }
 
 
@@ -74,7 +80,7 @@ if (is.null(norm_factors_path)) {
   dds <- estimateSizeFactors(dds)
 }
 
-dds_name <- args[4]
+dds_name <- args[5]
 timing <- system.time({
   saveRDS(dds, dds_name, compress = FALSE)
 })
