@@ -15,16 +15,16 @@ prefix <- args[1]
 dds <- readRDS(args[2])
 formula <- args[3]
 
-params_f <- NULL
+design(dds) <- as.formula(formula)
+
 
 if (length(args) >= 4) {
-  print("Taking existing params")
-  params_f <- args[4]
-}
-
-design(dds) <- formula
-
-if (is.null(params_f)) {
+    print("Taking existing params")
+    params_f <- args[4]
+    print('Use existing VST params')
+    df <- readRDS(params_f)
+    dispersionFunction(dds) <- df
+} else {
     print('Calculating and saving VST params')
     nsub <- 1000
     min_baseMean <- 2
@@ -59,10 +59,6 @@ if (is.null(params_f)) {
 
     # assign to the full object
     dispersionFunction(object) <- dispersionFunction(object.sub)
-} else {
-    print('Use existing VST params')
-    df <- readRDS(params_f)
-    dispersionFunction(dds) <- df
 }
 
 params_file_name <- paste(prefix, ".dispersion_function.RDS", sep='')
