@@ -82,7 +82,7 @@ process prepare_deseq_dataset {
 	label "bigmem"
 
 	input:
-		tuple val(prefix), path(scale_factors), path(signal_matrix), path(samples_order), path(metadata), path(masterlist)
+		tuple val(prefix), path(scale_factors), path(signal_matrix), path(samples_order), path(masterlist), path(metadata)
 
 	output:
 		tuple val(prefix), path(name)
