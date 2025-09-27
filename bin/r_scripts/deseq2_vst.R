@@ -12,11 +12,11 @@ args = commandArgs(trailingOnly=TRUE)
 
 
 prefix <- args[1]
-dds <- readRDS(args[2])
-formula <- args[3]
 
-colData(dds) <- droplevels(colData(dds))
-design(dds) <- as.formula(formula)
+formula <- as.formula(args[3])
+
+dds <- readRDS(args[2])
+design(dds) <- formula
 
 
 if (length(args) >= 4) {
