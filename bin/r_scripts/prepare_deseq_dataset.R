@@ -32,7 +32,8 @@ if (length(args) < 4) {
 
 sample_names <- fread(args[1], sep="\n", header=FALSE)$V1
 
-sample_meta <- data.frame(fread(args[2], stringsAsFactors = TRUE))
+sample_meta <- fread(args[2], stringsAsFactors = TRUE)
+sample_meta$ag_id <- as.character(sample_meta$ag_id)
 row.names(sample_meta) <- sample_meta$ag_id
 sample_meta <- sample_meta[sample_names, ]
 
@@ -44,8 +45,8 @@ counts <- as.matrix(py_to_r(counts))
 storage.mode(counts) <- "integer"
 colnames(counts) <- sample_names
 
-masterlist <- fread(args[4], sep="\n", header=FALSE)$V4
-row.names(counts) <- masterlist
+dhs_id <- fread(args[4], sep="\n", header=FALSE)$V4
+row.names(counts) <- dhs_id
 
 print(colnames(counts))
 print(rownames(sample_meta))
