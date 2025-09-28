@@ -30,18 +30,17 @@ if (length(args) >= 4) {
     nsub <- 1000
     min_baseMean <- 2
     fitType <- "parametric"
-    object <- dds
 
     # code below was copied from https://github.com/mikelove/DESeq2/blob/master/R/vst.R
     # dispersionFunction is not getting saved otherwise
-    baseMean <- rowMeans(counts(object, normalized=TRUE))
+    baseMean <- rowMeans(counts(dds, normalized=TRUE))
     if (sum(baseMean > min_baseMean) < nsub) {
         stop("less than 1000 rows with mean normalized count > 5, 
         it is recommended to use varianceStabilizingTransformation directly")
     }
 
     # subset to a specified number of genes with mean normalized count > 5
-    object.sub <- object[baseMean > min_baseMean,]
+    object.sub <- dds[baseMean > min_baseMean,]
     baseMean <- baseMean[baseMean > min_baseMean]
     o <- order(baseMean)
     idx <- o[round(seq(from=1, to=length(o), length=nsub))]
@@ -59,14 +58,15 @@ if (length(args) >= 4) {
     dev.off()
 
     # assign to the full object
-    dispersionFunction(object) <- dispersionFunction(object.sub)
+    dispersionFunction(dds) <- dispersionFunction(object.sub)
 }
 
 params_file_name <- paste(prefix, ".dispersion_function.RDS", sep='')
 if (file.exists(params_file_name)) {
-  print(paste('Parameters were not saved. File ', params_file_name, ' exists.', sep=''))
+    # safeguard to avoid overwriting
+    print(paste('Parameters were not saved. File ', params_file_name, ' exists.', sep=''))
 } else {
-  saveRDS(dispersionFunction(dds), file=params_file_name)
+    saveRDS(dispersionFunction(dds), file=params_file_name)
 }
 
 vsd <- varianceStabilizingTransformation(dds, blind = F)
