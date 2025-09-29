@@ -161,7 +161,7 @@ workflow normalizeMatrix {
 
         variance_partition_data = vst_data.vst
             | combine(matrices) // prefix, vst_matrix, binary_matrix, count_matrix, samples_order, masterlist, samples_file
-            | map(it -> tuple(it[0], it[5], it[6], params.variance_partition_formula))
+            | map(it -> tuple(it[0], it[1], it[4], it[5], it[6], params.variance_partition_formula))
             | variancePartition // prefix, vp_annotated_masterlist
 
 		out = normalization_data.scale_factors // prefix, scale factors

@@ -9,7 +9,7 @@ process variance_partition {
     conda params.conda
 
     input:
-        tuple val(start_index), val(prefix), path(norm_matrix), path(masterlist), path(samples_meta), val(variance_partition_formula)
+        tuple val(start_index), val(prefix), path(norm_matrix), path(samples_order), path(masterlist), path(samples_meta), val(variance_partition_formula)
     
     output:
         tuple val(prefix), path(name)
@@ -51,13 +51,13 @@ process sort_bed {
 
 workflow variancePartition {
     take:
-        data // prefix, normalized_matrix, masterlist, samples_file, variance_partition_formula
+        data // prefix, vst_matrix, samples_order, masterlist, samples_file
     main:
         out = data
             | flatMap(it -> (1..it[2].countLines()))
             | collate(params.chunk_size, remainder=true)
             | map(it -> it[1])
-            | combine(data) // chunk_start, prefix, normalized_matrix, masterlist, samples_order, samples_file, variance_partition_formula
+            | combine(data) // chunk_start, prefix, vst_matrix, samples_order, masterlist, samples_file, variance_partition_formula
             | variance_partition // prefix, vp_annotated_chunk
             | collectFile(
                 keepHeader: true,
