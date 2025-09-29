@@ -5,7 +5,6 @@ process variance_partition {
 
     tag "${start_index}"
     scratch true
-    label "medmem"
     conda params.conda
 
     input:
