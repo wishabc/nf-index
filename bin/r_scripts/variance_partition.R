@@ -43,7 +43,7 @@ row.names(data) <- row.names(dhs_meta)
 formula <- args[7]
 
 print("Fitting models")
-good <- apply(data, 1, function(x) var(x, na.rm=TRUE)) > 0
+good <- apply(data, 1, function(x) var(x)) > 0
 
 
 varPart_sub <- fitExtractVarPartModel(data[good, ], formula, sample_meta)
