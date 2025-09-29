@@ -68,7 +68,7 @@ workflow variancePartition {
                 "${it[0]}.masterlist.vp_annotated.bed", // name
                 it[1] // content
             ] }
-            | map(it -> tuple(it[0].replace(".masterlist.vp_annotated.bed", ""), it[1])) // prefix, vp_annotated_masterlist
+            | map(it -> tuple(it[0].name.replaceAll(".masterlist.vp_annotated.bed", ""), it[1])) // prefix, vp_annotated_masterlist
             | sort_bed
     emit:
         out  
