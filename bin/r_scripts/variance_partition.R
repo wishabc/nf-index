@@ -35,16 +35,16 @@ data <- py_to_r(np_array)
 
 print("Data loaded")
 print(dim(data))
-print(dim(meta))
+print(dim(sample_meta))
 print(dim(dhs_meta))
-colnames(data) <- row.names(meta)
+colnames(data) <- row.names(sample_meta)
 row.names(data) <- row.names(dhs_meta)
 
 formula <- args[7]
 
 print("Fitting models")
 
-varPart <- fitExtractVarPartModel(data, formula, meta)
+varPart <- fitExtractVarPartModel(data, formula, sample_meta)
 
 vp_df <- as.data.frame(varPart)
 stopifnot(all(identical(row.names(vp_df), row.names(dhs_meta))))
