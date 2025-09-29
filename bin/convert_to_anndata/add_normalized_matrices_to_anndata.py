@@ -23,7 +23,7 @@ def expand_vp_results(variance_partition_results: pd.DataFrame, index, mask):
 
 def add_normalization_params(adata, params):
     for param in params:
-        if param.endswith('.params.RDS'):
+        if param.endswith('.dispersion_function.RDS'):
             with open(param, 'rb') as f:
                 adata.uns['vst_dispersion_function_rds.b64_encoded'] = base64.b64encode(
                     f.read()
