@@ -36,13 +36,13 @@ process sort_bed {
     label "medmem"
 
     input:
-        path unsorted_bed
+        tuple val(prefix), path(unsorted_bed)
     
     output:
-        path name
+         tuple val(prefix), path(name)
     
     script:
-    name = "${unsorted_bed.simpleName}.vp_annotated.sorted.bed"
+    name = "${prefix}.vp_annotated.sorted.bed"
     """
     head -1 ${unsorted_bed} > ${name}
     tail -n+2 ${unsorted_bed} | sort-bed - >> ${name}
@@ -57,7 +57,7 @@ workflow variancePartition {
         out = data
             | flatMap(it -> (1..it[3].countLines()))
             | collate(params.chunk_size, remainder=true)
-            | map(it -> it[1])
+            | map(it -> it[1]) // chunk_start
             | combine(data) // chunk_start, prefix, vst_matrix, samples_order, masterlist, samples_file, variance_partition_formula
             | variance_partition // prefix, vp_annotated_chunk
             | collectFile(
@@ -68,6 +68,7 @@ workflow variancePartition {
                 "${it[0]}.masterlist.vp_annotated.bed", // name
                 it[1] // content
             ] }
+            | map(it -> tuple(it[0].replace(".masterlist.vp_annotated.bed", ""), it[1])) // prefix, vp_annotated_masterlist
             | sort_bed
     emit:
         out  
