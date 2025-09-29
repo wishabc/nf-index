@@ -15,7 +15,7 @@ prefix <- args[1]
 
 formula <- as.formula(args[3])
 
-dds <- readRDS(args[2])
+dds <- readRDS(args[2])[1:100000, ]
 design(dds) <- formula
 
 
