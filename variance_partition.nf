@@ -54,7 +54,7 @@ workflow variancePartition {
         data // prefix, vst_matrix, samples_order, masterlist, samples_file
     main:
         out = data
-            | flatMap(it -> (1..it[2].countLines()))
+            | flatMap(it -> (1..it[3].countLines()))
             | collate(params.chunk_size, remainder=true)
             | map(it -> it[1])
             | combine(data) // chunk_start, prefix, vst_matrix, samples_order, masterlist, samples_file, variance_partition_formula
