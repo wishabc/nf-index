@@ -70,8 +70,9 @@ if __name__ == '__main__':
     parser.add_argument("input", help="Input Zarr file")
     parser.add_argument("output", help="Output Zarr file")
     parser.add_argument("variance_partition_result", help="Variance partition annotated masterlist bed")
-    parser.add_argument("variance_partition_formula", help="Formula used for variance partition")
     parser.add_argument("deseq_design_formula", help="Formula used for variance partition")
+    parser.add_argument("variance_partition_formula", help="Formula used for variance partition")
+    
     parser.add_argument("--normalization_layer", help="Name of the layer used for normalization", default="counts")
     parser.add_argument("--dhs_mask_name", help="DHS mask column name")
     parser.add_argument(
@@ -96,7 +97,6 @@ if __name__ == '__main__':
     ]
 
     mask = get_mask_from_column_name(adata, args.dhs_mask_name)
-    args.matrices = sys.argv[6:7]
 
     adata = main(
         adata,
