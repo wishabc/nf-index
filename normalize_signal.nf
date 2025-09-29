@@ -178,7 +178,6 @@ workflow normalizeMatrix {
                     params.variance_partition_formula
                 )
             )
-            | view()
 
 	emit:
 		out // [vst_matrix, scale_factors], [model_params], vp_annotated_masterlist, formula
