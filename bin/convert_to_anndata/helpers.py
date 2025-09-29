@@ -74,9 +74,7 @@ def load_from_file(filepath):
 
 
 def get_matrices_mapping_by_types(matrices: List[str], matrices_types):
-    matrices_mapping = {
-        x: f'matrix.{x}.npy' for x in matrices_types
-    }
+    matrices_mapping = {}
     for matrix in matrices:
         for matrix_type in matrices_types:
             if matrix.endswith(f'.{matrix_type}.npy'):
