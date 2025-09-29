@@ -71,4 +71,4 @@ if (file.exists(params_file_name)) {
 
 vsd <- varianceStabilizingTransformation(dds, blind = F)
 vsd_name <- paste(prefix, ".vst.npy", sep='')
-np$save(vsd_name, np$array(vsd, dtype='float32'))
+np$save(vsd_name, np$array(assay(vsd), dtype='float32'))
