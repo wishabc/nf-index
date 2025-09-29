@@ -46,7 +46,7 @@ print("Fitting models")
 good <- apply(data, 1, function(x) var(x, na.rm=TRUE)) > 0
 
 
-varPart_sub <- fitExtractVarPartModel(data, formula, sample_meta)
+varPart_sub <- fitExtractVarPartModel(data[good, ], formula, sample_meta)
 varPart <- varPart_sub[FALSE, ]
 varPart <- varPart[rep(NA, nrow(data)), ]
 rownames(varPart) <- rownames(data)
