@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as sp
+from typing import List
 
 
 def convert_to_sparse_if_sufficently_sparse(matrix, threshold=0.7):
@@ -72,12 +73,16 @@ def load_from_file(filepath):
         raise ValueError("Unsupported file format. Expected formats are .npy or .npz ")
 
 
-def get_matrices_mapping_by_types(matrices, matrices_types):
+def get_matrices_mapping_by_types(matrices: List[str], matrices_types):
     matrices_mapping = {
         x: f'matrix.{x}.npy' for x in matrices_types
     }
     for matrix in matrices:
-        if matrix not in matrices_mapping.values():
+        for matrix_type in matrices_types:
+            if matrix.endswith(f'.{matrix_type}.npy'):
+                matrices_mapping[matrix_type] = matrix
+                break
+        else:
             raise ValueError(f"Matrix {matrix} not recognized. Expected one of {list(matrices_mapping.values())}")
     return matrices_mapping
 
