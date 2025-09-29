@@ -18,6 +18,7 @@ process variance_partition {
     name = "${prefix}.${start_index}.variance_partition.tsv"
     """
     Rscript $moduleDir/bin/r_scripts/variance_partition.R \
+        ${samples_order} \
         ${samples_meta} \
         ${start_index} \
         ${params.chunk_size} \
