@@ -172,8 +172,8 @@ workflow normalizeMatrix {
             | map(
                 it -> tuple(
                     [it[1], it[2]], // [vst_matrix, scale_factors]
-                    [it[2], it[3], it[4]], // [model_params]
-                    it[5], // vp_annotated_masterlist
+                    [it[3], it[4], it[5]], // [model_params]
+                    it[6], // vp_annotated_masterlist
                     params.vst_design_formula,
                     params.variance_partition_formula
                 )
