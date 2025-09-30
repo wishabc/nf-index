@@ -167,7 +167,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_and_validate_inputs(grouping_column, value, anndata_path, pvals_path):
+def load_and_validate_inputs(grouping_column, value, anndata_path):
     anndata = read_zarr_backed(anndata_path)
     samples_meta = anndata.obs
     samples_meta[grouping_column] = samples_meta[grouping_column].astype(str)
