@@ -30,7 +30,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     mapping = pd.read_table(args.mapping)
-    mapping['fdr'] = args.fdrs
+    mapping['fdr'] = [args.fdrs] * len(mapping)
     mapping = mapping.explode('fdr')
     mapping['prefix'] = mapping['path_safe_id'] + ".fdr" + mapping['fdr'].astype(str)
     mapping['base_path'] = args.core_sets_outdir + "/core_sets/" + mapping['fdr'] + "/" + mapping['path_safe_id']
