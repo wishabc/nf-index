@@ -33,13 +33,13 @@ if __name__ == '__main__':
     mapping['fdr'] = [args.fdrs] * len(mapping)
     mapping = mapping.explode('fdr')
     mapping['prefix'] = mapping['path_safe_id'].astype(str) + ".fdr" + mapping['fdr'].astype(str)
-    mapping['base_path'] = args.core_sets_outdir + "/core_sets/" + mapping['fdr'] + "/" + mapping['path_safe_id']
+    mapping['base_path'] = args.core_sets_outdir + "/core_sets/" + mapping['fdr'].astype(str) + "/" + mapping['prefix']
 
 
-    mapping['core_set_npy'] = mapping['base_path'] + "/" + mapping['prefix'] + ".core_set.npy"
-    mapping['core_set_bed'] = mapping['base_path'] + "/" + mapping['prefix'] + ".core_set.bed"
-    mapping['saturation_curve'] = mapping['base_path'] + "/" + mapping['prefix'] + ".s_curve.npy"
-    mapping['saturation_curve_core'] = mapping['base_path'] + "/" + mapping['prefix'] + ".s_curve_core.npy"
+    mapping['core_set_npy'] = mapping['base_path'] +  ".core_set.npy"
+    mapping['core_set_bed'] = mapping['base_path'] + ".core_set.bed"
+    mapping['saturation_curve'] = mapping['base_path'] +  ".saturation_curve.npy"
+    mapping['saturation_curve_core'] = mapping['base_path'] + ".saturation_curve_core.npy"
 
     mapping['step_added'] = mapping['base_path'] + "/" + mapping['prefix'] + ".step_added.npy"
     mapping['mcv_by_step_stats'] = mapping['base_path'] + "/" + mapping['prefix'] + ".mcv_by_step_stats.npy"
