@@ -86,11 +86,11 @@ if __name__ == '__main__':
         "--layers",
         nargs="+",
         required=True,
-        help="Matrices to add to the AnnData object"
+        help="Matrices to add to the AnnData layers"
     )
     parser.add_argument(
         "--varm",
-        help="BED files to add to the AnnData object",
+        help="BED files to add to the AnnData varm",
         nargs="+",
         default=[],
     )
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         "--uns",
         nargs="+",
         default=[],
-        help="Strings to save (e.g. R formulae). key=value format"
+        help="Strings to save in uns (e.g. R formulae). key=value format"
     )
     args = parser.parse_args()
 
