@@ -94,31 +94,3 @@ workflow {
     
         
 }
-
-// FIXME to work with anndata
-workflow {
-    core_set_fdrs = Channel.from(0.1, 0.05, 0.01, 0.001, 0.0001)
-    println "Using ${params.grouping_column} as grouping column"
-    
-    data = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-                row[params.grouping_column] // core_ontology_term
-            )
-        )
-        | unique()
-        | map(it -> tuple(it[0], file(params.pvals_matrix), file(params.index_anndata)))
-        | combine(core_set_fdrs) // grouping_key, pvals, anndata, core_set_fdr
-        | core_set
-        | collectFile (
-            skip: 1,
-            keepHeader: true,
-            storeDir: "${params.outdir}/core_sets/",
-        ) { it -> 
-            def parentDir = "${params.outdir}/core_sets/${params.grouping_column}.${it[1]}"
-            [ 
-                "${params.grouping_column}.core_sets_meta.tsv", 
-                "group_key\tfdr\tcore_set_bed\tcore_set_npy\tcore_set_size\tsaturation_curve\tsaturation_curve_core\tstep_added\tmcv_by_step_stats\n${it[0]}\t${it[1]}\t${parentDir}/${it[2].name}\t${parentDir}/${it[3].name}\t${it[2].countLines() - 1}\t${parentDir}/${it[4].name}\t${parentDir}/${it[5].name}\t${parentDir}/${it[6].name}\t${parentDir}/${it[7].name}\n" 
-            ] 
-        }
-}
