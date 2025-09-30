@@ -10,7 +10,7 @@ process get_mapping {
         tuple path(samples_meta), val(grouping_column)
     
     output:
-        tuple path(mapping), val(fdrs)
+        path mapping
     
     script:
     mapping = "core_set_mapping.${grouping_column}.tsv"
