@@ -147,13 +147,12 @@ def main(pvals_matrix, binary, category_mask, fdr_threshold, combine_pval_method
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Compute core sets from p-values and binary matrix along with saturation curves.")
-    parser.add_argument("output_prefix", type=str, help="Prefix for all output files.")
-    parser.add_argument("samples_meta", type=str, help="Path to samples metadata TSV file (must contain 'ag_id' column).")
+
     parser.add_argument("grouping_column", type=str, help="Column in samples_meta to use for grouping.")
+    parser.add_argument("output_prefix", type=str, help="Prefix for all output files.")
     parser.add_argument("value", type=str, help="Value in grouping_column to select samples.")
     parser.add_argument("anndata_path", type=str, help="Path to Zarr-backed AnnData object.")
-    parser.add_argument("pvals_npy", type=str, help="Path to npy file with -log10 p-values matrix.")
-    parser.add_argument("fdr_threshold", type=float, help="FDR threshold for core set selection.")
+    parser.add_argument("--fdr", type=float, help="FDR threshold for core set selection.")
     parser.add_argument("--method", type=str, choices=("cauchy", "stouffer"), help="Method for p-value combination.")
 
     return parser.parse_args()
@@ -216,7 +215,7 @@ if __name__ == "__main__":
         pvals_matrix,
         binary,
         category_mask=mask,
-        fdr_threshold=args.fdr_threshold,
+        fdr_threshold=args.fdr,
         combine_pval_method=args.method
     )
 

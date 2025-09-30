@@ -59,7 +59,7 @@ def main(
         variance_partition_results,
         adata.var.index,
         mask
-    ).values
+    )
     return adata
 
 

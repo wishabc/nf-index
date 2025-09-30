@@ -5,6 +5,8 @@ import pandas as pd
 import dask.array as da
 from genome_tools.data.anndata import read_zarr_backed
 from helpers import get_mask_from_column_name
+import os
+
 
 def main(anndata_obj, extra_keys):
     metadata = anndata_obj.obs
@@ -48,7 +50,7 @@ if __name__ == '__main__':
     args.add_argument('--extra_layers', nargs='+', help='Names of extra layers to extract from anndata', default=[])
     args.add_argument('--extra_layers_suffix', help='Suffix to add to the extra layers names', default='matrix')
     args.add_argument('--dhs_mask_name', help='Name of the var layer containing DHS mask', default="")
-    args.add_argument('--matrix_samples_file', help='Name of the var layer containing DHS mask', default=None)
+    args.add_argument('--matrix_samples_file', help='Path to samples metadata. If it has different IDs than anndata - returns samples_meta. Otherwise returns obs layer of anndata', default=None)
     args = args.parse_args()
     anndata = read_zarr_backed(args.anndata)
     mask = get_mask_from_column_name(anndata, args.dhs_mask_name)
@@ -57,7 +59,7 @@ if __name__ == '__main__':
     
     metadata, index, matrices = main(anndata, args.extra_layers)
     index.to_csv(args.index, sep='\t', index=False, header=False)
-    if args.matrix_samples_file is not None:
+    if args.matrix_samples_file is not None and os.path.exists(args.matrix_samples_file):
         matrix_metadata = pd.read_table(args.matrix_samples_file).set_index('ag_id')
         missing_ids = matrix_metadata.index.difference(metadata.index)
         print(f"Missing IDs in matrix samples metadata: {missing_ids}")

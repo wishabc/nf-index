@@ -141,18 +141,18 @@ process extract_bg_mean {
     suffix = "mean_bg_agg_cutcounts"
     name = "${ag_id}.${suffix}.npy"
     """
-    echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
+    echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\tdhs_id\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
 
     zcat ${bg_params_tabix} \
         | grep -v "^#" \
         | grep segment \
         | bedtools intersect \
             -loj \
-            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$5, \$5 + 1 }' ${masterlist} | sort-bed -) \
+            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$5, \$5 + 1, \$4 }' ${masterlist} | sort-bed -) \
             -b stdin \
             -sorted >> tmp.bed
 
-    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${name}
+    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${masterlist} ${name}
     """
 }
 
@@ -186,7 +186,6 @@ process generate_matrix {
 workflow generateMatrices {
     take:
         data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density, fit_stats, hotspot3_pvals_parquet
-
     main:
         binary_cols = data
             | map(it -> tuple(it[0], it[3], it[6]))
@@ -236,7 +235,8 @@ workflow generateMatricesFromAnndata {
         index_anndata = Channel.of(params.index_anndata)
 
         matrices = index_anndata
-            | extract_meta_from_anndata
+            | extract_meta_from_anndata // masterlist , saf_masterlist, samples_order, samples_meta
+            | map(it -> tuple(it[0], it[2], it[1])) // masterlist, samples_order, saf_masterlist
             | combine(bams_hotspots)
             | generateMatrices
             | map(it -> it[1])
