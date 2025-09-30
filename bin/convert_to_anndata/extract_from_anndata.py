@@ -50,7 +50,7 @@ if __name__ == '__main__':
     args.add_argument('--extra_layers', nargs='+', help='Names of extra layers to extract from anndata', default=[])
     args.add_argument('--extra_layers_suffix', help='Suffix to add to the extra layers names', default='matrix')
     args.add_argument('--dhs_mask_name', help='Name of the var layer containing DHS mask', default="")
-    args.add_argument('--matrix_samples_file', help='Path to samples metadata. If it has different IDs than anndata - returns samples_meta. Otherwise returns obs layer of anndata', default=None)
+    args.add_argument('--matrix_samples_file', help='Path to samples metadata. If it has different IDs than anndata - returns samples_meta. Otherwise returns obs layer of anndata', default=None, nargs="?", const=None)
     args = args.parse_args()
     anndata = read_zarr_backed(args.anndata)
     mask = get_mask_from_column_name(anndata, args.dhs_mask_name)
