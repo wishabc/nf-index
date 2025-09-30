@@ -61,11 +61,13 @@ process craft_meta {
         path name
 
     script:
-    name = 
+    name = "core_sets.meta.tsv"
     fdrs_str = fdrs.join(' ')
     """
     python3 $moduleDir/bin/core_sets/craft_meta.py \
         ${mapping} \
+        ${params.outdir}/ \
+        ${name} \
         --fdrs ${fdrs_str}
     """
 }

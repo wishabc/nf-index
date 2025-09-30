@@ -14,7 +14,7 @@ if __name__ == '__main__':
         help="Path to the mapping file with term -> path_safe_id information"
     )
     parser.add_argument(
-        "outdir",
+        "core_sets_outdir",
         help="Output directory where core sets are saved"
     )
     parser.add_argument(
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     mapping['fdr'] = args.fdrs
     mapping = mapping.explode('fdr')
     mapping['prefix'] = mapping['path_safe_id'] + ".fdr" + mapping['fdr'].astype(str)
-    mapping['base_path'] = args.outdir + "/core_sets/" + mapping['fdr'] + "/" + mapping['path_safe_id']
+    mapping['base_path'] = args.core_sets_outdir + "/core_sets/" + mapping['fdr'] + "/" + mapping['path_safe_id']
 
 
     mapping['core_set_npy'] = mapping['base_path'] + "/" + mapping['prefix'] + ".core_set.npy"
