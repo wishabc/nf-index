@@ -39,27 +39,39 @@ def add_normalization_params(adata, params):
             raise ValueError(f'Unknown parameter file type: {param}')
 
 
+def add_bed_files_to_anndata(adata, bed_files, mask):
+
+    for bed_file in bed_files:
+        bed_df = pd.read_table(bed_file)
+        if 'vp_annotated' in bed_file:
+            key = 'variance_partition'
+            bed_df = bed_df[[x for x in bed_df.columns if not x.startswith('V')]]
+        else:
+            raise ValueError(f'Unknown bed file type: {bed_file}')
+
+        adata.varm[key] = expand_vp_results(
+            bed_df,
+            adata.var.index,
+            mask
+        )
+
 def main(
         adata,
         matrices,
         params,
-        variance_partition_results,
+        bed,
         mask
     ):
-    matrices_types = [
+    expected_matrices_type = [
         'scale_factors.mean_normalized',
         'vst'
     ]
-    matrices_mapping = get_matrices_mapping_by_types(matrices, matrices_types)
+    matrices_mapping = get_matrices_mapping_by_types(matrices, expected_matrices_type)
 
     add_matrices_to_anndata(adata, matrices_mapping, mask)
     add_normalization_params(adata, params)
     
-    adata.varm['variance_partition'] = expand_vp_results(
-        variance_partition_results,
-        adata.var.index,
-        mask
-    )
+    add_bed_files_to_anndata(adata, bed, mask)
     return adata
 
 
@@ -69,17 +81,18 @@ if __name__ == '__main__':
     )
     parser.add_argument("input", help="Input Zarr file")
     parser.add_argument("output", help="Output Zarr file")
-    parser.add_argument("variance_partition_result", help="Variance partition annotated masterlist bed")
-    parser.add_argument("deseq_design_formula", help="Formula used for variance partition")
-    parser.add_argument("variance_partition_formula", help="Formula used for variance partition")
-    
-    parser.add_argument("--normalization_layer", help="Name of the layer used for normalization", default="counts")
     parser.add_argument("--dhs_mask_name", help="DHS mask column name")
     parser.add_argument(
-        "--matrices",
+        "--layers",
         nargs="+",
         required=True,
         help="Matrices to add to the AnnData object"
+    )
+    parser.add_argument(
+        "--varm",
+        help="BED files to add to the AnnData object",
+        nargs="+",
+        default=[],
     )
     parser.add_argument(
         "--params",
@@ -87,26 +100,27 @@ if __name__ == '__main__':
         default=[],
         help="Normalization parameters to reproduce normalization (RDS, json, npz files)"
     )
+    parser.add_argument(
+        "--uns",
+        nargs="+",
+        default=[],
+        help="Strings to save (e.g. R formulae). key=value format"
+    )
     args = parser.parse_args()
 
     adata = read_zarr_backed(args.input)
-
-    variance_partition_results = pd.read_table(args.variance_partition_result)
-    variance_partition_results = variance_partition_results[
-        [x for x in variance_partition_results.columns if not x.startswith('V')]
-    ]
 
     mask = get_mask_from_column_name(adata, args.dhs_mask_name)
 
     adata = main(
         adata,
-        args.matrices,
+        args.layers,
         args.params,
-        variance_partition_results,
+        args.varm,
         mask=mask
     )
-    adata.uns['normalization_layer'] = args.normalization_layer
-    adata.uns['variance_partition_formula'] = args.variance_partition_formula
-    adata.uns['deseq_design_formula'] = args.deseq_design_formula
+    for arg in args.uns:
+        key, value = arg.split('=', 1)
+        adata.uns[key] = value
 
     adata.write_zarr(args.output)

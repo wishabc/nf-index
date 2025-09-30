@@ -78,7 +78,7 @@ process add_normalized_matrices_to_anndata {
 
     input:
         val anndata
-        tuple path(matrices), path(normalization_params), path(masterlist_vp), val(vst_design_formula), val(variance_partition_formula)
+        tuple path(matrices), path(normalization_params), path(bed_files), val(extras)
     
     output:
         path(name, type: 'dir')
@@ -89,12 +89,10 @@ process add_normalized_matrices_to_anndata {
     python3 $moduleDir/bin/convert_to_anndata/add_normalized_matrices_to_anndata.py \
         ${anndata} \
         ${name} \
-        ${masterlist_vp} \
-        '${vst_design_formula}' \
-        '${variance_partition_formula}' \
-        --normalization_layer ${params.normalization_layer} \
         --dhs_mask_name ${params.dhs_mask_name} \
-        --matrices ${matrices} \
+        --uns ${extras.join(' ')} \
+        --varm ${bed_files} \
+        --layers ${matrices} \
         --params ${normalization_params}
     """
 }

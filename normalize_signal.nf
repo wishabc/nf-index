@@ -134,7 +134,6 @@ workflow normalizeMatrix {
 	take:
 		matrices  // prefix, binary_matrix, count_matrix, samples_order, masterlist, samples_file
 		normalization_params
-
 	main:
 		lowess_params = normalization_params
 			| filter { it.name =~ /lowess_params/ } // TODO modify regex to use prefix
@@ -173,14 +172,17 @@ workflow normalizeMatrix {
                 it -> tuple(
                     [it[1], it[2]], // [vst_matrix, scale_factors]
                     [it[3], it[4], it[5]], // [model_params]
-                    it[6], // vp_annotated_masterlist
-                    params.vst_design_formula,
-                    params.variance_partition_formula
+                    [it[6]], // bed files
+                    [
+                        "deseq_design_formula=${params.vst_design_formula}",
+                        "variance_partition_formula=${params.variance_partition_formula}",
+                        "normalization_layer=${params.normalization_layer}"
+                    ] // extras
                 )
             )
 
 	emit:
-		out // [vst_matrix, scale_factors], [model_params], vp_annotated_masterlist, formula
+		out // [matrices], [model_params], [bed files], [extras]
 }
 
 process extract_normalization_params_from_template {
@@ -221,6 +223,48 @@ workflow existingModel {
 
     out = normalizeMatrix(matrices, existing_params)
         
+    add_normalized_matrices_to_anndata(anndata, out)
+}
+
+
+workflow existingModelToScaleFactors {
+    params.template_anndata = "/path/to/previous/anndata_with_params"
+    if (!file(params.template_anndata).exists()) {
+        error "Template anndata: ${params.template_anndata} does not exist!"
+    } else {
+        print "Using existing model from ${params.template_anndata}"
+    }
+    print "Using layer=${params.normalization_layer} of ${params.matrices_anndata} for normalization"
+
+    existing_params = Channel.of(params.template_anndata)
+        | extract_normalization_params_from_template
+        | flatten()
+
+    anndata = Channel.of(params.matrices_anndata)
+    matrices = extract_from_anndata(anndata)
+        | map(it -> tuple(it[0], it[1], it[2]))
+
+    lowess_params = existing_params
+        | filter { it.name =~ /lowess_params/ } // TODO modify regex to use prefix
+        | collect(sort: true)
+    
+    normalization_data = normalize_matrix(
+        matrices,
+        lowess_params
+    )
+    out = normalization_data.scale_factors
+        | join(normalization_data.lowess_normalization_params)
+        | map(
+            it -> tuple(
+                [it[1]], // [scale_factors]
+                [it[2], it[3]], // [model_params]
+                [], // bed files
+                [
+                    "normalization_layer=${params.normalization_layer}",
+                    "template_anndata=${params.template_anndata}"
+                ] // extras
+            )
+        )
     add_normalized_matrices_to_anndata(anndata, out)
 }
 
