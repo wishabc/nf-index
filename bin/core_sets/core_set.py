@@ -128,12 +128,21 @@ def get_core_set(pvals_matrix, binary_matrix, combine_pval_method, fdr_threshold
     return core
 
 
-def main(pvals_matrix, binary, category_mask, fdr_threshold, combine_pval_method='cauchy'):
-    category_binary = binary[category_mask, :]
+def main(pvals_matrix, binary, inverse_binary, fdr_threshold, combine_pval_method='cauchy'):
+    category_binary = binary
     mcv_mask = calc_mcv(category_binary) > 0
-    inv_mcv = calc_mcv(binary[~category_mask, :][:, mcv_mask])
-    core_mask = get_core_set(pvals_matrix, category_binary, fdr_threshold=fdr_threshold, combine_pval_method=combine_pval_method)
-    s_curve, s_curve_core, step_added = saturation_curve(category_binary, mcv_mask, core_mask)
+    inv_mcv = calc_mcv(inverse_binary[:, mcv_mask])
+    core_mask = get_core_set(
+        pvals_matrix,
+        category_binary,
+        fdr_threshold=fdr_threshold,
+        combine_pval_method=combine_pval_method
+    )
+    s_curve, s_curve_core, step_added = saturation_curve(
+        category_binary,
+        mcv_mask,
+        core_mask
+    )
     mcv_by_step_stats = per_step_stats(
         category_binary,
         inv_mcv,
@@ -158,63 +167,38 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_and_validate_inputs(samples_meta_path, grouping_column, value, anndata_path, pvals_path):
-    # Load metadata
-    samples_meta = pd.read_table(samples_meta_path).set_index("ag_id")
+def load_and_validate_inputs(grouping_column, value, anndata_path, pvals_path):
+    anndata = read_zarr_backed(anndata_path)
+    samples_meta = anndata.obs
     samples_meta[grouping_column] = samples_meta[grouping_column].astype(str)
 
     if value not in samples_meta[grouping_column].unique():
         raise ValueError(f"Value '{value}' not found in column '{grouping_column}'.")
 
-    samples = samples_meta.query(f'{grouping_column} == "{value}"').index
-
-    # Load AnnData
-    anndata = read_zarr_backed(anndata_path)
+    samples_mask = samples_meta.eval(f'{grouping_column} == "{value}"').values
+    inverse_binary = anndata[~samples_mask, :].layers['binary']
+    anndata = anndata[samples_mask, :]
     print("Finished reading anndata.")
 
-    # Consistency checks
-    if np.any(~samples_meta.index.isin(anndata.obs_names)):
-        raise ValueError(
-            f"Some samples from {samples_meta_path} are not present in {anndata_path}."
-        )
-
-    if len(anndata) != len(samples_meta):
-        anndata = anndata[anndata.obs_names.isin(samples_meta.index), :].copy()
-
-    mask = anndata.obs_names.isin(samples)
-
-    # Load and convert p-values
-    pvals_matrix = np.load(pvals_path, mmap_mode='r')[:, mask].astype(np.float64).T
-    pvals_matrix = np.power(10, -pvals_matrix)  # Convert -log10(p) to p
-
-    # Binary layer
-    binary = anndata.layers["binary"]
-
-    # Final shape checks
-    if pvals_matrix.shape[1] != binary.shape[1]:
-        raise ValueError("pvals_matrix and binary matrix have mismatched feature dimensions.")
-    if binary.shape[0] != mask.shape[0]:
-        raise ValueError("binary matrix and sample mask have mismatched row dimensions.")
-
-    return anndata, pvals_matrix, mask
+    return anndata, inverse_binary
 
 
 if __name__ == "__main__":
     args = parse_args()
 
-    anndata, pvals_matrix, mask = load_and_validate_inputs(
-        args.samples_meta,
+    anndata, inverse_binary = load_and_validate_inputs(
         args.grouping_column,
         args.value,
         args.anndata_path,
-        args.pvals_npy
     )
     binary = anndata.layers["binary"]
+    pvals_matrix = anndata.layers['neglog10_pvals'].astype(np.float64)
+    pvals_matrix = np.power(10, -pvals_matrix)  # Convert -log10(p) to p
 
     core_set_mask, s_curve, s_curve_core, step_added, mcv_by_step_stats = main(
         pvals_matrix,
         binary,
-        category_mask=mask,
+        inverse_binary,
         fdr_threshold=args.fdr,
         combine_pval_method=args.method
     )
