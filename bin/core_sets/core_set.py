@@ -157,8 +157,9 @@ def main(pvals_matrix, binary, inverse_binary, fdr_threshold, combine_pval_metho
 def parse_args():
     parser = argparse.ArgumentParser(description="Compute core sets from p-values and binary matrix along with saturation curves.")
 
-    parser.add_argument("grouping_column", type=str, help="Column in samples_meta to use for grouping.")
     parser.add_argument("output_prefix", type=str, help="Prefix for all output files.")
+    parser.add_argument("grouping_column", type=str, help="Column in samples_meta to use for grouping.")
+
     parser.add_argument("value", type=str, help="Value in grouping_column to select samples.")
     parser.add_argument("anndata_path", type=str, help="Path to Zarr-backed AnnData object.")
     parser.add_argument("--fdr", type=float, help="FDR threshold for core set selection.")
