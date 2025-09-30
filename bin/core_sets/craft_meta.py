@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+import numpy as np
 
 def main():
     pass
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     mapping['mcv_by_step_stats'] = mapping['base_path'] + "/" + mapping['prefix'] + ".mcv_by_step_stats.npy"
 
     mapping['core_set_size'] = mapping['core_set_bed'].apply(
-        lambda x: len(pd.read_table(x))
+        lambda x: len(np.load(x))
     )
     mapping = mapping.drop(columns=['base_path', 'prefix'])
     mapping.to_csv(args.output, sep='\t', index=False)
