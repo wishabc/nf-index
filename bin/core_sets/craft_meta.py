@@ -42,8 +42,8 @@ if __name__ == '__main__':
     mapping['saturation_curve'] = mapping['base_path'] +  ".saturation_curve.npy"
     mapping['saturation_curve_core'] = mapping['base_path'] + ".saturation_curve_core.npy"
 
-    mapping['step_added'] = mapping['base_path'] + "/" + mapping['prefix'] + ".step_added.npy"
-    mapping['mcv_by_step_stats'] = mapping['base_path'] + "/" + mapping['prefix'] + ".mcv_by_step_stats.npy"
+    mapping['step_added'] = mapping['base_path'] + ".step_added.npy"
+    mapping['mcv_by_step_stats'] = mapping['base_path'] + ".mcv_by_step_stats.npy"
 
     mapping['core_set_size'] = mapping['core_set_bed'].apply(
         lambda x: len(np.load(x))
