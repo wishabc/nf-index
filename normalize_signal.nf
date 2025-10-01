@@ -65,7 +65,8 @@ process normalize_matrix {
         --prefix ${prefix} \
 		--jobs ${task.cpus} \
         --normalization_type lowess \
-		${normalization_params}
+        --fit_vs_sample_log_cpm \
+		${normalization_params} \
 
     qc-normalization ${save_dir} \
         --prefix ${prefix} \
