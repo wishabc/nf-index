@@ -85,7 +85,7 @@ process add_normalized_matrices_to_anndata {
 
     script:
     name = "index+matrices+normalized.anndata.zarr"
-    extra_args = extras.map(it -> "'" + it + "'").join(' ')
+    extra_args = extras.map { "'" + it + "'" }.join(' ')
     """
     python3 $moduleDir/bin/convert_to_anndata/add_normalized_matrices_to_anndata.py \
         ${anndata} \
