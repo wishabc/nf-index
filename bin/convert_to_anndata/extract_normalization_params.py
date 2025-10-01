@@ -24,16 +24,17 @@ def main(anndata_obj):
     deseq_params = base64.b64decode(anndata_obj.uns['vst_dispersion_function_rds.b64_encoded'])
     
     norm_json = anndata_obj.uns['lowess_normalization_params']
-    mask = get_mask_from_column_name(anndata_obj.uns['dhs_mask_name'])
     norm_arrays = {}
 
     for key in anndata_obj.uns.keys():
         if key.startswith('lowess_normalization_params.'):
             real_key = key.replace('lowess_normalization_params.', '')
-            norm_arrays[real_key] = anndata_obj.uns[key]#[mask]
+            norm_arrays[real_key] = anndata_obj.uns[key]
     
+    # for newer versions
     key = 'lowess_normalization_params.norm_factors_geometric_mean'
     if key in anndata_obj.varm:
+        mask = get_mask_from_column_name(anndata_obj.uns['dhs_mask_name'])
         norm_arrays['norm_factors_geometric_mean'] = anndata_obj.varm[key][mask]
 
     return deseq_params, norm_arrays, norm_json
