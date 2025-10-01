@@ -85,12 +85,13 @@ process add_normalized_matrices_to_anndata {
 
     script:
     name = "index+matrices+normalized.anndata.zarr"
+    extra_args = extras.map(it -> "'" + it + "'").join(' ')
     """
     python3 $moduleDir/bin/convert_to_anndata/add_normalized_matrices_to_anndata.py \
         ${anndata} \
         ${name} \
         --dhs_mask_name ${params.dhs_mask_name} \
-        --uns ${extras.join(' ')} \
+        --uns ${extra_args} \
         --varm ${bed_files} \
         --layers ${matrices} \
         --params ${normalization_params}
