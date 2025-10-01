@@ -45,7 +45,7 @@ if __name__ == '__main__':
     mapping['step_added'] = mapping['base_path'] + ".step_added.npy"
     mapping['mcv_by_step_stats'] = mapping['base_path'] + ".mcv_by_step_stats.npy"
 
-    mapping['core_set_size'] = mapping['core_set_bed'].apply(
+    mapping['core_set_size'] = mapping['core_set_npy'].apply(
         lambda x: len(np.load(x))
     )
     mapping = mapping.drop(columns=['base_path', 'prefix'])
