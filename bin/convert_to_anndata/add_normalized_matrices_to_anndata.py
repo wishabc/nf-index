@@ -21,7 +21,7 @@ def expand_vp_results(variance_partition_results: pd.DataFrame, index, mask):
     return expanded_variance_partition_results
 
 
-def add_normalization_params(adata, params):
+def add_normalization_params(adata, params, mask=None):
     for param in params:
         if param.endswith('.dispersion_function.RDS'):
             with open(param, 'rb') as f:
@@ -32,9 +32,13 @@ def add_normalization_params(adata, params):
             with open(param) as f:
                 adata.uns['lowess_normalization_params'] = json.load(f)
         elif param.endswith('npz'):
+            if mask is None:
+                mask = np.ones(adata.n_vars, dtype=bool)
             loaded_params = np.load(param)
-            for key in loaded_params:
-                adata.uns[f'lowess_normalization_params.{key}'] = loaded_params[key]
+            for key, array in loaded_params.items():
+                result = np.full(adata.n_vars, np.nan, dtype=array.dtype)
+                result[mask] = array
+                adata.varm[f'lowess_normalization_params.{key}'] = result
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
 
@@ -69,7 +73,7 @@ def main(
     matrices_mapping = get_matrices_mapping_by_types(matrices, expected_matrices_type)
 
     add_matrices_to_anndata(adata, matrices_mapping, mask)
-    add_normalization_params(adata, params)
+    add_normalization_params(adata, params, mask)
     
     add_bed_files_to_anndata(adata, bed, mask)
     return adata
@@ -111,6 +115,7 @@ if __name__ == '__main__':
     adata = read_zarr_backed(args.input)
 
     mask = get_mask_from_column_name(adata, args.dhs_mask_name)
+    adata.uns['dhs_mask_name'] = args.dhs_mask_name
 
     adata = main(
         adata,

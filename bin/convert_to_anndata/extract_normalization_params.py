@@ -4,6 +4,8 @@ import base64
 import json
 from genome_tools.data.anndata import read_zarr_backed
 
+from helpers import get_mask_from_column_name
+
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -22,11 +24,12 @@ def main(anndata_obj):
     deseq_params = base64.b64decode(anndata_obj.uns['vst_dispersion_function_rds.b64_encoded'])
     
     norm_json = anndata_obj.uns['lowess_normalization_params']
+    mask = get_mask_from_column_name(anndata_obj.uns['dhs_mask_name'])
     norm_arrays = {}
-    for key in anndata_obj.uns.keys():
+    for key in anndata_obj.varm.keys():
         if key.startswith('lowess_normalization_params.'):
             real_key = key.replace('lowess_normalization_params.', '')
-            norm_arrays[real_key] = anndata_obj.uns[key]
+            norm_arrays[real_key] = anndata_obj.varm[key][mask]
 
     return deseq_params, norm_arrays, norm_json
 
