@@ -36,9 +36,12 @@ def add_normalization_params(adata, params, mask=None):
                 mask = np.ones(adata.n_vars, dtype=bool)
             loaded_params = np.load(param)
             for key, array in loaded_params.items():
-                result = np.full(adata.n_vars, np.nan, dtype=array.dtype)
-                result[mask] = array
-                adata.varm[f'lowess_normalization_params.{key}'] = result
+                if key == "norm_factors_geometric_mean":
+                    result = np.full(adata.n_vars, np.nan, dtype=array.dtype)
+                    result[mask] = array
+                    adata.varm[f'lowess_normalization_params.{key}'] = result
+                else:
+                    adata.uns[f'lowess_normalization_params.{key}'] = array
         else:
             raise ValueError(f'Unknown parameter file type: {param}')
 
