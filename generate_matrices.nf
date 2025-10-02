@@ -255,7 +255,7 @@ workflow {
     bams_hotspots = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
-            row.ag_id,
+            row.sample_id,
             file(row.cram_file),
             file(row?.cram_index ?: "${row.cram_file}.crai"),
             file(row[params.matrix_peaks_column]),
@@ -274,7 +274,7 @@ workflow extractDensity {
     samples_meta = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
-            row.ag_id,
+            row.sample_id,
             file(row.normalized_density_bw)
         ))
         | combine(reference_bed)
@@ -289,7 +289,7 @@ workflow extractBGParams {
     samples_meta = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
-            row.ag_id,
+            row.sample_id,
             file(row.peak_stats),
             file("${row.peak_stats}.tbi")
         ))
@@ -297,25 +297,3 @@ workflow extractBGParams {
         | map(it -> tuple(it[3], it[0], it[1], it[2]))
         | extract_bg_params
 }
-
-
-
-// workflow filterInvalidSegments {
-//     bams_hotspots = Channel.fromPath(params.samples_file)
-//         | splitCsv(header:true, sep:'\t')
-//         | map(row -> tuple(
-//             row.ag_id,
-//             file(row.cram_file),
-//             file(row?.cram_index ?: "${row.cram_file}.crai"),
-//             file(row.peaks_for_matrix),
-//             file(row.peak_stats),
-//             file(row.normalized_density_bw)
-//         ))
-    
-//     bams_hotspots
-//         | map(it -> tuple(it[0], it[3], it[4]))
-//         | filter_segments
-//         | join(bams_hotspots) // ag_id, filtered_peaks, cram_file, cram_index, peaks_file, peak_stats, density_bw
-//         | map(it -> tuple(it[0], it[2], it[3], it[1], it[6])) // ag_id, cram_file, cram_index, peaks_file, density_bw
-//         | generateMatricesFromAnndata
-// }
