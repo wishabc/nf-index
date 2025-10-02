@@ -3,65 +3,6 @@ nextflow.enable.dsl = 2
 
 include { convert_to_numpy; convert_index_to_anndata } from "./converters"
 
-process filter_segments {
-    conda params.conda
-    scratch true
-    tag "${ag_id}"
-    memory 10.GB
-    publishDir "${params.outdir}/filtered_peak_calls"
-
-    input:
-        tuple val(ag_id), path(peaks_file), path(peak_stats)
-    
-    output:
-        tuple val(ag_id), path(name)
-    
-    script:
-    prefix = file(peaks_file.baseName).baseName // Remove .bed.gz
-    name = "${prefix}.filtered.bed.gz"
-    """
-    python3 $moduleDir/bin/index_scripts/filter_segments.py \
-        ${peak_stats} \
-        | sort-bed - > filtered_stats.bed
-
-    zcat ${peaks_file} \
-        | grep -v '#chr' \
-        | bedops --element-of 1 \
-            - \
-            filtered_stats.bed \
-        | bgzip > ${name}
-    """
-}
-
-process leave_invalid_segments {
-    conda params.conda
-    scratch true
-    tag "${ag_id}"
-    memory 10.GB
-    publishDir "${params.outdir}/filtered_peak_calls"
-
-    input:
-        tuple val(ag_id), path(peaks_file), path(peak_stats)
-    
-    output:
-        tuple val(ag_id), path(name)
-    
-    script:
-    prefix = file(peaks_file.baseName).baseName // Remove .bed.gz
-    name = "${prefix}.filtered.bed.gz"
-    """
-    python3 $moduleDir/bin/index_scripts/filter_segments.py \
-        ${peak_stats} \
-        | sort-bed - > filtered_stats.bed
-
-    zcat ${peaks_file} \
-        | grep -v '#chr' \
-        | bedops -n 1 \
-            - \
-            filtered_stats.bed \
-        | bgzip > ${name}
-    """
-}
 
 process collate_and_chunk {
     conda params.conda
@@ -192,7 +133,7 @@ process get_samples_order {
     script:
     name = "samples_order.txt"
     """
-    awk -F"\t" -v col="ag_id" \
+    awk -F"\t" -v col="sample_id" \
         'NR==1{for(i=1;i<=NF;i++)if(\$i==col)c=i}NR>1{if(c)print \$c}' \
             ${params.samples_file} > ${name}
     """
@@ -362,6 +303,67 @@ workflow {
 
 
 // DEFUNC
+
+
+// process filter_segments {
+//     conda params.conda
+//     scratch true
+//     tag "${ag_id}"
+//     memory 10.GB
+//     publishDir "${params.outdir}/filtered_peak_calls"
+
+//     input:
+//         tuple val(ag_id), path(peaks_file), path(peak_stats)
+    
+//     output:
+//         tuple val(ag_id), path(name)
+    
+//     script:
+//     prefix = file(peaks_file.baseName).baseName // Remove .bed.gz
+//     name = "${prefix}.filtered.bed.gz"
+//     """
+//     python3 $moduleDir/bin/index_scripts/filter_segments.py \
+//         ${peak_stats} \
+//         | sort-bed - > filtered_stats.bed
+
+//     zcat ${peaks_file} \
+//         | grep -v '#chr' \
+//         | bedops --element-of 1 \
+//             - \
+//             filtered_stats.bed \
+//         | bgzip > ${name}
+//     """
+// }
+
+// process leave_invalid_segments {
+//     conda params.conda
+//     scratch true
+//     tag "${sample_id}"
+//     memory 10.GB
+//     publishDir "${params.outdir}/filtered_peak_calls"
+
+//     input:
+//         tuple val(sample_id), path(peaks_file), path(peak_stats)
+    
+//     output:
+//         tuple val(sample_id), path(name)
+    
+//     script:
+//     prefix = file(peaks_file.baseName).baseName // Remove .bed.gz
+//     name = "${prefix}.filtered.bed.gz"
+//     """
+//     python3 $moduleDir/bin/index_scripts/filter_segments.py \
+//         ${peak_stats} \
+//         | sort-bed - > filtered_stats.bed
+
+//     zcat ${peaks_file} \
+//         | grep -v '#chr' \
+//         | bedops -n 1 \
+//             - \
+//             filtered_stats.bed \
+//         | bgzip > ${name}
+//     """
+// }
 // workflow annotateMasterlist {
 //     Channel.of(
 //         tuple(

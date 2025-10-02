@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 
 if __name__ == '__main__':
-    metadata = pd.read_table(sys.argv[1]).set_index("ag_id")
+    metadata = pd.read_table(sys.argv[1]).set_index("sample_id")
     grouping_column = sys.argv[2]
 
 

@@ -33,7 +33,7 @@ if (length(args) < 4) {
 sample_names <- fread(args[1], sep="\n", header=FALSE)$V1
 
 sample_meta <- as.data.frame(fread(args[2], stringsAsFactors = TRUE))
-row.names(sample_meta) <- sample_meta$ag_id
+row.names(sample_meta) <- sample_meta$sample_id
 sample_meta <- sample_meta[sample_names, ]
 
 

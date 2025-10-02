@@ -38,22 +38,22 @@ process project_peak_calls {
 
 process extract_max_density {
     conda params.conda
-    tag "${ag_id}"
+    tag "${sample_id}"
     scratch true
 
     input:
-        tuple path(masterlist), val(ag_id), path(density_bw)
+        tuple path(masterlist), val(sample_id), path(density_bw)
     
     output:
         tuple val(suffix), path(name)
     
     script:
     suffix = "density"
-    name = "${ag_id}.${suffix}.npy"
+    name = "${sample_id}.${suffix}.npy"
     """
     bigWigToBedGraph ${density_bw} tmp.bg 
     cat tmp.bg \
-        | awk -v OFS='\t' '{print \$1,\$2,\$3,"${ag_id}",\$4}' \
+        | awk -v OFS='\t' '{print \$1,\$2,\$3,"${sample_id}",\$4}' \
         | bedmap --sweep-all \
             --delim "\t" \
             --max ${masterlist} - \
@@ -104,18 +104,18 @@ process count_tags {
 }
 
 process extract_max_pval {
-    tag "${ag_id}"
+    tag "${sample_id}"
     conda "/home/sabramov/miniconda3/envs/hotspot3"
 
     input:
-        tuple path(masterlist), val(ag_id), path(pvals_parquet)
+        tuple path(masterlist), val(sample_id), path(pvals_parquet)
 
     output:
         tuple val(suffix), path(name)
 
     script:
     suffix = 'neglog10_pvals'
-    name = "${ag_id}.${suffix}.npy"
+    name = "${sample_id}.${suffix}.npy"
     """
     hotspot3-pvals \
         ${pvals_parquet} \
@@ -129,17 +129,17 @@ process extract_max_pval {
 // returns a np array of shape n_dhs x 2
 process extract_bg_mean {
     conda params.conda
-    tag "${ag_id}"
+    tag "${sample_id}"
 
     input:
-        tuple path(masterlist), val(ag_id), path(bg_params_tabix)
+        tuple path(masterlist), val(sample_id), path(bg_params_tabix)
     
     output:
         tuple val(suffix), path(name)
     
     script:
     suffix = "mean_bg_agg_cutcounts"
-    name = "${ag_id}.${suffix}.npy"
+    name = "${sample_id}.${suffix}.npy"
     """
     echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\tdhs_id\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
 
