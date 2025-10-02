@@ -20,7 +20,7 @@ def main(adata, matrices):
 
 if __name__ == '__main__':
     adata_obj = read_zarr_backed(sys.argv[1])
-    samples_meta = pd.read_table(sys.argv[2], low_memory=False).set_index('ag_id')
+    samples_meta = pd.read_table(sys.argv[2], low_memory=False).set_index('sample_id')
     samples_meta[
         samples_meta.select_dtypes(include=['object', 'O', 'category']).columns
     ] = samples_meta.select_dtypes(include=['object', 'O', 'category']).fillna('None')

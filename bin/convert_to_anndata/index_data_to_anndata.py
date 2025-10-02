@@ -22,7 +22,7 @@ if __name__ == '__main__':
     matrix = convert_to_sparse_if_sufficently_sparse(matrix)
 
     peaks_column = sys.argv[5]
-    samples_meta = pd.read_table(sys.argv[4]).set_index('ag_id').loc[
+    samples_meta = pd.read_table(sys.argv[4]).set_index('sample_id').loc[
         samples_order, [peaks_column]
     ]
     adata_obj = main(annotated_masterlist, samples_meta, matrix)
