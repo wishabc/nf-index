@@ -64,7 +64,7 @@ process extract_max_density {
 }
 
 process count_tags {
-	tag "${id}"
+	tag "${sample_id}"
 	conda "${params.conda}"
 	scratch true
 
