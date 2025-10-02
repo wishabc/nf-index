@@ -9,18 +9,18 @@ params.conda = "$moduleDir/environment.yml"
 // Processes below create a np array of shape n_dhs x 1
 process project_peak_calls {
     conda params.conda
-    tag "${id}"
+    tag "${sample_id}"
     scratch true
 
     input:
-		tuple path(masterlist), val(id), path(peaks_file)
+		tuple path(masterlist), val(sample_id), path(peaks_file)
     
     output:
         tuple val(suffix), path(name)
     
     script:
     suffix = 'binary'
-    name = "${id}.${suffix}.npy"
+    name = "${sample_id}.${suffix}.npy"
     """
     zcat ${peaks_file} \
         | grep -v "^#" \
@@ -69,14 +69,14 @@ process count_tags {
 	scratch true
 
 	input:
-		tuple path(saf), val(id), path(bam_file), path(bam_file_index)
+		tuple path(saf), val(sample_id), path(bam_file), path(bam_file_index)
 
 	output:
 		tuple val(suffix), path(name)
 
 	script:
     suffix = "counts"
-    name = "${id}.${suffix}.npy"
+    name = "${sample_id}.${suffix}.npy"
     ext = bam_file.extension
 	"""
     if [ ${ext} != 'bam' ]; then 
