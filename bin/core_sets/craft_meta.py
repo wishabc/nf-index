@@ -46,7 +46,7 @@ if __name__ == '__main__':
     mapping['mcv_by_step_stats'] = mapping['base_path'] + ".mcv_by_step_stats.npy"
 
     mapping['core_set_size'] = mapping['core_set_npy'].apply(
-        lambda x: len(np.load(x))
+        lambda x: np.load(x).sum()
     )
     mapping = mapping.drop(columns=['base_path', 'prefix'])
     mapping.to_csv(args.output, sep='\t', index=False)
