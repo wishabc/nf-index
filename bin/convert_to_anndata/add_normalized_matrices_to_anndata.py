@@ -100,7 +100,6 @@ if __name__ == '__main__':
         help="BED files to add to the AnnData varm",
         nargs="*",
         default=[],
-        const=[],
     )
     parser.add_argument(
         "--params",
