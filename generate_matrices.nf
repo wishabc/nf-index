@@ -2,7 +2,6 @@
 nextflow.enable.dsl = 2
 
 include { add_matrices_to_anndata; convert_to_numpy; extract_meta_from_anndata } from "./converters"
-include { filter_segments } from "./build_masterlist"
 
 params.conda = "$moduleDir/environment.yml"
 
