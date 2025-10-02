@@ -98,8 +98,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--varm",
         help="BED files to add to the AnnData varm",
-        nargs="+",
+        nargs="*",
         default=[],
+        const=[],
     )
     parser.add_argument(
         "--params",
