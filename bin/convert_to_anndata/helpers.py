@@ -73,7 +73,7 @@ def load_from_file(filepath):
         raise ValueError("Unsupported file format. Expected formats are .npy or .npz ")
 
 
-def get_matrices_mapping_by_types(matrices: List[str], matrices_types):
+def get_matrices_mapping_by_types(matrices: List[str], matrices_types, layers):
     matrices_mapping = {}
     for matrix in matrices:
         for matrix_type in matrices_types:
@@ -87,6 +87,9 @@ def get_matrices_mapping_by_types(matrices: List[str], matrices_types):
 
 def add_matrices_to_anndata(adata, matrices_mapping: dict, mask=None):
     for matrix_name, matrix in matrices_mapping.items():
+        if matrix_name in adata.layers:
+            print(f"Layer {matrix_name} already exists in anndata. Skipping.")
+            continue
         matrix = np.load(matrix).T
         if matrix.dtype == np.float64:
             matrix = matrix.astype(np.float32)

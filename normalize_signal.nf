@@ -165,15 +165,16 @@ workflow normalizeMatrix {
             | variancePartition // prefix, vp_annotated_masterlist
 
 		out = normalization_data.scale_factors // prefix, scale factors
+            | join(matrices.map(it -> tuple(it[0], it[2]))) // prefix, count_matrix
             | join(vst_data.vst)
             | join(normalization_data.lowess_normalization_params)
             | join(vst_data.dispersion_function)
             | join(variance_partition_data) // prefix, scale_factors, vst_matrix, model_params, dispersion_function, vp_annotated_masterlist
             | map(
                 it -> tuple(
-                    [it[1], it[2]], // [vst_matrix, scale_factors]
-                    [it[3], it[4], it[5]], // [model_params]
-                    [it[6]], // bed files
+                    [it[1], it[2], it[3]], // [vst_matrix, scale_factors]
+                    [it[4], it[5], it[6]], // [model_params]
+                    [it[7]], // bed files
                     [
                         "deseq_design_formula=${params.vst_design_formula}",
                         "variance_partition_formula=${params.variance_partition_formula}",
@@ -254,11 +255,12 @@ workflow existingModelToScaleFactors {
         lowess_params
     )
     out = normalization_data.scale_factors
+        | join(matrices.map(it -> tuple(it[0], it[2]))) // prefix, count_matrix
         | join(normalization_data.lowess_normalization_params)
         | map(
             it -> tuple(
-                [it[1]], // [scale_factors]
-                [it[2], it[3]], // [model_params]
+                [it[1], it[2]], // [scale_factors]
+                [it[3], it[4]], // [model_params]
                 [], // bed files
                 [
                     "normalization_layer=${params.normalization_layer}",
