@@ -34,7 +34,7 @@ def main(anndata_obj):
     # for newer versions
     key = 'lowess_normalization_params.norm_factors_geometric_mean'
     if key in anndata_obj.varm:
-        mask = get_mask_from_column_name(anndata_obj.uns['dhs_mask_name'])
+        mask = get_mask_from_column_name(anndata_obj, anndata_obj.uns['dhs_mask_name'])
         norm_arrays['norm_factors_geometric_mean'] = anndata_obj.varm[key][mask]
 
     return deseq_params, norm_arrays, norm_json
