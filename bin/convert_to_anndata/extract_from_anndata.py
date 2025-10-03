@@ -62,7 +62,6 @@ if __name__ == '__main__':
     if args.matrix_samples_file is not None and os.path.exists(args.matrix_samples_file):
         matrix_metadata = pd.read_table(args.matrix_samples_file).set_index('sample_id')
         missing_ids = matrix_metadata.index.difference(metadata.index)
-        print(f"Missing IDs in matrix samples metadata: {missing_ids}")
         if matrix_metadata.shape[0] == metadata.shape[0] and len(missing_ids) == 0:
             pass
         else:
