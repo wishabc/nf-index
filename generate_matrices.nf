@@ -129,6 +129,7 @@ process extract_max_pval {
 process extract_bg_mean {
     conda params.conda
     tag "${sample_id}"
+    label "bg_params"
 
     input:
         tuple path(masterlist), val(sample_id), path(bg_params_tabix)
