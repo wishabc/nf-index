@@ -73,7 +73,7 @@ def load_from_file(filepath):
         raise ValueError("Unsupported file format. Expected formats are .npy or .npz ")
 
 
-def get_matrices_mapping_by_types(matrices: List[str], matrices_types, layers):
+def get_matrices_mapping_by_types(matrices: List[str], matrices_types):
     matrices_mapping = {}
     for matrix in matrices:
         for matrix_type in matrices_types:
