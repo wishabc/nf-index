@@ -71,10 +71,11 @@ def main(
     ):
     expected_matrices_type = [
         'scale_factors.mean_normalized',
-        'vst'
+        'vst',
+        'bg_corrected_agg_cutcounts',
     ] + list(adata.layers.keys())
     matrices_mapping = get_matrices_mapping_by_types(matrices, expected_matrices_type)
-    
+
     add_matrices_to_anndata(adata, matrices_mapping, mask)
     add_normalization_params(adata, params, mask)
     

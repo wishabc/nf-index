@@ -77,9 +77,9 @@ if __name__ == '__main__':
 
     for name, matrix in matrices.items():
         if sp.issparse(matrix):
-            sp.save_npz(f"{name}.{args.extra_layers_suffix}.npz", matrix.T)
+            sp.save_npz(f"{args.extra_layers_suffix}.{name}.npz", matrix.T)
         elif isinstance(matrix, da.Array):
-            np.save(f"{name}.{args.extra_layers_suffix}.npy", matrix.T.compute())
+            np.save(f"{args.extra_layers_suffix}.{name}.npy", matrix.T.compute())
         else:
-            np.save(f"{name}.{args.extra_layers_suffix}.npy", matrix.T)
+            np.save(f"{args.extra_layers_suffix}.{name}.npy", matrix.T)
         
