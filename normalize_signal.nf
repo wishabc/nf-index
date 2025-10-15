@@ -15,7 +15,7 @@ process extract_from_anndata {
         val anndata
     
     output:
-        tuple val(prefix), path("binary.matrix.npz"), path("${params.normalization_layer}.matrix.npy"), path(samples_order), path(masterlist), path(samples_meta)
+        tuple val(prefix), path("matrix.binary.npz"), path("matrix.${params.normalization_layer}.npy"), path(samples_order), path(masterlist), path(samples_meta)
 
     script:
     prefix = params.dhs_mask_name
