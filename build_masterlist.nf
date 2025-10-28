@@ -213,10 +213,10 @@ process annotate_masterlist {
     errorStrategy 'ignore'
 
     input: 
-        tuple path(binary_matrix), path(samples_order), path(masterlist)
+        tuple path(samples_order), path(masterlist, name: "masterlist.bed")
 
     output:
-        tuple path(binary_matrix), path(samples_order), path(name)
+        path name
 
     script:
     name = "masterlist_DHSs_all_chunks.Altius.annotated.bed"
@@ -227,7 +227,6 @@ process annotate_masterlist {
         repeat_annotations.txt
 
     bash $moduleDir/bin/annotations/gencodeAnnotations.sh \
-	    ${params.species} \
         ${masterlist} \
         ${params.gencode} \
         ${params.chrom_sizes} \
@@ -293,13 +292,28 @@ workflow buildIndex {
 
 workflow {
     print "Using peak files from  - params.samples_file = ${params.samples_file}. Column for peak files: ${params.index_peaks_column}"
-    Channel.fromPath(params.samples_file)
+    index_data = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> file(row[params.index_peaks_column]))
         | buildIndex
-        | annotate_masterlist // matrix, samples_order, annotated_index
+
+    index_data // matrix, samples_order, masterlist
+        | map(it -> tuple(it[1], it[2]))
+        | annotate_masterlist // annotated_masterlist
+        | combine(index_data)
+        | map(it -> tuple(it[1], it[2], it[0])) // matrix, samples_order, annotated_masterlist
         | convert_index_to_anndata
 }
+
+workflow annotateMasterlist {
+    Channel.of(
+        tuple(
+            file("${params.index_dir}/samples_order.txt"),
+            file("${params.index_dir}/unfiltered_masterlist/masterlist_DHSs_Altius_all_chunkIDs.bed")
+        )
+    ) | annotate_masterlist
+}
+
 
 
 // DEFUNC

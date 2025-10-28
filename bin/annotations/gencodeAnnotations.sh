@@ -1,11 +1,10 @@
 #!/bin/bash
 
 #Path to relevant Masterlist Files
-species=$1
-masterlist=$2
-gencode=$3
-chromSize=$4
-outfile=$5
+masterlist=$1
+gencode=$2
+chromSize=$3
+outfile=$4
 
 ##################################
 #####  Parse Gencode File   ######
