@@ -8,7 +8,7 @@ chromSize=$4
 outfile=$5
 
 ##################################
-#Parse Gencode File (utr updated)#
+#####  Parse Gencode File   ######
 ##################################
 chromInfo="chrom_sizes.bed"
 awk -v OFS='\t' \
@@ -18,6 +18,7 @@ awk -v OFS='\t' \
 
 #Remove row if start = end
 zcat ${gencode} \
+    | grep -v '^#' \
     | awk -F'\t' -v OFS='\t' '{
         if($4 != $5) {
             print $1,$4,$5,$3,$7
@@ -49,14 +50,7 @@ awk '{if($4 == "gene") print}' gencode.bed > gene.bed
 awk '{if($4 == "exon") print}' gencode.bed > exon.bed
 awk '{if($4 == "CDS") print}' gencode.bed > cds.bed
 awk '{if($4 == "promoter") print}' gencode.bed > promoter.bed
-
-#Check which species since mouse doesn't have the 5' and 3' UTR difference
-if [ ${species} != "mouse" ]
-then
-        awk '{if($4 == "five_prime_utr" || $4 == "three_prime_utr") print}' gencode.bed > utr.bed
-else
-        awk '{if($4 == "UTR") print}' gencode.bed > utr.bed
-fi
+awk '{if($4 == "three_prime_UTR" || $4 == "five_prime_UTR") print}' gencode.bed > utr.bed
 
 bedops --ec -m utr.bed exon.bed promoter.bed cds.bed \
     | bedops --ec -d gene.bed - \
@@ -84,8 +78,10 @@ bedops --ec -u \
         --echo-overlap-size \
         <(cut -f1-3 ${masterlist}) - > gencode_mapped.bed
 
+echo "Protein_coding regions"
 #Filter Initial Gencode file based on protein coding and non-protein coding regions
 zcat ${gencode} \
+    | grep -v '^#' \
     | grep protein_coding \
     | awk -v OFS='\t' '{
         if($3 == "transcript") {
@@ -104,6 +100,7 @@ zcat ${gencode} \
     > PC.bed
 
 zcat ${gencode} \
+    | grep -v '^#' \
     | grep -v protein_coding \
     | awk '{
             if($3 == "transcript") {
@@ -369,7 +366,7 @@ bedmap --echo-map --fraction-both 1 ${masterlist} dhs_annotated_exon.bed \
 cat dhs_annotated_exon.bed dhs_annotated_intron.bed dhs_annotated_promoter.bed \
     | sort-bed - \
     | bedmap --echo-map --fraction-both 1 ${masterlist} - \
-    | awk -F'\t' '{if($5 == "CDS" || $5 == "three_prime_utr" || $5 == "five_prime_utr") print $1"\t"$2"\t"$3"\t"$4"\t""PC"; else print}' \
+    | awk -F'\t' '{if($5 == "CDS" || $5 == "three_prime_UTR" || $5 == "five_prime_UTR") print $1"\t"$2"\t"$3"\t"$4"\t""PC"; else print}' \
     | awk -F'\t' '{if($5 == "") print $1"\t"$2"\t"$3"\t"$4"\t""NPC"; else print}' \
     | cut -f5 \
     > is_coding.txt
