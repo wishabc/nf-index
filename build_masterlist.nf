@@ -309,7 +309,7 @@ workflow annotateMasterlist {
     Channel.of(
         tuple(
             file("${params.index_dir}/samples_order.txt"),
-            file("${params.index_dir}/unfiltered_masterlist/masterlist_DHSs_Altius_all_chunkIDs.bed")
+            file("${params.index_dir}/unfiltered_masterlists/masterlist_DHSs_Altius_all_chunkIDs.bed")
         )
     ) | annotate_masterlist
 }
