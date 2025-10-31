@@ -78,7 +78,7 @@ process extract_max_density {
         -c 4 \
         -o max \
     | awk '{print \$6}' \
-    | sed 's/\<NA\>/0/g' \
+    | sed 's/\\<NA\\>/0/g' \
     > tmp.txt
 
     python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype float
