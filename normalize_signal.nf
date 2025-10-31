@@ -313,7 +313,7 @@ process differential_deseq {
     """
 }
 
-
+// nextflow run normalize_signal.nf -profile Altius,new_cluster -entry diffDeseq --dds <path> -resume --total_chunks 1000
 workflow diffDeseq {
     params.dds = "/net/seq/data2/projects/sabramov/SuperIndex/hotspot3/w_babachi_new.v23/index/filled_1pr/output/normalization/lowess/ready_for_deseq.reciprocal.mouse+human.normalized.only_autosomes.filtered.no_q.dds.RDS"
     params.total_chunks = 500

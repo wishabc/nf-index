@@ -6,6 +6,27 @@ include { add_matrices_to_anndata; convert_to_numpy; extract_meta_from_anndata }
 params.conda = "$moduleDir/environment.yml"
 
 
+process index_to_summit {
+    conda params.conda
+    tag "${sample_id}"
+    scratch true
+
+    input:
+        path masterlist
+    
+    output:
+        path summit_masterlist
+    
+    script:
+    summit_masterlist = "masterlist.summits.bed"
+    """
+    awk -F'\t' -v OFS='\t' \
+        '{ print \$1, \$5, \$5 + 1, \$4, "\$5" }' ${masterlist} \
+        > ${summit_masterlist}
+    """
+}
+
+
 // Processes below create a np array of shape n_dhs x 1
 process project_peak_calls {
     conda params.conda
@@ -51,13 +72,14 @@ process extract_max_density {
     name = "${sample_id}.${suffix}.npy"
     """
     bigWigToBedGraph ${density_bw} tmp.bg 
-    cat tmp.bg \
-        | awk -v OFS='\t' '{print \$1,\$2,\$3,"${sample_id}",\$4}' \
-        | bedmap --sweep-all \
-            --delim "\t" \
-            --max ${masterlist} - \
-        | sed 's/\\<NAN\\>/0/g' \
-        > tmp.txt
+    bedtools map \
+        -a ${masterlist} \
+        -b tmp.bg \
+        -c 4 \
+        -o max \
+    | awk '{print \$6}' \
+    | sed 's/\<NA\>/0/g' \
+    > tmp.txt
 
     python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype float
     """
@@ -141,18 +163,18 @@ process extract_bg_mean {
     suffix = "mean_bg_agg_cutcounts"
     name = "${sample_id}.${suffix}.npy"
     """
-    echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\tdhs_id\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
+    echo -e "chrom_masterlist\tstart_masterlist\tend_masterlist\tdhs_id\tsummit\t\$(head -1 <(zcat ${bg_params_tabix}))" > tmp.bed
 
     zcat ${bg_params_tabix} \
         | grep -v "^#" \
         | grep segment \
         | bedtools intersect \
             -loj \
-            -a <(awk -F'\t' -v OFS='\t' '{ print \$1, \$5, \$5 + 1, \$4 }' ${masterlist} | sort-bed -) \
+            -a ${masterlist} \
             -b stdin \
-            -sorted >> tmp.bed
+            >> tmp.bed
 
-    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${masterlist} ${name}
+    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${name}
     """
 }
 
@@ -187,12 +209,19 @@ workflow generateMatrices {
     take:
         data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density, fit_stats, hotspot3_pvals_parquet
     main:
+        
+        summits_masterlist = data
+            | map(it -> it[0])
+            | index_to_summit
+
         binary_cols = data
             | map(it -> tuple(it[0], it[3], it[6]))
             | project_peak_calls
 
-        density_cols = data // masterlist, samples_order, saf_masterlist 
-            | map(it -> tuple(it[0], it[3], it[7]))
+        density_cols = data
+            | map(it -> tuple(it[3], it[7])) // samples_order, density_bw
+            | combine(summits_masterlist)
+            | map(it -> tuple(it[2], it[0], it[1]))
             | extract_max_density
 
         count_cols = data
@@ -267,22 +296,31 @@ workflow {
 }
 
 
-////////////////////// /////////////
-workflow extractDensity {
-    println "Extracting normalized density at ${params.reference_bed}"
-    reference_bed = Channel.fromPath(params.reference_bed)
+workflow extractDensityAtSummit {
+    println "Extracting normalized density at summits from ${params.index_anndata}"
+    data = Channel.of(params.index_anndata)
+        | extract_meta_from_anndata // masterlist , saf_masterlist, samples_order, samples_meta
+    
+    summits_masterlist = data
+        | map(it -> it[0])
+        | index_to_summit
+
     samples_meta = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.sample_id,
             file(row.normalized_density_bw)
         ))
-        | combine(reference_bed)
+        | combine(summits_masterlist)
         | map(it -> tuple(it[2], it[0], it[1]))
         | extract_max_density
+        | map(it -> tuple('density_at_summit', it[1])) // suffix, column
+        | groupTuple()
+        | combine(data.map(it -> it[2])) // suffix, column, samples_order
+        | generate_matrix
 }
 
-
+////////////////////// DEFUNC  /////////////
 workflow extractBGParams {
     println "Extracting bg params at ${params.reference_bed}"
     reference_bed = Channel.fromPath(params.reference_bed)
