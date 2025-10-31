@@ -6,10 +6,8 @@ include { add_matrices_to_anndata; convert_to_numpy; extract_meta_from_anndata }
 params.conda = "$moduleDir/environment.yml"
 
 
-process index_to_summit {
+process convert_regions_to_summits {
     conda params.conda
-    tag "${sample_id}"
-    scratch true
 
     input:
         path masterlist
@@ -212,7 +210,7 @@ workflow generateMatrices {
         
         summits_masterlist = data
             | map(it -> it[0])
-            | index_to_summit
+            | convert_regions_to_summits
 
         binary_cols = data
             | map(it -> tuple(it[0], it[3], it[6]))
@@ -303,7 +301,7 @@ workflow extractDensityAtSummit {
     
     summits_masterlist = data
         | map(it -> it[0])
-        | index_to_summit
+        | convert_regions_to_summits
 
     samples_meta = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
