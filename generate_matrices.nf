@@ -13,14 +13,40 @@ process convert_regions_to_summits {
         path masterlist
     
     output:
-        path summit_masterlist
+        tuple path(summit_masterlist), path(inverse_argsort)
     
     script:
     summit_masterlist = "masterlist.summits.bed"
+    inverse_argsort = "masterlist.summits.inverse_argsort.txt"
     """
     awk -F'\t' -v OFS='\t' \
-        '{ print \$1, \$5, \$5 + 1, \$4, "\$5" }' ${masterlist} \
-        > ${summit_masterlist}
+        '{ print \$1, \$5, \$5 + 1, \$4, NR }' ${masterlist} \
+        | sort-bed - > ${summit_masterlist}
+
+    cat ${summit_masterlist} \
+        | awk '{print NR, \$NF}' \
+        | sort -k2,2n | awk '{print \$1 - 1}' > ${inverse_argsort}
+    """
+}
+
+process restore_masterlist_order {
+
+    conda params.conda
+    tag "${prefix}"
+
+    input:
+        tuple val(prefix), path(np_array, name: "input/*"), path(inverse_argsort)
+    
+    output:
+        tuple val(prefix), path(name)
+    
+    script:
+    name = np_array.name
+    """
+    python3 $moduleDir/bin/helpers/restore_masterlist_order.py \
+        ${np_array} \
+        ${inverse_argsort} \
+        ${name}
     """
 }
 
@@ -49,7 +75,7 @@ process project_peak_calls {
         ${masterlist} \
         - > tmp.txt
 
-    python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype bool
+    python3 $moduleDir/bin/helpers/txt_to_np.py tmp.txt ${name} --dtype bool
     """
 }
 
@@ -69,17 +95,17 @@ process extract_max_density {
     suffix = "density"
     name = "${sample_id}.${suffix}.npy"
     """
-    bigWigToBedGraph ${density_bw} tmp.bg 
-    bedtools map \
-        -a ${masterlist} \
-        -b tmp.bg \
-        -c 4 \
-        -o max \
-    | awk '{print \$6}' \
-    | sed 's/\\<NA\\>/0/g' \
-    > tmp.txt
+    bigWigToBedGraph ${density_bw} tmp.bg
 
-    python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype float
+    cat tmp.bg \
+        | awk -v OFS='\t' '{print \$1,\$2,\$3,"${sample_id}",\$4}' \
+        | bedmap --sweep-all \
+            --delim "\t" \
+            --max ${masterlist} - \
+        | sed 's/\\<NAN\\>/0/g' \
+        > tmp.txt
+
+    python3 $moduleDir/bin/helpers/txt_to_np.py tmp.txt ${name} --dtype float
     """
 }
 
@@ -118,7 +144,7 @@ process count_tags {
 	cat counts.txt \
         | awk 'NR > 2 {print \$(NF)}' > tmp.txt
         
-    python3 $moduleDir/bin/txt_to_np.py tmp.txt ${name} --dtype int
+    python3 $moduleDir/bin/helpers/txt_to_np.py tmp.txt ${name} --dtype int
 	"""
 }
 
@@ -170,9 +196,10 @@ process extract_bg_mean {
             -loj \
             -a ${masterlist} \
             -b stdin \
+            -sorted \
             >> tmp.bed
 
-    python3 $moduleDir/bin/extract_bg_params.py tmp.bed ${name}
+    python3 $moduleDir/bin/helpers/extract_bg_params.py tmp.bed ${name}
     """
 }
 
@@ -194,7 +221,7 @@ process generate_matrix {
 	script:
     name = "matrix.${prefix}.npy"
 	"""
-    python3 $moduleDir/bin/matrix_from_vectors.py \
+    python3 $moduleDir/bin/helpers/matrix_from_vectors.py \
         ${prefix} \
         ${samples_order} \
         ${name} \
@@ -207,32 +234,39 @@ workflow generateMatrices {
     take:
         data // masterlist, samples_order, saf_masterlist, id, bam, bam_index, peaks, density, fit_stats, hotspot3_pvals_parquet
     main:
-        
-        summits_masterlist = data
-            | map(it -> it[0])
-            | convert_regions_to_summits
 
         binary_cols = data
             | map(it -> tuple(it[0], it[3], it[6]))
             | project_peak_calls
-
-        density_cols = data
-            | map(it -> tuple(it[3], it[7])) // samples_order, density_bw
-            | combine(summits_masterlist)
-            | map(it -> tuple(it[2], it[0], it[1]))
-            | extract_max_density
-
+        
         count_cols = data
             | map(it -> tuple(it[2], it[3], it[4], it[5]))
 			| count_tags
-
-        bg_params_cols = data
-            | map(it -> tuple(it[0], it[3], it[8]))
-            | extract_bg_mean
         
         max_pvals = data
             | map(it -> tuple(it[0], it[3], it[9]))
             | extract_max_pval
+
+        // Summit based extraction
+        summits_masterlist = data
+            | map(it -> it[0])
+            | convert_regions_to_summits // summits_masterlist, inverse_argsort
+
+        density_cols = data
+            | map(it -> tuple(it[3], it[7])) // samples_order, density_bw
+            | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
+            | map(it -> tuple(it[3], it[0], it[1], it[2]))
+            | extract_max_density
+
+        summit_based_cols = data
+            | map(it -> tuple(it[3], it[8]))
+            | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
+            | map(it -> tuple(it[2], it[0], it[1]))
+            | extract_bg_mean
+            | mix(density_cols) 
+            | combine(summits_masterlist.map(it -> it[1])) 
+            | restore_masterlist_order
+        
 
         samples_order = data
             | map(it -> it[1])
@@ -240,9 +274,9 @@ workflow generateMatrices {
 
         out = binary_cols
             | mix(count_cols)
-            | mix(density_cols) // suffix, column
-            | mix(bg_params_cols)
             | mix(max_pvals)
+            | mix(summit_based_cols)
+
             | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
             | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
             | groupTuple(by: 0) // suffix, columns
@@ -301,7 +335,7 @@ workflow extractDensityAtSummit {
     
     summits_masterlist = data
         | map(it -> it[0])
-        | convert_regions_to_summits
+        | convert_regions_to_summits // summits_masterlist, inverse_argsort
 
     samples_meta = Channel.fromPath(params.samples_file)
         | splitCsv(header:true, sep:'\t')
@@ -309,10 +343,11 @@ workflow extractDensityAtSummit {
             row.sample_id,
             file(row.normalized_density_bw)
         ))
-        | combine(summits_masterlist)
+        | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
         | map(it -> tuple(it[2], it[0], it[1]))
         | extract_max_density
-        | map(it -> tuple('density_at_summit', it[1])) // suffix, column
+        | combine(summits_masterlist.map(it -> it[1])) // inverse_argsort
+        | restore_masterlist_order
         | groupTuple()
         | combine(data.map(it -> it[2])) // suffix, column, samples_order
         | generate_matrix
