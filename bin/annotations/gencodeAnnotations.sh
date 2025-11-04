@@ -376,33 +376,39 @@ cat dhs_annotated_exon.bed dhs_annotated_intron.bed dhs_annotated_promoter.bed \
 ###############
 
 zcat ${gencode} \
-    | awk -F'\t' '{if($4 != $5) print}' \
-    | awk -F'\t' '{
-            if($3 == "transcript") {
-                    if($7 == "+") {
-                            print $1"\t"$4"\t"$4+1"\t"$9;
-                    }
-                    else if($7 == "-") {
-                            print $1"\t"$5-1"\t"$5"\t"$9;
-                    }
-            }
-    }' - \
-    | grep -v chrM | grep -v Selenocysteine | grep -v codon \
-    | sort-bed - \
-    | awk -F';' '{print $1"\t"$3}' \
-    | awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$5}' \
-    | sed 's/gene_name//g' \
-    | sed 's/\"//g' \
-    | sed 's/ //g' \
-    > tss.bed
+  | awk -F'\t' '$3 == "transcript" && $4 != $5' \
+  | awk -F'\t' '{
+      if ($7 == "+") {
+        print $1"\t"$4"\t"$4+1"\t"$7"\t"$9;
+      } else if ($7 == "-") {
+        print $1"\t"$5-1"\t"$5"\t"$7"\t"$9;
+      }
+    }' \
+  | grep -v chrM | grep -v Selenocysteine | grep -v codon \
+  | sort-bed - \
+  | awk -F';' '{print $1"\t"$3"\t"$4"\t"$5}' \
+  | awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$4"\t"$6}' \
+  | sed 's/gene_name//g' | sed 's/"//g' | sed 's/ //g' \
+  > tss.bed
+
 
 ###########################
 #Closest-Features to Genes#
 ##########################
 
-closest-features --closest --no-ref --dist ${masterlist} tss.bed \
-    | awk -F'\t' '{print $4}' \
-    | awk -F'|' -v OFS='\t' '{print $2,$1}' \
+closest-features --closest --no-ref --dist "${masterlist}" tss.bed \
+  | sed 's/|/\t/g' \
+  | awk -F'\t' '{
+      strand = $4;
+      dist = $6;
+
+      # Flip sign if strand is "-"
+      if (strand == "-") {
+        dist = -dist;
+      }
+
+      print dist"\t"$5;
+    }' \
     > dist_gene.txt
 
 
