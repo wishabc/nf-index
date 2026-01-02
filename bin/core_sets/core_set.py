@@ -76,7 +76,7 @@ def calc_mcv(binary_sparse):
     return binary_sparse.sum(axis=0).A1
 
 
-def saturation_curve(category_binary, mcv_mask, core_mask, n_shuffles=100):
+def saturation_curve(category_binary, mcv_mask, core_mask, n_shuffles=200):
     b_mat = np.ascontiguousarray(category_binary[:, mcv_mask].todense().A)
     core_b_mat = np.ascontiguousarray(category_binary[:, core_mask].todense().A)
     print('Saturation curve', b_mat.shape, core_b_mat.shape, n_shuffles)
