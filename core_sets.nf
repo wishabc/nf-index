@@ -46,7 +46,8 @@ process core_set {
         '${grouping_key}' \
         ${anndata} \
         --fdr ${fdr} \
-        --method ${params.core_set_correction_method}
+        --method ${params.core_set_correction_method} \
+        --n_samples ${params.core_set_n_shuffles} \
     """
 }
 

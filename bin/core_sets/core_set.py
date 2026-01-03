@@ -128,7 +128,7 @@ def get_core_set(pvals_matrix, binary_matrix, combine_pval_method, fdr_threshold
     return core
 
 
-def main(pvals_matrix, binary, inverse_binary, fdr_threshold, combine_pval_method='cauchy'):
+def main(pvals_matrix, binary, inverse_binary, fdr_threshold, combine_pval_method='cauchy', n_samples=100):
     category_binary = binary
     mcv_mask = calc_mcv(category_binary) > 0
     inv_mcv = calc_mcv(inverse_binary[:, mcv_mask])
@@ -141,7 +141,8 @@ def main(pvals_matrix, binary, inverse_binary, fdr_threshold, combine_pval_metho
     s_curve, s_curve_core, step_added = saturation_curve(
         category_binary,
         mcv_mask,
-        core_mask
+        core_mask,
+        n_shuffles=n_samples
     )
     mcv_by_step_stats = per_step_stats(
         category_binary,
@@ -164,6 +165,7 @@ def parse_args():
     parser.add_argument("anndata_path", type=str, help="Path to Zarr-backed AnnData object.")
     parser.add_argument("--fdr", type=float, help="FDR threshold for core set selection.")
     parser.add_argument("--method", type=str, choices=("cauchy", "stouffer"), help="Method for p-value combination.")
+    parser.add_argument("--n_samples", type=int, help="Number of samples")
 
     return parser.parse_args()
 
@@ -201,7 +203,8 @@ if __name__ == "__main__":
         binary,
         inverse_binary,
         fdr_threshold=args.fdr,
-        combine_pval_method=args.method
+        combine_pval_method=args.method,
+        n_samples=args.n_samples,
     )
 
     # Output files
