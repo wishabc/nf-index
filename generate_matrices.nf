@@ -255,7 +255,7 @@ workflow generateMatrices {
         density_cols = data
             | map(it -> tuple(it[3], it[7])) // samples_order, density_bw
             | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
-            | map(it -> tuple(it[3], it[0], it[1], it[2]))
+            | map(it -> tuple(it[2], it[0], it[1]))
             | extract_max_density
 
         summit_based_cols = data
