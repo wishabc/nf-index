@@ -250,6 +250,7 @@ workflow generateMatrices {
         // Summit based extraction
         summits_masterlist = data
             | map(it -> it[0])
+            | first()
             | convert_regions_to_summits // summits_masterlist, inverse_argsort
 
         density_cols = data
@@ -276,7 +277,6 @@ workflow generateMatrices {
             | mix(count_cols)
             | mix(max_pvals)
             | mix(summit_based_cols)
-
             | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
             | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
             | groupTuple(by: 0) // suffix, columns
