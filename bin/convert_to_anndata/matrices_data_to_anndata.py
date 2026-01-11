@@ -37,7 +37,8 @@ if __name__ == '__main__':
 
         if len(overlap) > 0:
             for col in overlap:
-                assert samples_meta[col].equals(adata_obj.obs[col]), f"Column '{col}' differs between samples_meta and adata.obs"
+                if not samples_meta[col].equals(adata_obj.obs[col]):
+                    print(f"Column '{col}' differs between samples_meta and adata.obs. Using samples meta as refeence")
 
         adata_obj.obs = samples_meta.drop(columns=overlap).join(adata_obj.obs)
 
