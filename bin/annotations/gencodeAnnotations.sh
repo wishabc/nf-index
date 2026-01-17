@@ -386,9 +386,10 @@ zcat ${gencode} \
     }' \
   | grep -v chrM | grep -v Selenocysteine | grep -v codon \
   | sort-bed - \
-  | awk -F';' '{print $1"\t"$3"\t"$4"\t"$5}' \
-  | awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$4"\t"$6}' \
-  | sed 's/gene_name//g' | sed 's/"//g' | sed 's/ //g' \
+  | awk -F';' '{print $1"\t"$3"\t"$4"\t"$5"\t"$6}' \
+  | awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$9}' \
+  | tr "=" "\t" \
+  | cut -f1-4,6,8 \
   > tss.bed
 
 
@@ -400,20 +401,20 @@ closest-features --closest --no-ref --dist "${masterlist}" tss.bed \
   | sed 's/|/\t/g' \
   | awk -F'\t' '{
       strand = $4;
-      dist = $6;
+      dist = $7;
 
       # Flip sign if strand is "-"
       if (strand == "-") {
         dist = -dist;
       }
 
-      print dist"\t"$5;
+      print dist"\t"$5"\t"$6;
     }' \
     > dist_gene.txt
 
 
 echo "Finished Distance to TSS"
-echo -e "dist_tss\tgene\tgene_body\texon_subgroup\tis_coding" > ${outfile}
+echo -e "dist_tss\tgene_id\tgene_name\tgene_body\texon_subgroup\tis_coding" > ${outfile}
 paste dist_gene.txt gene_body.txt exon_subfamily.txt is_coding.txt >> ${outfile}
 
 echo "Finished Gencode Annotation"

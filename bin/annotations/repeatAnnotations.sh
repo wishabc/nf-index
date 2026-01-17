@@ -12,10 +12,13 @@ outfile=$3
 cut -f1-3 ${masterlist} \
 > tmp.masterlist.bed3
 
-
 zcat ${repeats} \
-    | bedmap --echo --echo-map --fraction-map .5 --echo-overlap-size --echo-map-size --ec --skip-unmapped tmp.masterlist.bed3 - \
-    > repeated_mapped.bed
+| cut -f6-8,10-13 \
+| sort-bed - \
+> repeats.bed
+
+bedmap --echo --echo-map --fraction-ref .5 --echo-overlap-size --echo-map-size --ec --skip-unmapped tmp.masterlist.bed3 repeats.bed \
+> repeated_mapped.bed
 
 ########################
 #Choose Best Annotation#
