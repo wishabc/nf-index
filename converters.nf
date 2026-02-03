@@ -15,7 +15,7 @@ process convert_to_numpy {
     name = "${prefix}.raw.matrix.npy"
     dtype = prefix.contains('binary') ? 'bool' : (prefix.contains('counts') ? 'int' : 'float')
     """
-    python3 $moduleDir/bin/convert_to_numpy.py \
+    python3 $moduleDir/bin/helpers/convert_to_numpy.py \
         ${matrix} \
         ${name} \
         --dtype ${dtype}
