@@ -3,12 +3,15 @@ import sys
 import pandas as pd
 import numpy as np
 from helpers import convert_to_sparse_if_sufficently_sparse, load_from_file
-    
+import scipy.sparse as sp
 
 def main(rows_meta, cols_meta, matrix):
     adata = ad.AnnData(X=matrix, obs=cols_meta, var=rows_meta)
 
-    adata.obs['n_peaks'] = adata.X.sum(axis=1).A1
+    n_peaks = adata.X.sum(axis=1)
+    if sp.issparse(adata.X):
+        n_peaks = n_peaks.A1
+    adata.obs['n_peaks'] = n_peaks
 
     adata.var['autosomal_dhs'] = adata.var['#chr'].str.contains('chr[1-9]', regex=True)
     return adata
