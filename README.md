@@ -167,7 +167,33 @@ Parameters for each process can be specified either in ```params.config``` file 
 
 ### build_masterlist.nf params
 
-working
+- **samples_file**: A TSV file that must contain the following columns:
+  - `sample_id`: unique identifier for each sample
+  - a peak-file path column (set by `--index_peaks_column`, default: `peaks_file_0.001fdr`)
+
+  Example format:
+            <table>
+        <tr>
+            <th>sample_id</th>
+            <th>peaks_file_0.001fdr</th>
+        </tr>
+        <tr>
+            <td>Sample1</td>
+            <td>path/to/sample1.bed.gz</td>
+        </tr>
+        <tr>
+            <td>Sample2</td>
+            <td>path/to/sample2.bed.gz</td>
+        </tr>
+        <tr>
+            <td>...</td>
+            <td>...</td>
+        </tr>
+        <tr>
+            <td>Sample999</td>
+            <td>path/to/sample999.bed.gz</td>
+        </tr>
+        </table>
 
 ### TODO: add details about other workflows
 
