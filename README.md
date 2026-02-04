@@ -50,6 +50,26 @@ nextflow run nmf.nf -profile Altius -entry visualize --nmf_results_path <launchD
 The `--nmf_results_path` option can be omitted if you are running the pipeline in the same folder as `nextflow run nmf.nf -profile Altius`. 
 
 Note that output files are named according to provided `prefix` and `n_components` in `nmf_params_list`. No warning are made in case of name collisions.
+### build_masterlist.nf
+The workflow consists of these process:
+- Collates and chunks all peak files into genomic chunks.
+- Builds DHSs per chunk and resolves overlaps (produces “all”, “non-overlapping core”, and “non-overlapping any” versions per chunk).
+- Merges chunks into genome-wide masterlists.
+- Generates a raw sparse matrix (chunk-wise rows written then concatenated), then converts it to NumPy format.
+- Annotates the masterlist (GC content, GENCODE, repeats) and exports an AnnData object.
+
+To run the pipeline, use:
+```
+nextflow run build_masterlist.nf -profile Altius,new_cluster --resume \
+  --samples_file <samples_file> \
+  --index_peaks_column <column_name>
+```
+`--index_peaks_column` is optional if your peak-path column is `peaks_file_0.001fdr` (default).
+
+See [build_masterlist.nf params](#build_masterlistnf-params) for the required `<samples_file>` format.
+
+The `<samples_file>` must follow the required name and format as in build_masterlist.nf params
+
 ### TODO:
 Add other workflows description here
 
@@ -145,6 +165,9 @@ Parameters for each process can be specified either in ```params.config``` file 
 - **dhs_annotations**: (optional)
   (used only for visualizations) A tsv file with DHSs annotations. Should contain `dhs_id` and `dist_tss` columns. Other columns are permitted and ignored. If provided, plot cumulative distance to TSS for DHSs of each component. 
 
+### build_masterlist.nf params
+
+working
 
 ### TODO: add details about other workflows
 
