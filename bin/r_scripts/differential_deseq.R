@@ -66,6 +66,7 @@ export_deseq_data <- function(dds, prefix) {
   mu   <- assay(dds, "mu")
   q <- (mu + 1) / normalizationFactors(dds)
   gids <- rownames(dds); sids <- colnames(dds)
+  print(head(q))
   df_plot <- data.frame(
     gene                 = rep(gids, times = length(sids)),
     sample               = rep(sids, each  = length(gids)),
