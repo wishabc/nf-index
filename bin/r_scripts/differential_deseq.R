@@ -67,7 +67,6 @@ export_deseq_data <- function(dds, prefix) {
   q <- (mu + 1) / normalizationFactors(dds)
   gids <- rownames(dds)
   sids <- colnames(dds)
-  print(sids)
 
   df_plot <- data.frame(
     gene                 = rep(gids, times = length(sids)),
