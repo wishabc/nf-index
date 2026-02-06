@@ -305,7 +305,7 @@ process differential_deseq {
     script:
     suffix = "deseq_res.${chunk}"
     """
-    Rscript $moduleDir/bin/differential_deseq.R \
+    Rscript $moduleDir/bin/r_scripts/differential_deseq.R \
         ${suffix} \
         ${params.dds} \
         ${params.total_chunks} \
