@@ -1,6 +1,5 @@
 library(readr)
 library(dplyr)
-library(reticulate)
 library(stringr)
 library(data.table)
 library(DESeq2)
