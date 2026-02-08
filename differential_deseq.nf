@@ -48,6 +48,7 @@ process differential_deseq {
     memory { 30.GB * task.attempt * task.attempt }
     conda "/home/sabramov/miniconda3/envs/r-jupyter/"
     label "medmem"
+    tag "${meta.prefix}"
 
     input:
         val meta
