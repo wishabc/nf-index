@@ -43,7 +43,7 @@ workflow diffDeseq {
 
 
 
-process differential_deseq {
+process differential_deseq_species {
 
     memory { 30.GB * task.attempt * task.attempt }
     conda "/home/sabramov/miniconda3/envs/r-jupyter/"
@@ -60,7 +60,7 @@ process differential_deseq {
     prefix = meta.prefix
     name = "${prefix}.deseq_results.tsv"
     """
-    Rscript $moduleDir/bin/r_scripts/differential_deseq.R \
+    Rscript $moduleDir/bin/r_scripts/differential_deseq.species.R \
         ${meta.dataset_anndata} \
         ${prefix} \
         ${name}
@@ -70,7 +70,7 @@ process differential_deseq {
 workflow diffDeseqSpecies {
     Channel.fromPath(params.deseq_meta)
         | splitCsv(header:true, sep:'\t')
-        | differential_deseq
+        | differential_deseq_species
         | map(it -> it[1])
         | collectFile(
             storeDir: "${params.outdir}",
