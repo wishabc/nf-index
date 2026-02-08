@@ -16,9 +16,9 @@ args = commandArgs(trailingOnly=TRUE)
 anndata <- ad$read_zarr(args[1])
 anndata
 
-sample_meta <- anndat$obs
-dhs_meta <- anndat$var
-counts <- t(anndat$layers['counts'])
+sample_meta <- anndata$obs
+dhs_meta <- anndata$var
+counts <- t(anndata$layers['counts'])
 storage.mode(counts) <- "integer"
 row.names(counts) <- row.names(dhs_meta)
 colnames(counts) <- row.names(sample_meta)
