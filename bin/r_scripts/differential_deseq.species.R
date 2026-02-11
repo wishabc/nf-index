@@ -30,7 +30,7 @@ dds <- DESeqDataSet(
 )
 print('DEseq dataset done')
 dds <- estimateSizeFactors(dds)
-dds <- DESeq(dds, parallel=FALSE, minReplicatesForReplace=5)
+dds <- DESeq(dds, parallel=FALSE, minReplicatesForReplace=5, fitType="local")
 
 res_df <- as.data.frame(results(dds))
 res_df$dhs_id <- rownames(res_df)
