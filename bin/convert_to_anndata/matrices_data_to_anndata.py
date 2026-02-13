@@ -3,6 +3,7 @@ import pandas as pd
 from helpers import add_matrices_to_anndata, get_matrices_mapping_by_types
 from genome_tools.data.anndata import read_zarr_backed
 import anndata as ad
+from scipy import sparse as sp
 
 
 def main(adata, matrices):
@@ -14,7 +15,10 @@ def main(adata, matrices):
 
     add_matrices_to_anndata(adata, matrices_mapping)
 
-    adata.obs['n_peaks'] = adata.layers['binary'].sum(axis=1).A1
+    n_peaks = adata.X.sum(axis=1)
+    if sp.issparse(adata.X):
+        n_peaks = n_peaks.A1
+    adata.obs['n_peaks'] = n_peaks
     return adata
 
 

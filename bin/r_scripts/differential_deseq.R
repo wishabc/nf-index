@@ -1,6 +1,5 @@
 library(readr)
 library(dplyr)
-library(reticulate)
 library(stringr)
 library(data.table)
 library(DESeq2)
@@ -65,7 +64,9 @@ export_deseq_data <- function(dds, prefix) {
   nc   <- (counts(dds, normalized = FALSE) + 1) / normalizationFactors(dds)
   mu   <- assay(dds, "mu")
   q <- (mu + 1) / normalizationFactors(dds)
-  gids <- rownames(dds); sids <- colnames(dds)
+  gids <- rownames(dds)
+  sids <- colnames(dds)
+
   df_plot <- data.frame(
     gene                 = rep(gids, times = length(sids)),
     sample               = rep(sids, each  = length(gids)),
