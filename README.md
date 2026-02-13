@@ -86,7 +86,7 @@ Note: Run this workflow from the same launch directory as build_masterlist.nf so
 
 `--matrix_peaks_column` is optional if your peak-path column is `peaks_file_0.01fdr` (default).
 
-See [generate_matrices.nf params](#generate_matrices-params) for the required `<samples_file>` format.
+See [generate_matrices.nf params](#generate_matricesnf-params) for the required `<samples_file>` format.
 
 ### TODO:
 Add other workflows description here
