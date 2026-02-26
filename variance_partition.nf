@@ -51,7 +51,7 @@ process sort_bed {
 
 workflow variancePartition {
     take:
-        data // prefix, vst_matrix, samples_order, masterlist, samples_file
+        data // prefix, vst_matrix, samples_order, masterlist, samples_file, formula
     main:
         out = data
             | flatMap(it -> (1..it[3].countLines()))
@@ -77,7 +77,9 @@ workflow variancePartition {
 workflow {
     input_data = Channel.of(
         tuple(
+            "variance_partition",
             file(params.norm_matrix),
+            file(params.samples_order),
             file(params.masterlist),
             file(params.samples_meta),
             params.variance_partition_formula
