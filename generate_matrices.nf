@@ -61,7 +61,7 @@ process project_peak_calls {
 		tuple path(masterlist), val(sample_id), path(peaks_file)
     
     output:
-        tuple val(suffix), path(name)
+        tuple val(sample_id), val(suffix), path(name)
     
     script:
     suffix = 'binary'
@@ -89,7 +89,7 @@ process extract_max_density {
         tuple path(masterlist), val(sample_id), path(density_bw)
     
     output:
-        tuple val(suffix), path(name)
+        tuple val(sample_id), val(suffix), path(name)
     
     script:
     suffix = "density"
@@ -118,7 +118,7 @@ process count_tags {
 		tuple path(saf), val(sample_id), path(bam_file), path(bam_file_index)
 
 	output:
-		tuple val(suffix), path(name)
+		tuple val(sample_id), val(suffix), path(name)
 
 	script:
     suffix = "counts"
@@ -156,7 +156,7 @@ process extract_max_pval {
         tuple path(masterlist), val(sample_id), path(pvals_parquet)
 
     output:
-        tuple val(suffix), path(name)
+        tuple val(sample_id), val(suffix), path(name)
 
     script:
     suffix = 'neglog10_pvals'
@@ -181,7 +181,7 @@ process extract_bg_mean {
         tuple path(masterlist), val(sample_id), path(bg_params_tabix)
     
     output:
-        tuple val(suffix), path(name)
+        tuple val(sample_id), val(suffix), path(name)
     
     script:
     suffix = "mean_bg_agg_cutcounts"
@@ -229,6 +229,29 @@ process generate_matrix {
 	"""
 }
 
+ workflow getSummitBasedColumns {
+    take:
+        data // sample_id, bg_params_tabix, density_bw, masterlist, inverse_argsort
+    main:
+        inverse_argsort = data
+            | map(it -> tuple(it[0], it[4])) // sample_id, inverse_argsort
+
+        density_cols = data
+            | map(it -> tuple(it[3], it[0], it[2])) // masterlist, sample_id, density_bw
+            | extract_max_density
+
+        summit_based_cols = data
+            | map(it -> tuple(it[3], it[0], it[1])) // masterlist, sample_id, bg_params_tabix
+            | extract_bg_mean // sample_id, suffix, np_array
+            | mix(density_cols) 
+            | combine(inverse_argsort, by: 0) // sample_id, suffix, np_array, inverse_argsort
+            | map(it -> tuple(it[1], it[2], it[3])) // suffix, np_array, inverse_argsort
+            | restore_masterlist_order
+    
+    emit:
+        summit_based_cols
+ }
+
 
 workflow generateMatrices {
     take:
@@ -253,29 +276,27 @@ workflow generateMatrices {
             | first()
             | convert_regions_to_summits // summits_masterlist, inverse_argsort
 
-        density_cols = data
-            | map(it -> tuple(it[3], it[7])) // samples_order, density_bw
-            | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
-            | map(it -> tuple(it[2], it[0], it[1]))
-            | extract_max_density
-
-        summit_based_cols = data
-            | map(it -> tuple(it[3], it[8]))
-            | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
-            | map(it -> tuple(it[2], it[0], it[1]))
-            | extract_bg_mean
-            | mix(density_cols) 
-            | combine(summits_masterlist.map(it -> it[1])) 
-            | restore_masterlist_order
-        
-
         samples_order = data
             | map(it -> it[1])
             | first()
+        
+        samples_masterlists = samples_order
+            | map { it.split("\t")[0] }
+            | collect()
+            | combine(summits_masterlist)
+
+        samples_masterlists
+            | view()
+
+        summit_based_cols = data
+            | map(it -> tuple(it[3], it[8], it[7])) // sample_id, bg_params_tabix, density_bw
+            | join(samples_masterlists) // sample_id, bg_params_tabix, density_bw, summits_masterlist, inverse_argsort
+            | getSummitBasedColumns
 
         out = binary_cols
             | mix(count_cols)
-            | mix(max_pvals)
+            | mix(max_pvals) // sample_id, suffix, np_array
+            | map(it -> tuple(it[1], it[2])) // suffix, np_array
             | mix(summit_based_cols)
             | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
             | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
@@ -352,6 +373,41 @@ workflow extractDensityAtSummit {
         | combine(data.map(it -> it[2])) // suffix, column, samples_order
         | generate_matrix
 }
+
+
+workflow extractDataWithOffsets {
+    println "Extracting data with offsets from ${params.index_anndata}"
+    data = Channel.of(params.index_anndata)
+        | extract_meta_from_anndata // masterlist , saf_masterlist, samples_order, samples_meta
+    
+     samples_meta = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.sample_id,
+            file(row.normalized_density_bw)
+        ))
+    
+    summits_masterlist = data
+        | map(it -> it[0])
+        | first()
+        | convert_regions_to_summits // summits_masterlist, inverse_argsort
+
+    density_cols = data
+        | map(it -> tuple(it[3], it[7])) // samples_order, density_bw
+        | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
+        | map(it -> tuple(it[2], it[0], it[1]))
+        | extract_max_density
+
+    summit_based_cols = data
+        | map(it -> tuple(it[3], it[8]))
+        | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
+        | map(it -> tuple(it[2], it[0], it[1]))
+        | extract_bg_mean
+        | mix(density_cols) 
+        | combine(summits_masterlist.map(it -> it[1])) 
+        | restore_masterlist_order
+}
+
 
 ////////////////////// DEFUNC  /////////////
 workflow extractBGParams {
