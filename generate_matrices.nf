@@ -391,6 +391,11 @@ workflow extractDataWithOffsets {
     samples_order = data
         | map(it -> it[1])
         | first()
+    
+    samples_order
+        | countLines()
+        | toInteger()
+        | view()
 
     samples_meta
         | join(summits_masterlist)
@@ -398,7 +403,7 @@ workflow extractDataWithOffsets {
         | combine(samples_order.countLines().toInteger())
         | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
         | groupTuple(by: 0) // suffix, columns
-        | combine(samples_order)
+        | combine(samples_order) // suffix, columns, samples_order
         | generate_matrix
 }
 
