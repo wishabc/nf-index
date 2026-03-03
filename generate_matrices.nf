@@ -391,11 +391,7 @@ workflow extractDataWithOffsets {
     samples_order = data
         | map(it -> it[2])
         | first()
-    
-    samples_order
-        | countLines()
-        | toInteger()
-        | view()
+
 
     samples_meta
         | join(summits_masterlist)
