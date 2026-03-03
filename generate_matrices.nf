@@ -389,7 +389,7 @@ workflow extractDataWithOffsets {
         | apply_jitter // summits_masterlist, inverse_argsort
 
     samples_order = data
-        | map(it -> it[1])
+        | map(it -> it[2])
         | first()
     
     samples_order
