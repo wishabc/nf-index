@@ -284,9 +284,6 @@ workflow generateMatrices {
             | map(it -> it[3])
             | combine(summits_masterlist)
 
-        samples_masterlists
-            | view()
-
         summit_based_cols = data
             | map(it -> tuple(it[3], it[8], it[7])) // sample_id, bg_params_tabix, density_bw
             | join(samples_masterlists) // sample_id, bg_params_tabix, density_bw, summits_masterlist, inverse_argsort
