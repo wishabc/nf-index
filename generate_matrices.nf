@@ -280,9 +280,8 @@ workflow generateMatrices {
             | map(it -> it[1])
             | first()
         
-        samples_masterlists = samples_order
-            | map { it.split("\t")[0] }
-            | collect()
+        samples_masterlists = data
+            | map(it -> it[3])
             | combine(summits_masterlist)
 
         samples_masterlists
@@ -349,6 +348,33 @@ workflow {
 }
 
 
+workflow extractDataWithOffsets {
+    println "Extracting data with offsets from ${params.index_anndata}"
+    data = Channel.of(params.index_anndata)
+        | extract_meta_from_anndata // masterlist, saf_masterlist, samples_order, samples_meta
+    
+    samples_meta = Channel.fromPath(params.samples_file)
+        | splitCsv(header:true, sep:'\t')
+        | map(row -> tuple(
+            row.sample_id,
+            file(row.bg_params_tabix),
+            file(row.normalized_density_bw),
+        ))
+    
+    summits_masterlist = data
+        | map(it -> it[0])
+        | first()
+        | convert_regions_to_summits // summits_masterlist, inverse_argsort
+
+    data
+        | map(it -> tuple(it[3], it[8], it[7])) // sample_id, bg_params_tabix, density_bw
+        | join(summits_masterlist) // sample_id, bg_params_tabix, density_bw, summits_masterlist, inverse_argsort
+    getSummitBasedColumns
+}
+
+
+////////////////////// DEFUNC  /////////////
+
 workflow extractDensityAtSummit {
     println "Extracting normalized density at summits from ${params.index_anndata}"
     data = Channel.of(params.index_anndata)
@@ -375,41 +401,6 @@ workflow extractDensityAtSummit {
 }
 
 
-workflow extractDataWithOffsets {
-    println "Extracting data with offsets from ${params.index_anndata}"
-    data = Channel.of(params.index_anndata)
-        | extract_meta_from_anndata // masterlist , saf_masterlist, samples_order, samples_meta
-    
-     samples_meta = Channel.fromPath(params.samples_file)
-        | splitCsv(header:true, sep:'\t')
-        | map(row -> tuple(
-            row.sample_id,
-            file(row.normalized_density_bw)
-        ))
-    
-    summits_masterlist = data
-        | map(it -> it[0])
-        | first()
-        | convert_regions_to_summits // summits_masterlist, inverse_argsort
-
-    density_cols = data
-        | map(it -> tuple(it[3], it[7])) // samples_order, density_bw
-        | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
-        | map(it -> tuple(it[2], it[0], it[1]))
-        | extract_max_density
-
-    summit_based_cols = data
-        | map(it -> tuple(it[3], it[8]))
-        | combine(summits_masterlist.map(it -> it[0])) // summits_masterlist
-        | map(it -> tuple(it[2], it[0], it[1]))
-        | extract_bg_mean
-        | mix(density_cols) 
-        | combine(summits_masterlist.map(it -> it[1])) 
-        | restore_masterlist_order
-}
-
-
-////////////////////// DEFUNC  /////////////
 workflow extractBGParams {
     println "Extracting bg params at ${params.reference_bed}"
     reference_bed = Channel.fromPath(params.reference_bed)
