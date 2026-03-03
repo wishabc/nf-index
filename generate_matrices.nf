@@ -29,6 +29,29 @@ process convert_regions_to_summits {
     """
 }
 
+process apply_jitter {
+    conda params.conda
+    tag "${sample_id}"
+
+    input:
+        tuple path(masterlist), val(sample_id)
+    
+    output:
+        tuple val(sample_id), path(name), path(inverse_argsort)
+    
+    script:
+    name = "${sample_id}.jittered_masterlist.bed"
+    inverse_argsort = "${sample_id}.jittered_masterlist.inverse_argsort.txt"
+    """
+    python3 $moduleDir/bin/helpers/apply_jitter.py \
+        ${masterlist} \
+        ${sample_id} \
+        ${params.jitter_matrix} \
+        ${name} \
+        ${inverse_argsort}
+    """
+}
+
 process restore_masterlist_order {
 
     conda params.conda
@@ -357,18 +380,17 @@ workflow extractDataWithOffsets {
             file(row.bg_params_tabix),
             file(row.normalized_density_bw),
         ))
-    
-    samples_order = data
-        | map(it -> it[1])
-        | first()
+
     
     summits_masterlist = data
         | map(it -> it[0])
-        | first()
-        | convert_regions_to_summits // summits_masterlist, inverse_argsort
-        | combine(samples_meta.map(it -> it[0]))
-        | map(it -> tuple(it[2], it[0], it[1])) // sample_id, summits_masterlist, inverse_argsort
+        | first() // masterlist
+        | combine(samples_meta.map(it -> it[0])) // masterlist, sample_id
+        | apply_jitter // summits_masterlist, inverse_argsort
 
+    samples_order = data
+        | map(it -> it[1])
+        | first()
 
     samples_meta
         | join(summits_masterlist)
