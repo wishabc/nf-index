@@ -294,7 +294,8 @@ workflow generateMatrices {
             | mix(max_pvals) // sample_id, suffix, np_array
             | map(it -> tuple(it[1], it[2])) // suffix, np_array
             | mix(summit_based_cols)
-            | map(it -> tuple(groupKey(it[0], samples_order.countLines().toInteger()), it[1]))
+            | combine(samples_order.countLines().toInteger())
+            | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
             | groupTuple(by: 0) // suffix, columns
             | combine(samples_order) // suffix, columns, samples_order
             | generate_matrix
@@ -372,14 +373,8 @@ workflow extractDataWithOffsets {
     samples_meta
         | join(summits_masterlist)
         | getSummitBasedColumns
-        | map(it -> tuple(
-            groupKey(
-                it[0],
-                samples_order.countLines().toInteger()
-            ),
-            it[1]
-            )
-        )
+        | combine(samples_order.countLines().toInteger())
+        | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
         | groupTuple(by: 0) // suffix, columns
         | combine(samples_order)
         | generate_matrix
