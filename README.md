@@ -50,6 +50,44 @@ nextflow run nmf.nf -profile Altius -entry visualize --nmf_results_path <launchD
 The `--nmf_results_path` option can be omitted if you are running the pipeline in the same folder as `nextflow run nmf.nf -profile Altius`. 
 
 Note that output files are named according to provided `prefix` and `n_components` in `nmf_params_list`. No warning are made in case of name collisions.
+### build_masterlist.nf
+The workflow consists of these process:
+- Collates and chunks all peak files into genomic chunks.
+- Builds DHSs per chunk and resolves overlaps (produces “all”, “non-overlapping core”, and “non-overlapping any” versions per chunk).
+- Merges chunks into genome-wide masterlists.
+- Generates a raw sparse matrix (chunk-wise rows written then concatenated), then converts it to NumPy format.
+- Annotates the masterlist (GC content, GENCODE, repeats) and exports an AnnData object.
+
+To run the pipeline, use:
+```
+nextflow run build_masterlist.nf -profile Altius,new_cluster --resume \
+  --samples_file <samples_file> \
+  --index_peaks_column <column_name>
+```
+`--index_peaks_column` is optional if your peak-path column is `peaks_file_0.001fdr` (default).
+
+See [build_masterlist.nf params](#build_masterlistnf-params) for the required `<samples_file>` format.
+
+The `<samples_file>` must follow the required name and format as in build_masterlist.nf params
+
+### generate_matrices.nf
+The workflow consists of these process:
+- Uses the masterlist (index) as a scaffold to project per-sample files onto DHSs.
+- Builds DHS × sample matrices (.npy) for peak overlap and signal/count tracks (e.g., counts, density, hotspot neglog10_pvals, density, mean_bg_agg_cutcounts).
+- Writes matrices and adds them back into the index AnnData.
+
+To run the pipeline, use:
+```
+nextflow run generate_matrices.nf -profile Altius,new_cluster --resume \
+  --samples_file <samples_file> \
+  --matrix_peaks_column <column_name>
+```
+Note: Run this workflow from the same launch directory as build_masterlist.nf so the generated index AnnData is detected automatically.
+
+`--matrix_peaks_column` is optional if your peak-path column is `peaks_file_0.01fdr` (default).
+
+See [generate_matrices.nf params](#generate_matricesnf-params) for the required `<samples_file>` format.
+
 ### TODO:
 Add other workflows description here
 
@@ -145,7 +183,80 @@ Parameters for each process can be specified either in ```params.config``` file 
 - **dhs_annotations**: (optional)
   (used only for visualizations) A tsv file with DHSs annotations. Should contain `dhs_id` and `dist_tss` columns. Other columns are permitted and ignored. If provided, plot cumulative distance to TSS for DHSs of each component. 
 
+### build_masterlist.nf params
 
+- **samples_file**: A TSV file that must contain the following columns:
+  - `sample_id`: unique identifier for each sample
+  - a peak-file path column (set by `--index_peaks_column`, default: `peaks_file_0.001fdr`)
+
+  Example format:
+            <table>
+        <tr>
+            <th>sample_id</th>
+            <th>peaks_file_0.001fdr</th>
+        </tr>
+        <tr>
+            <td>AG81965</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81965/fdr0.001/AG81965.peaks.fdr0.001.bed.gz</td>
+        </tr>
+        <tr>
+            <td>AG81945</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81945/fdr0.001/AG81945.peaks.fdr0.001.bed.gz</td>
+        </tr>
+        <tr>
+            <td>...</td>
+            <td>...</td>
+        </tr>
+        <tr>
+            <td>AG81957</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81957/fdr0.001/AG81957.peaks.fdr0.001.bed.gz</td>
+        </tr>
+        </table>
+
+
+### generate_matrices.nf params
+
+- **samples_file**: Required same `sample_id` columns as `build_masterlist.nf` with the additional following columns:
+  - a peak-file path column (set by `--matrix_peaks_column`, default: `peaks_file_0.01fdr`).
+  - a bigWig file path column `normalized_density_bw`.
+  - a hotspot3 stats file path column `hotspot3_fit_stats_file`.
+  - a hotspot3 p-values parquet file path column `hotspot3_pvals_parquet`.
+
+  Example additional columns format:
+            <table>
+        <tr>
+            <th>sample_id</th>
+            <th>peaks_file_0.01fdr</th>
+            <th>normalized_density_bw</th>
+            <th>hotspot3_fit_stats_file</th>
+            <th>hotspot3_pvals_parquet</th>
+        </tr>
+        <tr>
+            <td>AG81965</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81965/fdr0.001/AG81965.peaks.fdr0.001.bed.gz</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81965/AG81965.normalized_density.bw</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81965/AG81965.fit_stats.bed.gz</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81965/AG81965.pvals.parquet</td>
+        </tr>
+        <tr>
+            <td>AG81945</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81945/fdr0.001/AG81945.peaks.fdr0.001.bed.gz</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81945/AG81945.normalized_density.bw</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81945/AG81945.fit_stats.bed.gz</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81945/AG81945.pvals.parquet</td>
+        </tr>
+        <tr>
+            <td>...</td>
+            <td>...</td>
+        </tr>
+        <tr>
+            <td>AG81957</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81957/fdr0.001/AG81957.peaks.fdr0.001.bed.gz</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81957/AG81957.normalized_density.bw</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81957/AG81957.fit_stats.bed.gz</td>
+            <td>/net/seq/data2/projects/afathul/klf1_dbd/2026_klf1_dbd/peak_calls/output/AG81957/AG81957.pvals.parquet</td>
+        </tr>
+        </table>
 ### TODO: add details about other workflows
 
 
