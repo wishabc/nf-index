@@ -297,8 +297,7 @@ workflow generateMatrices {
             | mix(max_pvals) // sample_id, suffix, np_array
             | map(it -> tuple(it[1], it[2])) // suffix, np_array
             | mix(summit_based_cols)
-            | combine(samples_order.countLines().toInteger()) // suffix, column, samples_order
-            | map(it -> tuple(groupKey(it[0], it[2]), it[1]))
+            | map(it -> tuple(groupKey(it[0], samples_order.countLines().toInteger()), it[1]))
             | groupTuple(by: 0) // suffix, columns
             | combine(samples_order) // suffix, columns, samples_order
             | generate_matrix
@@ -361,15 +360,32 @@ workflow extractDataWithOffsets {
             file(row.normalized_density_bw),
         ))
     
+    samples_order = data
+        | map(it -> it[1])
+        | first()
+    
     summits_masterlist = data
         | map(it -> it[0])
         | first()
         | convert_regions_to_summits // summits_masterlist, inverse_argsort
+        | combine(samples_meta.map(it -> it[0]))
+        | map(it -> tuple(it[2], it[0], it[1])) // sample_id, summits_masterlist, inverse_argsort
 
-    data
-        | map(it -> tuple(it[3], it[8], it[7])) // sample_id, bg_params_tabix, density_bw
-        | join(summits_masterlist) // sample_id, bg_params_tabix, density_bw, summits_masterlist, inverse_argsort
-    getSummitBasedColumns
+
+    samples_meta
+        | join(summits_masterlist)
+        | getSummitBasedColumns
+        | map(it -> tuple(
+            groupKey(
+                it[0],
+                samples_order.countLines().toInteger()
+            ),
+            it[1]
+            )
+        )
+        | groupTuple(by: 0) // suffix, columns
+        | combine(samples_order)
+        | generate_matrix
 }
 
 
