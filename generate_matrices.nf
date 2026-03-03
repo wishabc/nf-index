@@ -377,7 +377,7 @@ workflow extractDataWithOffsets {
         | splitCsv(header:true, sep:'\t')
         | map(row -> tuple(
             row.sample_id,
-            file(row.bg_params_tabix),
+            file(row.hotspot3_fit_stats_file),
             file(row.normalized_density_bw),
         ))
 
