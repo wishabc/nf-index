@@ -356,7 +356,7 @@ cut -f4 dhs_annotated.bed > gene_body.txt
 
 #exon_subfamily
 bedmap --echo-map --fraction-both 1 ${masterlist} dhs_annotated_exon.bed \
-    | awk -F'\t' '{if($5 == "NPC") print $1"\t"$2"\t"$3"\t"$4"\t"""; else print}' \
+    | awk -F'\t' '{if($5 == "NPC") print $1"\t"$2"\t"$3"\t"$4"\t""exon"; else print}' \
     | cut -f5 \
     | sed 's/;.*//' \
     > exon_subfamily.txt
@@ -387,9 +387,9 @@ zcat ${gencode} \
   | grep -v chrM | grep -v Selenocysteine | grep -v codon \
   | sort-bed - \
   | awk -F';' '{print $1"\t"$3"\t"$4"\t"$5"\t"$6}' \
-  | awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$9}' \
+  | awk -F'\t' '{print $1"\t"$2"\t"$3"\t"$4"\t"$6"\t"$7"\t"$9}' \
   | tr "=" "\t" \
-  | cut -f1-4,6,8 \
+  | cut -f1-4,6,8,10 \
   > tss.bed
 
 
@@ -401,20 +401,26 @@ closest-features --closest --no-ref --dist "${masterlist}" tss.bed \
   | sed 's/|/\t/g' \
   | awk -F'\t' '{
       strand = $4;
-      dist = $7;
+      dist = $8;
 
       # Flip sign if strand is "-"
       if (strand == "-") {
         dist = -dist;
       }
 
-      print dist"\t"$5"\t"$6;
+      print dist"\t"$5"\t"$7"\t"$6;
     }' \
     > dist_gene.txt
 
 
+## Merge gene_body.txt with exon_subfamily.txt
+paste gene_body.txt exon_subfamily.txt \
+| awk -F'\t' '{ gsub("exon", $2, $1); print $1 }' \
+> gene_annot.txt
+
+
 echo "Finished Distance to TSS"
-echo -e "dist_tss\tgene_id\tgene_name\tgene_body\texon_subgroup\tis_coding" > ${outfile}
-paste dist_gene.txt gene_body.txt exon_subfamily.txt is_coding.txt >> ${outfile}
+echo -e "dist_tss\tgene_id\tgene_name\ttranscript_id\tgene_body\tis_coding" > ${outfile}
+paste dist_gene.txt gene_annot.txt is_coding.txt >> ${outfile}
 
 echo "Finished Gencode Annotation"
